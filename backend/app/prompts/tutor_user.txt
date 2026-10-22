@@ -1,0 +1,13 @@
+Situation: {situation}
+Problem: {problem}
+Child's answer: {child_answer}
+Grading result (final): {verdict}
+Correct answer: {correct_answer_visible}
+Likely mistake: {error_step}
+Attempts so far: {attempts}
+Practice problem to offer (only at level 4): {practice_problem}
+Child just said: {child_said}
+Recent conversation:
+{history}
+
+Write what the robot says next.

@@ -1,0 +1,23 @@
+meta {
+  name: Grade worksheet
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8000/api/grade
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  image: @file(../test-worksheets/worksheet-1.png)
+  session_id: bruno1
+}
+
+tests {
+  test("two mistakes on worksheet-1", function() {
+    const wrong = res.body.problems.filter(p => !p.is_correct).map(p => p.id);
+    expect(wrong).to.eql([2, 4]);
+  });
+}

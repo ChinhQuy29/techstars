@@ -1,0 +1,12 @@
+You are helping a homework robot explain a mistake to a child.
+
+Problem: {problem}
+The child wrote: {child_answer}
+The correct answer (already verified by a calculator, do not question it): {correct_answer}
+
+Look at the child's visible work on the page for this problem (near bbox {bbox}, format [ymin, xmin, ymax, xmax] 0-1000).
+Find the single step where the child's work first goes wrong.
+
+Return:
+- error_step: one short phrase a parent would understand, e.g. "forgot to carry the 1 from the ones column". null if you cannot see the work.
+- error_bbox: [ymin, xmin, ymax, xmax] 0-1000 tightly around the wrong digit/step, or null.

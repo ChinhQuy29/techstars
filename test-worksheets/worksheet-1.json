@@ -1,0 +1,123 @@
+{
+  "description": "Sample worksheet-1: expected extraction (what the vision LLM should return).",
+  "extraction": {
+    "hand_blocking": false,
+    "unreadable": false,
+    "problems": [
+      {
+        "id": 1,
+        "problem": "23 + 14",
+        "child_answer": "37",
+        "bbox": [
+          185,
+          60,
+          300,
+          493
+        ],
+        "answer_bbox": [
+          223,
+          375,
+          294,
+          481
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      },
+      {
+        "id": 2,
+        "problem": "47 + 38",
+        "child_answer": "75",
+        "bbox": [
+          185,
+          530,
+          300,
+          966
+        ],
+        "answer_bbox": [
+          222,
+          848,
+          292,
+          954
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      },
+      {
+        "id": 3,
+        "problem": "9 * 6",
+        "child_answer": "54",
+        "bbox": [
+          438,
+          60,
+          554,
+          433
+        ],
+        "answer_bbox": [
+          477,
+          315,
+          548,
+          421
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      },
+      {
+        "id": 4,
+        "problem": "52 - 17",
+        "child_answer": "45",
+        "bbox": [
+          438,
+          530,
+          554,
+          970
+        ],
+        "answer_bbox": [
+          477,
+          852,
+          548,
+          958
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      },
+      {
+        "id": 5,
+        "problem": "36 / 4",
+        "child_answer": "9",
+        "bbox": [
+          692,
+          60,
+          808,
+          416
+        ],
+        "answer_bbox": [
+          735,
+          343,
+          806,
+          404
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      },
+      {
+        "id": 6,
+        "problem": "8 + 7",
+        "child_answer": "15",
+        "bbox": [
+          692,
+          530,
+          808,
+          902
+        ],
+        "answer_bbox": [
+          730,
+          784,
+          801,
+          890
+        ],
+        "confidence": 0.95,
+        "has_work": false
+      }
+    ]
+  }
+}

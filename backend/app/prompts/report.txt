@@ -1,0 +1,4 @@
+Write a 2-3 sentence friendly summary for a parent about their child's homework session, in {language_name}.
+Facts (already computed, do not change numbers): score {correct}/{total}, fixed after hints: {fixed}, hints used: {hints_used}.
+Concepts to practice: {concepts}.
+Praise effort and persistence, be specific, no overpraise.

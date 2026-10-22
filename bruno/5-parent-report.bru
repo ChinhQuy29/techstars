@@ -1,0 +1,15 @@
+meta {
+  name: Parent report
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:8000/api/report
+  body: json
+  auth: none
+}
+
+body:json {
+  { "session_id": "bruno1", "language": "en" }
+}

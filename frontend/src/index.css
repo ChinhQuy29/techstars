@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Baloo 2", "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-hand: "Patrick Hand", "Comic Sans MS", "Chalkboard SE", cursive;
+  --color-lamp: #facc15;
+  --color-ink: #0f172a;
+}
+
+html, body, #root { height: 100%; }
+body {
+  @apply text-slate-800 font-display antialiased;
+  background: radial-gradient(circle at 15% 10%, #fff7d6 0%, transparent 40%),
+    linear-gradient(180deg, #dff3ff 0%, #fdf6dc 100%) fixed;
+  background-color: #eef8ff;
+}
+
+/* Kid UI building blocks (teach-lumi-spec.md §8.1): chunky, high-contrast, easy to tap. */
+.card { @apply rounded-3xl bg-white/90 shadow-xl ring-1 ring-sky-100 backdrop-blur; }
+.btn-kid {
+  @apply inline-flex select-none items-center justify-center gap-2 rounded-2xl px-5 py-3 text-lg font-bold leading-tight transition;
+  min-height: 56px;
+  box-shadow: 0 5px 0 rgb(15 23 42 / 0.18);
+}
+.btn-kid:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgb(15 23 42 / 0.18); }
+.btn-kid:disabled { @apply cursor-not-allowed opacity-40; }
+.btn-small { @apply rounded-xl px-3 py-2 text-sm font-semibold transition active:scale-95; }
+
+/* Lumi's notebook page: blue rule lines + red margin. */
+.notebook {
+  background-color: #fffdf5;
+  background-image:
+    linear-gradient(90deg, transparent 54px, #fca5a5 54px, #fca5a5 56px, transparent 56px),
+    repeating-linear-gradient(180deg, transparent 0, transparent 63px, #bfdbfe 63px, #bfdbfe 64px);
+}
+.font-hand { font-family: var(--font-hand); }
+
+@media print {
+  body { background: white; }
+}

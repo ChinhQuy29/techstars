@@ -1,0 +1,15 @@
+meta {
+  name: Tutor hint (repeat to climb the ladder)
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8000/api/tutor
+  body: json
+  auth: none
+}
+
+body:json {
+  { "session_id": "bruno1", "language": "en", "action": "hint" }
+}
