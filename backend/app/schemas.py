@@ -122,7 +122,7 @@ class ReportResponse(BaseModel):
     teach: Optional["TeachReport"] = None
 
 
-# ---------- API: /teach (Teach Lumi mode, see teach-lumi-spec.md §7.2) ----------
+# ---------- API: /teach (Teach Lumi mode, see docs/05-architecture-and-api.md) ----------
 
 TeachStep = Literal["practice_first", "mark", "fix", "help", "find", "explain", "demo", "sure", "next", "done"]
 TeachOutcome = Literal["caught_fixed", "caught_unfixed", "missed", "false_alarm", "confirmed_ok"]
@@ -176,11 +176,13 @@ class TeachTurn(BaseModel):
 class TeachWorksheetRequest(BaseModel):
     session_id: str
     language: Language = "en"
-    force: bool = False
+    force: bool = False  # adult-only: skip the readiness gate with {carry, off_by_one}
+    demo: bool = False   # adult-only: the fixed canonical demo worksheet (47 + 38 = 75 ...)
 
 
 class TeachWorksheetResponse(BaseModel):
     ready: bool
+    demo: bool = False
     worksheet_id: Optional[str] = None
     problems: list[LumiProblemOut] = []
     concepts: list[str] = []
@@ -234,6 +236,99 @@ class TeachReport(BaseModel):
     false_alarms: int
     explanations: dict[str, int]
     note: str
+    demo: bool = False  # True if any counted worksheet was the scripted demo sheet
 
 
 ReportResponse.model_rebuild()
+
+
+# ---------- API: /teach/town, /teach/scene (Lumi's Town, see docs/03-lumis-town.md) ----------
+
+Concept = Literal["carry", "borrow", "off_by_one", "mul"]
+
+
+class TownRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+
+
+class TownPlace(BaseModel):
+    concept: Concept
+    name: str
+    emoji: str
+    stars: float
+    unlocked: bool
+    need: Optional[str] = None
+    teaser: Optional[str] = None
+
+
+class ScrapbookEntry(BaseModel):
+    concept: Concept
+    label: str
+    quote: str
+    stars: float
+
+
+class TownResponse(BaseModel):
+    dream: str
+    unlock_stars: float
+    places: list[TownPlace]
+    scrapbook: list[ScrapbookEntry]
+
+
+class SceneRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+    concept: Concept
+
+
+class SceneResponse(BaseModel):
+    concept: Concept
+    unlocked: bool
+    title: str
+    problem: Optional[str] = None
+    lines: list[str]
+    answer: Optional[str] = None
+    say: str
+    parts: Optional["SceneParts"] = None  # digits for the illustrated scene (docs/03-lumis-town.md)
+
+
+class SceneParts(BaseModel):
+    op: Literal["+", "-", "*"]
+    a: int
+    b: int
+    answer: int
+    a_digits: Optional[list[int]] = None  # [tens, ones]
+    b_digits: Optional[list[int]] = None
+    regroup: Optional[bool] = None  # carried (+) or borrowed (-) a ten
+    ones: Optional[int] = None
+    tens: Optional[int] = None
+    seq: Optional[list[int]] = None  # × : b, 2b, … a·b
+    borrow_tens: Optional[int] = None  # − with borrowing: the tens digit after lending a ten
+    borrow_ones: Optional[int] = None  # − with borrowing: the ones digit after receiving it
+
+
+SceneResponse.model_rebuild()
+
+
+# ---------- API: /profile (saved progress, docs/06-privacy-and-safety.md) ----------
+
+class ProfileCreateRequest(BaseModel):
+    session_id: str
+    consent: bool  # a grown-up opted in; must be true
+    consent_version: str
+
+
+class ProfileAttachRequest(BaseModel):
+    session_id: str
+    profile_id: str = Field(min_length=32, max_length=32, pattern=r"^[0-9a-f]{32}$")
+
+
+class ProgressSummary(BaseModel):
+    stars: dict[str, float]
+    skills_taught: int
+
+
+class ProfileResponse(BaseModel):
+    profile_id: str
+    summary: ProgressSummary

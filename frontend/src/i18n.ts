@@ -1,8 +1,7 @@
 import type { Language } from "./api";
 
-/** Kid-facing UI labels. Spoken lines come from the backend (or LINES in App.tsx). */
-const STRINGS = {
-  en: {
+/** Kid-facing UI labels. Spoken lines come from the backend (or LINES in App.tsx). English is the reference shape. */
+const en = {
     teachTab: "Teach Lumi", helpTab: "Help me", grownups: "Grown-ups", settings: "Grown-up settings",
     right: "Right", oops: "Oops", doneChecking: "Done checking!", tellLumi: "Tell Lumi",
     tapMistake: "Tap the one with the mistake!", talkWhy: "Tell Lumi why", listening: "I'm listening…",
@@ -15,10 +14,31 @@ const STRINGS = {
     cameraOn: "Turn on camera", cameraOff: "Turn off camera", checkWork: "Check my work", hint: "Hint please",
     talk: "Talk to Lumi", trySample: "Try a sample", trySampleHint: "No camera? Tap a sample page.",
     upload: "Upload photo", newSession: "New session", camera: "Camera", cameraIsOff: "Camera is off",
-    putWorksheet: "Put your worksheet under the lamp, write your answers, then move your hands away. Lumi will check it!",
-    status: { SLEEPING: "😴 Sleeping", WATCHING: "👀 Watching", CAPTURING: "📸 Snap!", THINKING: "🤔 Thinking", RESULT: "💬 Talking" },
+    putWorksheet: "Turn on the camera, hold your worksheet up so Lumi can see it, then tap Check my work. Or try a sample page below!",
+    status: { SLEEPING: "😴 Sleeping", WATCHING: "🙂 Ready", CAPTURING: "📸 Snap!", THINKING: "🤔 Thinking", RESULT: "💬 Talking" },
     concepts: { carry: "Carrying", borrow: "Borrowing", off_by_one: "Careful counting", mul: "Times tables" },
-  },
+    tryAgain: "Try again", startOver: "Start over", oopsError: "Oops, Lumi got stuck. Let's try that again!",
+    micOff: "Mic is off — tap a card", holdForGrownups: "Hold for grown-ups", thisSession: "this session",
+    demoSheet: "Demo worksheet", deleteData: "Delete this session's data",
+    tagline: "your robot learning buddy", welcomeHi: "Hi! I'm Lumi.",
+    welcomePremise: "I'm a little robot who is learning math. I make mistakes sometimes. Can you be my teacher?",
+    welcomeTeach: "Teach Lumi", welcomeHelp: "Help with my homework",
+    town: "Lumi's Town", visit: "Visit", anotherCustomer: "Another customer!", backToHomework: "Back to homework",
+    newPlace: "New place in Lumi's Town!", scrapbook: "Lumi's Scrapbook", scrapbookEmpty: "Teach Lumi a skill and it will be saved here!",
+    youTaughtMe: "You taught me:", locked: "Locked", typeReason: "Or type why",
+    thankYouLumi: "Thank you, Lumi!", paid: "Paid", costs: "Costs",
+    saveTitle: "Save Lumi's progress on this device?",
+    saveBody: "Lumi will remember its stars, which skills your child has practiced, and your child's best explanation for each skill, so you can come back another day. No names, photos or recordings. This prototype keeps it on our server, linked only to this device, and deletes it after 180 days without use, or anytime you tap Delete.",
+    saveButton: "Save progress", savingOn: "✅ Saving progress on this device.", deleteSaved: "Delete saved progress",
+    saveFailed: "Couldn't save right now. Please try again.",
+    welcomeBack: "Welcome back! Lumi remembers {n} skills you taught.", welcomeBackOne: "Welcome back! Lumi remembers the skill you taught.",
+};
+
+export type Strings = typeof en;
+
+/** Kid-facing UI labels. Every language must have every key (enforced by the Strings type). */
+const STRINGS: Record<Language, Strings> = {
+  en,
   es: {
     teachTab: "Enséñale a Lumi", helpTab: "Ayúdame", grownups: "Adultos", settings: "Ajustes para adultos",
     right: "Bien", oops: "Uy", doneChecking: "¡Ya revisé!", tellLumi: "Díselo a Lumi",
@@ -32,9 +52,24 @@ const STRINGS = {
     cameraOn: "Encender cámara", cameraOff: "Apagar cámara", checkWork: "Revisa mi trabajo", hint: "Una pista",
     talk: "Hablar con Lumi", trySample: "Probar un ejemplo", trySampleHint: "¿Sin cámara? Toca una hoja de ejemplo.",
     upload: "Subir foto", newSession: "Nueva sesión", camera: "Cámara", cameraIsOff: "La cámara está apagada",
-    putWorksheet: "Pon tu hoja bajo la lámpara, escribe tus respuestas y luego quita las manos. ¡Lumi la revisará!",
-    status: { SLEEPING: "😴 Durmiendo", WATCHING: "👀 Mirando", CAPTURING: "📸 ¡Foto!", THINKING: "🤔 Pensando", RESULT: "💬 Hablando" },
+    putWorksheet: "Enciende la cámara, muestra tu hoja para que Lumi la vea y toca Revisa mi trabajo. ¡O prueba una hoja de ejemplo abajo!",
+    status: { SLEEPING: "😴 Durmiendo", WATCHING: "🙂 Listo", CAPTURING: "📸 ¡Foto!", THINKING: "🤔 Pensando", RESULT: "💬 Hablando" },
     concepts: { carry: "Llevar", borrow: "Pedir prestado", off_by_one: "Contar con cuidado", mul: "Tablas" },
+    tryAgain: "Intentar otra vez", startOver: "Empezar de nuevo", oopsError: "¡Uy, Lumi se trabó! ¡Intentémoslo otra vez!",
+    micOff: "Micrófono apagado — toca una tarjeta", holdForGrownups: "Mantener presionado (adultos)", thisSession: "esta sesión",
+    demoSheet: "Hoja de demostración", deleteData: "Borrar los datos de esta sesión",
+    tagline: "tu robot compañero de aprendizaje", welcomeHi: "¡Hola! Soy Lumi.",
+    welcomePremise: "Soy un pequeño robot que está aprendiendo matemáticas. A veces me equivoco. ¿Quieres ser mi profe?",
+    welcomeTeach: "Enséñale a Lumi", welcomeHelp: "Ayuda con mi tarea",
+    town: "El Pueblo de Lumi", visit: "Visitar", anotherCustomer: "¡Otro cliente!", backToHomework: "Volver a la tarea",
+    newPlace: "¡Lugar nuevo en el Pueblo de Lumi!", scrapbook: "El álbum de Lumi", scrapbookEmpty: "¡Enséñale algo a Lumi y se guardará aquí!",
+    youTaughtMe: "Me enseñaste:", locked: "Cerrado", typeReason: "O escribe por qué",
+    thankYouLumi: "¡Gracias, Lumi!", paid: "Pagó", costs: "Cuesta",
+    saveTitle: "¿Guardar el progreso de Lumi en este dispositivo?",
+    saveBody: "Lumi recordará sus estrellas, qué habilidades ha practicado su hijo y la mejor explicación de su hijo para cada una, para que puedan volver otro día. Sin nombres, fotos ni grabaciones. Este prototipo lo guarda en nuestro servidor, vinculado solo a este dispositivo, y lo borra después de 180 días sin uso, o cuando usted toque Borrar.",
+    saveButton: "Guardar progreso", savingOn: "✅ Guardando el progreso en este dispositivo.", deleteSaved: "Borrar el progreso guardado",
+    saveFailed: "No se pudo guardar ahora. Inténtelo de nuevo.",
+    welcomeBack: "¡Bienvenido de nuevo! Lumi recuerda {n} habilidades que le enseñaste.", welcomeBackOne: "¡Bienvenido de nuevo! Lumi recuerda la habilidad que le enseñaste.",
   },
   vi: {
     teachTab: "Dạy Lumi", helpTab: "Giúp mình", grownups: "Người lớn", settings: "Cài đặt cho người lớn",
@@ -49,13 +84,27 @@ const STRINGS = {
     cameraOn: "Bật camera", cameraOff: "Tắt camera", checkWork: "Chấm bài giúp mình", hint: "Gợi ý",
     talk: "Nói với Lumi", trySample: "Thử bài mẫu", trySampleHint: "Không có camera? Chạm vào bài mẫu.",
     upload: "Tải ảnh lên", newSession: "Phiên mới", camera: "Camera", cameraIsOff: "Camera đang tắt",
-    putWorksheet: "Đặt bài tập dưới đèn, viết đáp án, rồi bỏ tay ra. Lumi sẽ kiểm tra!",
-    status: { SLEEPING: "😴 Đang ngủ", WATCHING: "👀 Đang nhìn", CAPTURING: "📸 Chụp!", THINKING: "🤔 Đang nghĩ", RESULT: "💬 Đang nói" },
+    putWorksheet: "Bật camera, giơ bài tập cho Lumi nhìn thấy, rồi chạm Chấm bài giúp mình. Hoặc thử bài mẫu bên dưới!",
+    status: { SLEEPING: "😴 Đang ngủ", WATCHING: "🙂 Sẵn sàng", CAPTURING: "📸 Chụp!", THINKING: "🤔 Đang nghĩ", RESULT: "💬 Đang nói" },
     concepts: { carry: "Nhớ sang hàng chục", borrow: "Mượn ở hàng chục", off_by_one: "Đếm cẩn thận", mul: "Bảng cửu chương" },
+    tryAgain: "Thử lại", startOver: "Làm lại từ đầu", oopsError: "Ối, Lumi bị kẹt rồi. Mình thử lại nhé!",
+    micOff: "Micro đang tắt — chạm vào một ý", holdForGrownups: "Giữ nút (dành cho người lớn)", thisSession: "phiên này",
+    demoSheet: "Bài mẫu để trình diễn", deleteData: "Xóa dữ liệu của phiên này",
+    tagline: "bạn robot cùng học", welcomeHi: "Chào bạn! Mình là Lumi.",
+    welcomePremise: "Mình là một chú robot nhỏ đang học toán. Đôi khi mình làm sai. Bạn làm cô giáo của mình nhé?",
+    welcomeTeach: "Dạy Lumi", welcomeHelp: "Giúp mình làm bài tập",
+    town: "Thị trấn Lumi", visit: "Ghé thăm", anotherCustomer: "Khách khác!", backToHomework: "Quay lại bài tập",
+    newPlace: "Nơi mới ở Thị trấn Lumi!", scrapbook: "Sổ lưu niệm của Lumi", scrapbookEmpty: "Dạy Lumi một điều và nó sẽ được lưu ở đây!",
+    youTaughtMe: "Bạn đã dạy mình:", locked: "Đang đóng", typeReason: "Hoặc gõ lý do",
+    thankYouLumi: "Cảm ơn Lumi!", paid: "Đã trả", costs: "Giá",
+    saveTitle: "Lưu tiến độ của Lumi trên thiết bị này?",
+    saveBody: "Lumi sẽ nhớ số sao, những kỹ năng con đã luyện tập và lời giải thích hay nhất của con cho từng kỹ năng, để hôm khác con quay lại học tiếp. Không lưu tên, ảnh hay ghi âm. Bản thử nghiệm này lưu trên máy chủ của chúng tôi, chỉ gắn với thiết bị này, và tự xóa sau 180 ngày không dùng, hoặc bất cứ lúc nào bạn chạm Xóa.",
+    saveButton: "Lưu tiến độ", savingOn: "✅ Đang lưu tiến độ trên thiết bị này.", deleteSaved: "Xóa tiến độ đã lưu",
+    saveFailed: "Chưa lưu được. Vui lòng thử lại.",
+    welcomeBack: "Chào mừng bạn quay lại! Lumi còn nhớ {n} kỹ năng bạn đã dạy.", welcomeBackOne: "Chào mừng bạn quay lại! Lumi còn nhớ kỹ năng bạn đã dạy.",
   },
-} satisfies Record<Language, unknown>;
+};
 
-export type Strings = (typeof STRINGS)["en"];
 export const t = (lang: Language): Strings => STRINGS[lang];
 
 export const CONCEPT_EMOJI: Record<string, string> = { carry: "➕", borrow: "➖", off_by_one: "🔢", mul: "✖️" };

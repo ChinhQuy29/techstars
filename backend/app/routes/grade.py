@@ -8,6 +8,7 @@ from fastapi import APIRouter, File, Form, UploadFile
 
 from ..schemas import GradedProblem, GradeResponse, VisionProblem
 from ..services import math_check, vision
+from ..services import profile
 from ..services.session import get_session
 from ..services.tutor import CONFIDENCE_THRESHOLD
 
@@ -84,4 +85,5 @@ async def grade(image: UploadFile = File(...), session_id: Optional[str] = Form(
 
     graded = [p for p, _ in results]
     session.last_grade, session.last_fixed = graded, fixed_ids
+    profile.autosave(session)  # Teach readiness from Help mode (only with consent)
     return GradeResponse(session_id=session.id, problems=graded, fixed_ids=fixed_ids, mock=mock)

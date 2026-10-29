@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { report, type Language, type ReportResponse } from "../api";
+import LumiMascot from "../components/mascot/LumiMascot";
 
 const pretty = (p: string) => p.replace(/\*/g, "×").replace(/\//g, "÷");
 
@@ -23,9 +24,12 @@ export default function ParentReport({ sessionId, language, onClose }: { session
         className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-3xl bg-white p-8 text-slate-900 shadow-2xl"
       >
         <div className="mb-6 flex items-start justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <LumiMascot expression="default" size="xs" animated={false} />
+            <div>
             <h2 className="text-3xl font-bold">Session report</h2>
             <p className="text-sm text-slate-500">for parents &amp; teachers · session {sessionId}</p>
+            </div>
           </div>
           <button onClick={onClose} className="rounded-full bg-slate-100 px-3 py-1 text-slate-600 hover:bg-slate-200">
             ✕
@@ -82,7 +86,10 @@ export default function ParentReport({ sessionId, language, onClose }: { session
             </div>
             {data.teach && (
               <div className="rounded-2xl bg-violet-50 p-5 ring-1 ring-violet-100">
-                <h3 className="mb-2 text-xl font-bold text-violet-800">🧑‍🏫 Your child taught Lumi</h3>
+                <h3 className="mb-2 text-xl font-bold text-violet-800">
+                  🧑‍🏫 Your child taught Lumi
+                  {data.teach.demo && <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-sm font-semibold text-amber-800">includes the scripted demo sheet</span>}
+                </h3>
                 <div className="mb-3 grid grid-cols-3 gap-3 text-center">
                   {[
                     ["Mistakes found", `${data.teach.caught}/${data.teach.planted}`],
@@ -95,6 +102,16 @@ export default function ParentReport({ sessionId, language, onClose }: { session
                     </div>
                   ))}
                 </div>
+                <ul className="mb-3 space-y-1 text-sm text-slate-600">
+                  <li><b>Mistakes found</b>: Lumi's deliberate mistakes your child marked as wrong. Finding one doesn't by itself show they understand the concept.</li>
+                  <li><b>Missed</b>: a deliberate mistake your child accepted as right. It can mean attention, tiredness, or the screen, not only the math. It is not a diagnosis.</li>
+                  <li><b>False alarms</b>: a correct answer marked wrong. Lumi asked them to check it together; this is not a failure.</li>
+                </ul>
+                {data.teach.taught.length > 0 && (
+                  <p className="mb-1 text-sm font-semibold text-slate-600">
+                    Lumi's session progress, based on your child's explanations (stars are a game signal for this session, not a test of mastery):
+                  </p>
+                )}
                 {data.teach.taught.length > 0 && (
                   <ul className="mb-3 flex flex-wrap gap-2">
                     {data.teach.taught.map((c) => (

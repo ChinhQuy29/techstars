@@ -52,7 +52,7 @@ export default function LumiHomework(p: Props) {
               <button
                 disabled={!finding}
                 onClick={() => p.onPick(pr.id)}
-                className={`font-hand flex flex-1 items-baseline gap-3 rounded-xl px-2 text-left text-4xl text-slate-800 ${
+                className={`font-hand flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-1 text-left text-[1.6rem] text-slate-800 sm:gap-3 sm:px-2 sm:text-4xl ${
                   finding ? "cursor-pointer hover:bg-amber-100" : "cursor-default"
                 }`}
               >
@@ -62,7 +62,7 @@ export default function LumiHomework(p: Props) {
                   {crossed && <span className="absolute left-[-4px] right-[-4px] top-1/2 h-1 -rotate-6 rounded bg-rose-500" />}
                 </span>
                 {crossed && m?.correction && <span className="text-rose-600">{m.correction}</span>}
-                {focused && !marking && <span className="text-3xl">👈</span>}
+                {focused && !marking && <span className="hidden text-3xl sm:inline">👈</span>}
               </button>
 
               {marking ? (

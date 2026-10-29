@@ -9,16 +9,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 load_dotenv()
-logging.getLogger("homework-lamp").setLevel(logging.INFO)
+logging.getLogger("lumi").setLevel(logging.INFO)
 logging.basicConfig(format="%(levelname)s:     %(message)s")
 
 from .realtime import sio  # noqa: E402
-from .routes import grade, lamp, report, teach, tutor  # noqa: E402
+from .routes import frames, grade, profile, report, teach, tutor  # noqa: E402
 from .services import llm  # noqa: E402
 from .services.session import reset_session  # noqa: E402
 from .services.vision import SAMPLES_DIR, _samples  # noqa: E402
 
-api = FastAPI(title="Homework Lamp API")
+api = FastAPI(title="Lumi API")
 api.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()],
@@ -26,7 +26,7 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (grade.router, tutor.router, report.router, lamp.router, teach.router):
+for r in (grade.router, tutor.router, report.router, frames.router, teach.router, profile.router):
     api.include_router(r, prefix="/api")
 
 

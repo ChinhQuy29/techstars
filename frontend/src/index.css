@@ -3,7 +3,7 @@
 @theme {
   --font-display: "Baloo 2", "Nunito", ui-rounded, system-ui, sans-serif;
   --font-hand: "Patrick Hand", "Comic Sans MS", "Chalkboard SE", cursive;
-  --color-lamp: #facc15;
+  --color-sun: #facc15;
   --color-ink: #0f172a;
 }
 
@@ -15,7 +15,7 @@ body {
   background-color: #eef8ff;
 }
 
-/* Kid UI building blocks (teach-lumi-spec.md §8.1): chunky, high-contrast, easy to tap. */
+/* Kid UI building blocks (docs/04-character-ui-and-art.md): chunky, high-contrast, easy to tap. */
 .card { @apply rounded-3xl bg-white/90 shadow-xl ring-1 ring-sky-100 backdrop-blur; }
 .btn-kid {
   @apply inline-flex select-none items-center justify-center gap-2 rounded-2xl px-5 py-3 text-lg font-bold leading-tight transition;
@@ -25,6 +25,14 @@ body {
 .btn-kid:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 rgb(15 23 42 / 0.18); }
 .btn-kid:disabled { @apply cursor-not-allowed opacity-40; }
 .btn-small { @apply rounded-xl px-3 py-2 text-sm font-semibold transition active:scale-95; }
+
+/* Keyboard users can always see where they are. */
+button:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px solid #38bdf8; outline-offset: 3px; }
+
+/* Respect reduced-motion (framer-motion also follows it via <MotionConfig reducedMotion="user">). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
 
 /* Lumi's notebook page: blue rule lines + red margin. */
 .notebook {

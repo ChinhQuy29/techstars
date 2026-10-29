@@ -1,7 +1,8 @@
+import { MotionConfig } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api";
-import type { ChatTurn, Emotion, GradeResponse, Language } from "./api";
+import type { ChatTurn, Concept, Emotion, GradeResponse, Language } from "./api";
 import { useCaptureTrigger } from "./camera/useCaptureTrigger";
 import { useHandDetector } from "./camera/useHandDetector";
 import { useRemoteCamera } from "./camera/useRemoteCamera";
@@ -11,11 +12,15 @@ import { celebrate, sounds } from "./robot/sounds";
 import { useSpeech } from "./robot/useSpeech";
 import ParentReport from "./views/ParentReport";
 import TeachView from "./views/TeachView";
+import TownPage from "./views/TownPage";
 import TutorView from "./views/TutorView";
+import WelcomeView from "./views/WelcomeView";
+import SavedProgress from "./components/SavedProgress";
+import LumiMascot from "./components/mascot/LumiMascot";
 
 /**
  * Two modes (big tabs): "Help me" (Lumi tutors the child's own worksheet) and "Teach Lumi"
- * (the child teaches Lumi — server-driven, see views/TeachView.tsx and teach-lumi-spec.md).
+ * (the child teaches Lumi — server-driven, see views/TeachView.tsx and docs/02-learning-design.md).
  *
  * Help-mode state machine:
  *   SLEEPING --hand appears--> WATCHING
@@ -24,15 +29,15 @@ import TutorView from "./views/TutorView";
  */
 type Phase = "SLEEPING" | "WATCHING" | "CAPTURING" | "THINKING" | "RESULT";
 type Source = "webcam" | "remote";
-type Mode = "teach" | "help";
+type Mode = "welcome" | "teach" | "help" | "town";
 
 const SLEEP_AFTER_MS = 60_000;
 
 const LINES: Record<Language, Record<string, string>> = {
   en: {
-    hello: "Hi, I'm Lumi! Put your worksheet under my light and I'll check it with you.",
+    hello: "Hi, I'm Lumi! Show me your worksheet and I'll check it with you.",
     hand: "Move your hand so I can see!",
-    unreadable: "Hmm, I can't read that. Can you hold the page still under the light?",
+    unreadable: "Hmm, I can't read that. Can you hold the page still and closer to the camera?",
     empty: "I don't see any math problems yet. Show me your worksheet!",
     error: "Oops, my brain hiccupped. Let's try again!",
     wake: "Oh, hello! I'm awake.",
@@ -43,9 +48,9 @@ const LINES: Record<Language, Record<string, string>> = {
     look3: "Let me see what you wrote…",
   },
   es: {
-    hello: "¡Hola, soy Lumi! Pon tu hoja bajo mi luz y la revisamos juntos.",
+    hello: "¡Hola, soy Lumi! Muéstrame tu hoja y la revisamos juntos.",
     hand: "¡Mueve la mano para que pueda ver!",
-    unreadable: "Mmm, no puedo leerlo. ¿Puedes dejar la hoja quieta bajo la luz?",
+    unreadable: "Mmm, no puedo leerlo. ¿Puedes acercar la hoja a la cámara y dejarla quieta?",
     empty: "Todavía no veo problemas de matemáticas. ¡Muéstrame tu hoja!",
     error: "¡Uy! Probemos otra vez.",
     wake: "¡Oh, hola! Ya estoy despierto.",
@@ -56,9 +61,9 @@ const LINES: Record<Language, Record<string, string>> = {
     look3: "A ver qué escribiste…",
   },
   vi: {
-    hello: "Chào con, mình là Lumi! Đặt bài tập dưới đèn, mình cùng kiểm tra nhé.",
+    hello: "Chào con, mình là Lumi! Cho mình xem bài tập, mình cùng kiểm tra nhé.",
     hand: "Con bỏ tay ra để mình nhìn thấy nhé!",
-    unreadable: "Ừm, mình chưa đọc được. Con giữ tờ giấy yên dưới đèn nhé?",
+    unreadable: "Ừm, mình chưa đọc được. Con giữ tờ giấy yên và gần camera hơn nhé?",
     empty: "Mình chưa thấy bài toán nào. Cho mình xem bài tập nhé!",
     error: "Ối, mình bị lỗi một chút. Thử lại nhé!",
     wake: "Ồ, chào con! Mình dậy rồi.",
@@ -77,11 +82,52 @@ const LANGS: { id: Language; label: string }[] = [
 ];
 
 const newSessionId = () => Math.random().toString(36).slice(2, 8);
+const SESSION_KEY = "lumi-session";
+
+/** Keep the session across a page refresh (this tab only), so Help-mode progress and Lumi's stars survive. */
+function initialSessionId(): string {
+  try {
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) return saved;
+  } catch {
+    /* storage blocked: fall through */
+  }
+  const id = newSessionId();
+  saveSessionId(id);
+  return id;
+}
+
+const PROFILE_KEY = "lumi-profile"; // saved-progress id (only after a grown-up's consent)
+
+function readProfileId(): string | null {
+  try {
+    return localStorage.getItem(PROFILE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileId(id: string | null) {
+  try {
+    if (id) localStorage.setItem(PROFILE_KEY, id);
+    else localStorage.removeItem(PROFILE_KEY);
+  } catch {
+    /* storage blocked: progress just won't be remembered on this device */
+  }
+}
+
+function saveSessionId(id: string) {
+  try {
+    sessionStorage.setItem(SESSION_KEY, id);
+  } catch {
+    /* storage blocked: the session just won't survive a refresh */
+  }
+}
 
 export default function App() {
-  const [sessionId, setSessionId] = useState(newSessionId);
+  const [sessionId, setSessionId] = useState(initialSessionId);
   const [language, setLanguage] = useState<Language>("en");
-  const [appMode, setAppMode] = useState<Mode>("help");
+  const [appMode, setAppMode] = useState<Mode>("welcome");
   const [source, setSource] = useState<Source>("webcam");
   const [cameraOn, setCameraOn] = useState(false);
   const [phase, setPhase] = useState<Phase>("WATCHING");
@@ -93,10 +139,19 @@ export default function App() {
   const [history, setHistory] = useState<ChatTurn[]>([]);
   const [showReport, setShowReport] = useState(false);
   const [voiceTrigger, setVoiceTrigger] = useState(false);
+  // Photos are taken when someone asks (Check my work). Auto-snap when hands leave the frame is an opt-in grown-up setting.
+  const [autoSnap, setAutoSnap] = useState(false);
   const [mode, setMode] = useState<string>("…");
   const [samples, setSamples] = useState<{ name: string; url: string }[]>([]);
   const [showDebug, setShowDebug] = useState(false);
   const [teachKey, setTeachKey] = useState(0);
+  const [teachDemo, setTeachDemo] = useState(false);
+  const [townStart, setTownStart] = useState<{ concept: Concept | null; key: number } | null>(null);
+  const [teachAlive, setTeachAlive] = useState(false); // keep the worksheet while visiting the town
+  const [profileId, setProfileId] = useState<string | null>(readProfileId);
+  const [remembered, setRemembered] = useState(0);
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const busy = useRef(false);
   const lastActivity = useRef(Date.now());
@@ -137,7 +192,6 @@ export default function App() {
       if (tr.emotion === "celebrating") celebrate();
       else if (tr.emotion === "happy") sounds.correct();
       else sounds.hint();
-      api.setLamp(tr.emotion === "celebrating" || tr.emotion === "happy" ? "correct" : "hint");
       await say(tr.say, tr.emotion);
     },
     [say],
@@ -162,7 +216,6 @@ export default function App() {
         setFocusId(null);
         setPhase("THINKING");
         setEmotion("thinking");
-        api.setLamp("thinking");
         sounds.thinking();
 
         // Speak a short filler while Gemini reads the page, so the wait feels natural.
@@ -189,7 +242,6 @@ export default function App() {
         busy.current = false;
         lastActivity.current = Date.now();
         setPhase((p) => (p === "SLEEPING" ? p : "WATCHING"));
-        api.setLamp("idle");
       }
     },
     [sessionId, language, history, L, say, afterTutor, speech],
@@ -198,7 +250,7 @@ export default function App() {
 
   const trigger = useCaptureTrigger({
     element: cam.element,
-    enabled: helping && cameraOn && cam.ready,
+    enabled: helping && cameraOn && cam.ready && autoSnap,
     detectHands: hands.detect,
     onTrigger: () => runGradeRef.current(cam.captureHighRes),
     onActivity: (handsVisible) => {
@@ -218,7 +270,7 @@ export default function App() {
 
   markGraded.current = trigger.markGraded;
 
-  // Sleep after ~60 s of no activity (Help mode only; only on the transition, so the lamp isn't spammed).
+  // Sleep after ~60 s of no activity (Help mode only).
   useEffect(() => {
     if (phase === "SLEEPING" || !helping) return;
     const id = window.setInterval(() => {
@@ -226,7 +278,6 @@ export default function App() {
         setPhase("SLEEPING");
         setEmotion("sleeping");
         setBubble("");
-        api.setLamp("off");
       }
     }, 2000);
     return () => window.clearInterval(id);
@@ -286,17 +337,38 @@ export default function App() {
   const switchMode = (m: Mode) => {
     if (m === appMode) return;
     speech.stopSpeaking();
-    if (m === "help") {
+    if (m === "town") {
+      setTownStart((t0) => ({ concept: null, key: (t0?.key ?? 0) + 1 }));
+    } else if (m === "help") {
       setEmotion("idle");
       setBubble(L.hello);
-    } else {
+    } else if (!(m === "teach" && appMode === "town" && teachAlive)) {
+      setTeachDemo(false);
       setTeachKey((k) => k + 1); // fresh Teach view (and worksheet) each time the tab is opened
     }
+    if (m === "teach") setTeachAlive(true);
+    if (m === "help" || m === "welcome") setTeachAlive(false); // Teach unmounts there, so don't revive it hidden later
     setAppMode(m);
+  };
+
+  const openTown = (concept: Concept | null) => {
+    speech.stopSpeaking();
+    setTownStart((t0) => ({ concept, key: (t0?.key ?? 0) + 1 }));
+    setAppMode("town");
+  };
+
+  /** Adult action (Grown-up settings): the fixed canonical demo sheet, for rehearsals and pitches. */
+  const startDemo = () => {
+    speech.stopSpeaking();
+    setTeachDemo(true);
+    setTeachKey((k) => k + 1);
+    setAppMode("teach");
   };
 
   const newSession = async () => {
     const id = newSessionId();
+    saveSessionId(id);
+    setTeachDemo(false);
     setSessionId(id);
     setResult(null);
     setCaptureUrl(null);
@@ -310,16 +382,72 @@ export default function App() {
   const phoneUrl = `${location.origin}/?phone=${sessionId}`;
   const isLocalhost = /localhost|127\.0\.0\.1/.test(location.hostname);
   const tab = (m: Mode) =>
-    `btn-kid px-6 text-xl ${appMode === m ? (m === "teach" ? "bg-violet-500 text-white" : "bg-sky-500 text-white") : "bg-white text-slate-600 ring-2 ring-slate-200"}`;
+    `btn-kid px-6 text-xl ${appMode === m ? (m === "teach" ? "bg-violet-500 text-white" : m === "town" ? "bg-teal-500 text-white" : "bg-sky-500 text-white") : "bg-white text-slate-600 ring-2 ring-slate-200"}`;
+
+  const deleteSessionData = async () => {
+    await api.resetSession(sessionId).catch(() => {});
+    await newSession();
+  };
+
+  // Saved progress: link this session to the device's profile (if a grown-up opted in earlier).
+  useEffect(() => {
+    if (!profileId) return setRemembered(0);
+    let live = true;
+    api.attachProfile(sessionId, profileId)
+      .then((p) => live && setRemembered(p.summary.skills_taught))
+      .catch((e) => {
+        if (!live) return;
+        if (e instanceof api.ApiError && (e.status === 404 || e.status === 422)) {
+          writeProfileId(null); // deleted or expired on the server
+          setProfileId(null);
+        }
+      });
+    return () => {
+      live = false;
+    };
+  }, [sessionId, profileId]);
+
+  const saveProgress = async () => {
+    setProfileBusy(true);
+    setProfileError(null);
+    try {
+      const p = await api.createProfile(sessionId);
+      writeProfileId(p.profile_id);
+      setProfileId(p.profile_id);
+    } catch {
+      setProfileError(s.saveFailed);
+    } finally {
+      setProfileBusy(false);
+    }
+  };
+
+  const deleteSavedProgress = async () => {
+    if (!profileId) return;
+    setProfileBusy(true);
+    setProfileError(null);
+    try {
+      await api.deleteProfile(profileId);
+      writeProfileId(null);
+      setProfileId(null);
+      await deleteSessionData(); // also clear what this session holds in memory
+    } catch {
+      setProfileError(s.saveFailed);
+    } finally {
+      setProfileBusy(false);
+    }
+  };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <img src="/lamp.svg" alt="" className="h-12 w-12 drop-shadow" />
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
-            Lumi <span className="text-lg font-semibold text-amber-500">· Homework Lamp</span>
-          </h1>
+          <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+            <LumiMascot expression="default" animated={false} className="w-11" />
+            <h1 className="text-left text-4xl font-extrabold tracking-tight text-slate-800">
+              Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
+            </h1>
+          </button>
         </div>
         <nav className="flex flex-wrap gap-3" aria-label="Mode">
           <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
@@ -327,6 +455,9 @@ export default function App() {
           </button>
           <button className={tab("help")} onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
             🙋 {s.helpTab}
+          </button>
+          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
+            🏘️ {s.town}
           </button>
         </nav>
         <div className="flex flex-wrap items-center gap-2">
@@ -347,7 +478,22 @@ export default function App() {
         </div>
       </header>
 
-      {appMode === "teach" ? (
+      {appMode === "welcome" ? (
+        <WelcomeView language={language} remembered={remembered} onTeach={() => switchMode("teach")} onHelp={() => switchMode("help")} />
+      ) : appMode === "teach" || appMode === "town" ? (
+        <>
+        {appMode === "town" && townStart && (
+          <TownPage
+            key={`${sessionId}-${language}-${townStart.key}`}
+            sessionId={sessionId}
+            language={language}
+            speech={speech}
+            startConcept={townStart.concept}
+            onBackToHomework={() => switchMode("teach")}
+          />
+        )}
+        {(appMode === "teach" || teachAlive) && (
+        <div hidden={appMode !== "teach"}>
         <TeachView
           key={`${sessionId}-${teachKey}-${language}`}
           sessionId={sessionId}
@@ -355,7 +501,12 @@ export default function App() {
           speech={speech}
           onPracticeFirst={() => switchMode("help")}
           onShowReport={() => setShowReport(true)}
+          onOpenTown={openTown}
+          demo={teachDemo}
         />
+        </div>
+        )}
+        </>
       ) : (
         <>
           <TutorView
@@ -372,7 +523,7 @@ export default function App() {
               askTutor("hint", undefined, id);
             }}
           >
-            <button className="btn-kid bg-lamp text-slate-900" disabled={!cam.ready || busy.current} onClick={() => runGrade(cam.captureHighRes)}>
+            <button className="btn-kid bg-sun text-slate-900" disabled={!cam.ready || busy.current} onClick={() => runGrade(cam.captureHighRes)}>
               ✅ {s.checkWork}
             </button>
             <button className="btn-kid bg-violet-500 text-white" disabled={!result?.problems.length} onClick={() => askTutor("hint")}>
@@ -388,7 +539,7 @@ export default function App() {
               <div className="mb-3 flex items-center justify-between gap-2">
                 <h2 className="text-xl font-extrabold">📷 {s.camera}</h2>
                 <button
-                  className={`btn-kid !min-h-12 !py-2 text-base ${cameraOn ? "bg-slate-200 text-slate-700" : "bg-lamp text-slate-900"}`}
+                  className={`btn-kid !min-h-12 !py-2 text-base ${cameraOn ? "bg-slate-200 text-slate-700" : "bg-sun text-slate-900"}`}
                   onClick={() => { touch(); setCameraOn((c) => !c); }}
                 >
                   {cameraOn ? s.cameraOff : s.cameraOn}
@@ -443,7 +594,7 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-2">
             <select value={source} onChange={(e) => setSource(e.target.value as Source)} className="rounded-lg bg-slate-100 px-3 py-2">
               <option value="webcam">Webcam</option>
-              <option value="remote">Phone / ESP32 lamp</option>
+              <option value="remote">Phone camera</option>
             </select>
             <button className="btn-small bg-slate-100" onClick={newSession}>
               {s.newSession}
@@ -451,7 +602,26 @@ export default function App() {
             <button className="btn-small bg-slate-100" onClick={() => setShowReport(true)}>
               {s.report}
             </button>
+            <button className="btn-small bg-violet-100 text-violet-800" onClick={startDemo}>
+              🎬 {s.demoSheet}
+            </button>
+            <button className="btn-small bg-rose-50 text-rose-700" onClick={deleteSessionData}>
+              🗑 {s.deleteData}
+            </button>
           </div>
+          <SavedProgress
+            s={s}
+            saving={!!profileId}
+            busy={profileBusy}
+            error={profileError}
+            onSave={saveProgress}
+            onDelete={deleteSavedProgress}
+          />
+          <p className="text-xs text-slate-500">
+            Data: without saved progress, everything stays in this server's memory for this session only. No photos or audio
+            are stored. In Help mode the worksheet photo, and in Teach mode the typed or spoken explanation text, are sent to
+            Google Gemini when a key is configured (none when MOCK_MODE=1). See docs/06-privacy-and-safety.md.
+          </p>
           <div className="flex flex-wrap gap-2 text-xs">
             <Badge on={(trigger.status.hands ?? 0) > 0} label={trigger.status.hands === null ? `hands: ${hands.status}` : `hands: ${trigger.status.hands}`} />
             <Badge on={!trigger.status.moving} label={trigger.status.moving ? "moving" : "still"} />
@@ -465,6 +635,10 @@ export default function App() {
               {JSON.stringify({ ...trigger.status, stillMs: Math.round(trigger.status.stillMs), pageChange: trigger.status.pageChange.toFixed(4) }, null, 1)}
             </pre>
           )}
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={autoSnap} onChange={(e) => setAutoSnap(e.target.checked)} />
+            Auto-snap: take the photo by itself when hands leave the page (the camera picture stays on this device until a photo is taken)
+          </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={voiceTrigger} onChange={(e) => setVoiceTrigger(e.target.checked)} disabled={!speech.canListen} />
             Voice trigger: say “check my work”
@@ -480,7 +654,7 @@ export default function App() {
                   Status: <span className={remote.connected ? "text-green-600" : "text-slate-400"}>{remote.connected ? "connected" : "waiting"}</span>
                 </p>
                 {isLocalhost && <p className="mt-2 text-amber-600">Phones can't open localhost — open this page via your ngrok / Cloudflare Tunnel HTTPS URL first.</p>}
-                <p className="mt-2 text-xs">ESP32 lamp: POST JPEGs to /api/frame/{sessionId}</p>
+                <p className="mt-2 text-xs">Other cameras can POST JPEGs to /api/frame/{sessionId}</p>
               </div>
             </div>
           )}
@@ -489,6 +663,7 @@ export default function App() {
 
       {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}
     </div>
+    </MotionConfig>
   );
 }
 

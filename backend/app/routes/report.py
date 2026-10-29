@@ -55,6 +55,8 @@ def teach_report(s: Session, language: str) -> TeachReport | None:
         false_alarms=sum(1 for o in outcomes if o == "false_alarm"),
         explanations=quality,
         note=TEACH_NOTE[language],
+        demo=any(e.get("demo") for e in s.events if e["type"] == "teach_worksheet"
+                 and any(c["worksheet_id"] == e["worksheet_id"] for c in checked)),
     )
 
 
@@ -86,6 +88,7 @@ async def report(req: ReportRequest) -> ReportResponse:
     return ReportResponse(
         session_id=s.id, score=round(100 * correct / total) if total else 0, total=total,
         correct=correct, fixed=fixed, hints_used=hints, concepts=concepts,
-        practice_problems=practice, summary=summary, events=s.events[-50:],
+        practice_problems=practice, summary=summary,
+        events=[e for e in s.events if not e["type"].startswith("teach_")][-50:],
         teach=teach_report(s, req.language),
     )

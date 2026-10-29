@@ -1,5 +1,5 @@
 """Teach Lumi mode: Lumi brings its own homework with planted mistakes; the child finds, fixes and
-explains them, and Lumi visibly learns. Spec: teach-lumi-spec.md (source of truth).
+explains them, and Lumi visibly learns. Spec: docs/02-learning-design.md (source of truth).
 
 Rules (same spirit as Help mode):
 - SymPy (math_check) is the only judge of Lumi's answers, the child's fixes and Lumi's demo answers.
@@ -9,8 +9,10 @@ Rules (same spirit as Help mode):
 """
 from __future__ import annotations
 
+import logging
 import random
 import re
+import time
 import uuid
 from types import SimpleNamespace
 from typing import Optional
@@ -29,6 +31,22 @@ from .tutor import LANGUAGE_NAMES, ROBOT_NAME, T as HELP_T, _pretty, _worked_ste
 
 N_PROBLEMS = 5
 MAX_STARS = 3.0
+MAX_REACTION_CHARS = 200
+log = logging.getLogger("lumi.teach")
+
+# Canonical 90-second demo sheet (docs/07-testing-and-demo.md). Adult-only, isolated in the report.
+# (problem, Lumi's answer, planted, concept), verified by check()/diagnose() when built.
+DEMO_SHEET = [
+    ("23 + 14", "37", False, "off_by_one"),
+    ("47 + 38", "75", True, "carry"),
+    ("6 × 7", "42", False, "mul"),
+    ("52 - 17", "45", True, "borrow"),
+    ("34 + 25", "59", False, "off_by_one"),
+]
+
+
+class TeachGenerationError(RuntimeError):
+    """A valid worksheet could not be generated (should never happen; reported as a recoverable 503)."""
 
 # ---------- templates (spoken lines, en / es / vi) ----------
 
@@ -383,19 +401,44 @@ def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: se
         used.add(expr)
         return TeachProblem(id=pid, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
                             planted=planted, concept=concept, error_step=error_step)
-    raise RuntimeError(f"could not generate a {concept} problem")
+    raise TeachGenerationError(f"could not generate a {concept} problem")
 
 
 def ready_concepts(session: Session) -> set[str]:
-    """Concepts the child has shown in Help mode (solved correctly, or fixed after hints)."""
-    ready: set[str] = set()
+    """Concepts the child has shown in Help mode (solved correctly, or fixed after hints),
+    plus concepts shown on earlier days when progress is saved (T5)."""
+    ready: set[str] = set(session.saved_ready)
     for st in session.problems.values():
         if (st.last is not None and st.last.is_correct) or st.fixed:
             ready |= concepts_of(st.key)
     return ready & set(TEACHABLE)
 
 
-def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random.Random] = None) -> TeachWorksheetResponse:
+def _demo_problems() -> list[TeachProblem]:
+    problems = []
+    for i, (expr, lumi, planted, concept) in enumerate(DEMO_SHEET, start=1):
+        result = check(expr, lumi)
+        error_step, tag = diagnose(expr, lumi) if planted else (None, concept)
+        if result.is_correct == planted or tag != concept:
+            raise TeachGenerationError(f"demo sheet row {i} failed verification")
+        problems.append(TeachProblem(id=i, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
+                                     planted=planted, concept=concept, error_step=error_step))
+    return problems
+
+
+def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random.Random] = None,
+                  demo: bool = False) -> TeachWorksheetResponse:
+    if demo:  # explicit adult demo action: fixed sheet, bypasses the gate on purpose
+        st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(), demo=True)
+        session.teach = st
+        session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=["borrow", "carry"],
+                    planted=[p.id for p in st.problems if p.planted], demo=True)
+        turn = _turn(session, "happy", TT[lang]["intro"], "mark")
+        return TeachWorksheetResponse(
+            ready=True, demo=True, worksheet_id=st.worksheet_id, concepts=["carry", "borrow"],
+            problems=[LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer) for p in st.problems],
+            turn=turn,
+        )
     rng = rng or random.Random()
     ready = ready_concepts(session)
     if not ready and force:
@@ -424,7 +467,7 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
     st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=problems, review=review)
     session.teach = st
     session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=sorted(set(pool)),
-                planted=[p.id for p in problems if p.planted])
+                planted=[p.id for p in problems if p.planted], demo=False)
     turn = _turn(session, "happy", TT[lang]["review_intro" if review else "intro"], "mark")
     return TeachWorksheetResponse(
         ready=True, worksheet_id=st.worksheet_id, concepts=sorted(set(pool), key=TEACHABLE.index),
@@ -484,7 +527,13 @@ def _stats(st: TeachState) -> TeachStats:
 
 def _turn(session: Session, emotion: str, say: str, step: str, p: Optional[TeachProblem] = None, **kw) -> TeachTurn:
     st = session.teach
-    outcomes = [TeachOutcomeOut(id=x.id, outcome=x.outcome) for x in st.problems if x.outcome] if st else []
+    # Never reveal which rows are still-unfound mistakes (or which were right) before the end:
+    # the child's own marks (caught / false alarm) are shown; misses only once found.
+    outcomes = [
+        TeachOutcomeOut(id=x.id, outcome=x.outcome) for x in st.problems
+        if x.outcome and (st.done or x.outcome in ("caught_fixed", "caught_unfixed", "false_alarm")
+                          or (x.outcome == "missed" and x.found))
+    ] if st else []
     turn = TeachTurn(emotion=emotion, say=say.strip(), step=step, focus_problem_id=p.id if p else None,
                      outcomes=outcomes, mastery=_mastery(session), help_level=p.help_level if p else 0, **kw)
     if st:
@@ -493,7 +542,19 @@ def _turn(session: Session, emotion: str, say: str, step: str, p: Optional[Teach
 
 
 def _rng(st: TeachState, p: TeachProblem, salt: int = 0) -> random.Random:
-    return random.Random(f"{st.worksheet_id}-{p.id}-{salt}")
+    # The demo sheet uses a fixed seed so rehearsals show the same chip order and demo problem.
+    return random.Random(f"{'demo' if st.demo else st.worksheet_id}-{p.id}-{salt}")
+
+
+def _sanitize(text: Optional[str]) -> Optional[str]:
+    """LLM text -> one short plain sentence (no markup), or None."""
+    if not text:
+        return None
+    text = re.sub(r"[*_#`<>\[\]{}|]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if len(text) > MAX_REACTION_CHARS:
+        text = text[:MAX_REACTION_CHARS].rsplit(" ", 1)[0].rstrip(",;:") + "…"
+    return text or None
 
 
 def _open(session: Session, p: TeachProblem, lang: str, prefix: str = "") -> TeachTurn:
@@ -563,10 +624,11 @@ async def _rate(session: Session, p: TeachProblem, lang: str, text: str) -> tupl
             temperature=0.4, label="teach_rate",
         )
         if out is not None:
-            reaction = out.reaction.strip() or None
+            reaction = _sanitize(out.reaction)
             if reaction and out.quality in ("incorrect", "vague") and _affirms(reaction, lang):
                 reaction = None  # never affirm a wrong / empty explanation
-            return out.quality, reaction, (out.quote or None)
+            quote = _sanitize(out.quote)
+            return out.quality, reaction, (quote[:80] if quote else None)
     quality = classify_rules(p.concept, text)
     return quality, None, (text.strip()[:80] if quality in ("concept", "procedure") else None)
 
@@ -582,7 +644,7 @@ async def _explain(session: Session, p: TeachProblem, req: TeachTurnRequest) -> 
         quality, reaction, quote = await _rate(session, p, lang, req.child_said or "")
         chip_final = False
     session.log("teach_explained", problem=p.problem, concept=p.concept, quality=quality,
-                text=req.child_said, chip=req.chip_id)
+                source="chip" if req.chip_id else ("speech" if (req.child_said or "").strip() else "none"))
     if quote and quality in ("concept", "procedure"):
         p.quote = quote
         prev = session.teach_quotes.get(p.concept)
@@ -625,7 +687,8 @@ def _next(session: Session, lang: str, prefix: str = "") -> TeachTurn:
             return _open(session, p, lang, prefix)
     st.done = True
     stats = _stats(st)
-    session.log("teach_done", caught=stats.caught, planted=stats.planted, false_alarms=stats.false_alarms)
+    session.log("teach_done", caught=stats.caught, planted=stats.planted, false_alarms=stats.false_alarms,
+                elapsed_s=round(time.time() - st.started), demo=st.demo)
     say = f"{prefix} {t['done'].format(caught=stats.caught, planted=stats.planted)}"
     return _turn(session, "celebrating", say, "done", None, stats=stats)
 
@@ -665,7 +728,7 @@ def _find(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachTurn
             p.stage = None
             p = tapped
             st.current = p.id
-        p.stage = "fix"
+        p.stage, p.found = "fix", True
         return _turn(session, "happy", t["find_found"], "fix", p)
     p.nudge += 1
     if p.nudge == 2:
@@ -677,7 +740,7 @@ def _find(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachTurn
     if p.nudge == 3:
         return _turn(session, "curious", f"{t['find_ok']} {t['find_one'].format(id=p.id)}", "find", None,
                      highlight_ids=[p.id])
-    p.stage = "fix"
+    p.stage, p.found = "fix", True
     return _turn(session, "encouraging", t["find_point"].format(id=p.id), "fix", p, highlight_ids=[p.id])
 
 
@@ -712,7 +775,8 @@ def _confirm(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachT
     gain = p.gain
     before = session.lumi_mastery.get(p.concept, 0.0)
     session.lumi_mastery[p.concept] = min(MAX_STARS, before + gain)
-    session.log("teach_mastery_up", concept=p.concept, gain=gain, stars=session.lumi_mastery[p.concept])
+    session.log("teach_mastery_up", concept=p.concept, gain=gain, stars=session.lumi_mastery[p.concept],
+                agree=req.agree is not False)
     p.stage = "next"
     lead = t["demo_disagree"].format(answer=(p.demo or {}).get("answer", "")) if req.agree is False else ""
     if gain > 0:
@@ -722,7 +786,13 @@ def _confirm(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachT
     return _turn(session, "happy", f"{lead} {t['thanks_help']}", "next", p)
 
 
-def _repeat(session: Session) -> TeachTurn:
+def _repeat(session: Session, req: Optional[TeachTurnRequest] = None) -> TeachTurn:
+    """Out-of-order or duplicate action: no state change, the last turn again."""
+    if req is not None:
+        st = session.teach
+        cur = st.get(st.current)
+        log.info("teach repeat: action=%s stage=%s session=%s worksheet=%s",
+                 req.action, cur.stage if cur else ("done" if st.done else "mark"), session.id, st.worksheet_id)
     return TeachTurn.model_validate(session.teach.last_turn)
 
 
@@ -731,18 +801,18 @@ async def respond(session: Session, req: TeachTurnRequest) -> TeachTurn:
     st = session.teach
     if req.action == "check":
         if st.checked:
-            return _repeat(session)
+            return _repeat(session, req)
         return _check(session, req)
     if not st.checked:
-        return _repeat(session)
+        return _repeat(session, req)
     if req.action == "next":
         cur = st.get(st.current)
         if cur is None or cur.stage == "next" or st.done:
-            return _repeat(session) if st.done else _next(session, req.language)
-        return _repeat(session)
+            return _repeat(session, req) if st.done else _next(session, req.language)
+        return _repeat(session, req)
     p = st.get(st.current)
     if p is None:
-        return _repeat(session)
+        return _repeat(session, req)
     if req.action == "find" and p.stage == "find":
         return _find(session, p, req)
     if req.action == "fix" and p.stage == "fix":
@@ -751,4 +821,4 @@ async def respond(session: Session, req: TeachTurnRequest) -> TeachTurn:
         return await _explain(session, p, req)
     if req.action == "confirm" and p.stage in ("sure", "demo"):
         return _confirm(session, p, req)
-    return _repeat(session)
+    return _repeat(session, req)

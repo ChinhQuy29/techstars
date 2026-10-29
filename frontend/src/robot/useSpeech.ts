@@ -30,6 +30,7 @@ export function useSpeech(language: Language) {
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [micBlocked, setMicBlocked] = useState(false);
   const phraseRec = useRef<Recognition | null>(null);
 
   useEffect(() => {
@@ -70,27 +71,47 @@ export function useSpeech(language: Language) {
     setSpeaking(false);
   }, []);
 
-  /** One-shot listen: resolves with the final transcript ("" on silence / unsupported). */
+  /** One-shot listen: resolves with the final transcript ("" on silence / unsupported / denied).
+   *  Never hangs: a 12 s safety timer stops it, and a denied mic is remembered (chips take over). */
   const listen = useCallback(
     () =>
       new Promise<string>((resolve) => {
         const Ctor = getRecognition();
-        if (!Ctor) return resolve("");
+        if (!Ctor || micBlocked) return resolve("");
         const rec = new Ctor();
         rec.lang = LANG_TAGS[language];
         rec.interimResults = false;
         rec.continuous = false;
         let text = "";
-        rec.onresult = (e) => (text = Array.from(e.results).map((r) => r[0].transcript).join(" "));
-        rec.onerror = () => {};
-        rec.onend = () => {
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(safety);
           setListening(false);
           resolve(text.trim());
         };
+        const safety = window.setTimeout(() => {
+          try {
+            rec.stop();
+          } catch {
+            /* already stopped */
+          }
+          finish();
+        }, 12_000);
+        rec.onresult = (e) => (text = Array.from(e.results).map((r) => r[0].transcript).join(" "));
+        rec.onerror = (e) => {
+          if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") setMicBlocked(true);
+        };
+        rec.onend = finish;
         setListening(true);
-        rec.start();
+        try {
+          rec.start();
+        } catch {
+          finish();
+        }
       }),
-    [language],
+    [language, micBlocked],
   );
 
   /** Background phrase listener for the voice fallback trigger ("check my work"). */
@@ -124,7 +145,7 @@ export function useSpeech(language: Language) {
   );
 
   return {
-    speak, stopSpeaking, listen, startPhraseListener, speaking, listening,
-    canListen: getRecognition() !== null,
+    speak, stopSpeaking, listen, startPhraseListener, speaking, listening, micBlocked,
+    canListen: getRecognition() !== null && !micBlocked,
   };
 }

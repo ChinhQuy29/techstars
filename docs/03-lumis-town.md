@@ -1,0 +1,54 @@
+# 03 · Lumi's Town
+
+Why kids come back. **Every skill the child teaches lets Lumi *do* something new, using exactly that math.** Lumi's dream: "I'm saving up to open a shop in Lumi's Town! Every skill you teach me opens a new place." The reward is seeing your impact on a friend, not points (protégé effect, overjustification effect, SDT; see [01](01-product-vision.md)).
+
+## Places
+| Concept | Place | Scene |
+|---|---|---|
+| `carry` | 🍋 Lemonade Stand | customer buys lemonade (a¢) + cookie (b¢); Lumi adds with carrying |
+| `borrow` | 🪙 Change Counter | customer pays a¢ for a b¢ treat; Lumi makes change with borrowing |
+| `off_by_one` | 🫙 Coin Jar | Lumi adds or spends coins, counting carefully |
+| `mul` | 🍪 Bakery | a trays of b cookies, skip-counted |
+
+- **Locked:** greyed, CLOSED sign + padlock, "Teach Lumi carrying to open it"; tapping plays a funny teaser with a real `diagnose()`-verified mistake ("Last time I said 47 + 38 = 75. Oops! I need a teacher.").
+- **Unlocked:** Visit plays the scene; **🔄 Another customer!** gives fresh numbers.
+- **Lumi's Scrapbook:** per taught concept: emoji, skill, stars, and the child's own words ("You taught me: …").
+
+## Rules
+1. **All math from the backend:** numbers from `_make(concept, planted=False)`, narration from `demo_steps()`, answer from SymPy, every displayed digit from `town.parts()` (asserted against SymPy). No arithmetic in the browser.
+2. **Unlock at ≥ 1 star** (`UNLOCK_STARS = 1.0`): one `concept` explanation or two correct teachings; a chip (½) isn't enough. Stars still move only at demo confirmation.
+3. **No dark patterns:** no guilt, streaks, timers, leaderboards, purchases or random rewards.
+4. **Read-only:** never changes stars or quotes.
+5. **No new data** beyond a visit count per place (seeds fresh problems).
+
+## Where it appears
+- Header tab **🏘️ Lumi's Town** and a 🏘️ button on the Teach screen. TeachView stays mounted (hidden) in the town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
+- On Teach `next`, when a concept just reached 1 star: "🎉 New place in Lumi's Town: 🍋 Lemonade Stand!" → Visit opens that scene.
+- Welcome: "Welcome back! Lumi remembers…" with saved progress.
+
+## As built
+- **Map** (`views/TownPage.tsx`): background, four buildings, Lumi with the dream line; a button row repeats the places for small screens and screen readers.
+- **Scene** (`components/town/SkillScene.tsx`): a 16:9 picture, then the math board and captions. One caption every 1.8 s; picture, board and captions share one `stage`.
+  - Lemonade: price tags 🍋 a¢ / 🍪 b¢; register board fills ones, pops the carried 1, then tens and total; coins slide to Lumi.
+  - Change Counter: "💰 Paid a¢ / 🍬 Costs b¢"; the board crosses out the tens digit and writes the borrowed digits (e.g. 4→3, 6→16), then the change; coins slide back.
+  - Coin Jar: the jar fills or empties; its label changes from a to the answer.
+  - Bakery: trays appear one by one with the running count (b, 2b … a·b), echoed on a chalkboard.
+  - End: green "answer ✓" badge, happy customer (bunny/bear/cat/duck, chosen from the problem) with "Thank you, Lumi!", Another customer!. Lumi `thinking` while working, `happy` at the end. Captions are `aria-live`.
+- `ColumnBoard` looks: `register`, `jar`, `chalk`; it only displays digits it receives.
+- **Art:** the 31 illustrations (backgrounds, shops open/closed, Lumi poses, customers, props) are the primary visuals, with the SVG drawings (`Buildings`, `Critter`, `LumiMascot`) as fallback. See [04 · Town art](04-character-ui-and-art.md).
+- Verified: 33¢+58¢ → 91¢ (carry 1); 46¢−38¢ (4→3, 6→16) → 8¢; Coin Jar 78; 5×8 → 8, 16, 24, 32, 40. Works at 375 px.
+
+## API
+- `POST /api/teach/town {session_id, language}` → `{dream, unlock_stars, places[{concept, name, emoji, stars, unlocked, need, teaser}], scrapbook[{concept, label, quote, stars}]}`.
+- `POST /api/teach/scene {session_id, language, concept}` → `{concept, unlocked, title, problem, lines[], answer, say, parts}`; locked → teaser, no math. Fresh problem per visit (seed: session + concept + visit). Logs `town_scene {concept, visit}`.
+
+`parts`: `op` (+ − *), `a`, `b`, `answer`; for + −: `a_digits`, `b_digits` ([tens, ones]), `regroup`, `ones`, `tens`; for − with borrowing: `borrow_tens`, `borrow_ones`; for ×: `seq`.
+
+## Roadmap
+- [x] T1 places, locks, teasers, dream · T2 illustrated scenes with backend digits · T3 scrapbook · T4 new-place banner · T5 opt-in saved progress
+- [ ] T6 gentle refreshers: after a few days Lumi asks "Can you remind me how to carry?" (curiosity, never loss; places stay open)
+- [ ] T7 chapters: places grow with stars; the child picks the next goal
+- [ ] Vision: the town becomes chapter 1 of Lumi's journey to the moon ([01](01-product-vision.md)); needs approval
+- [ ] T8 pilot: town vs. stars-only on return and explanation quality
+
+**Watch for** kids rushing explanations to unlock places (falling share of `concept`).

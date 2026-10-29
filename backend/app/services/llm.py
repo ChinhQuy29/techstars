@@ -10,7 +10,7 @@ from typing import Optional, TypeVar
 
 from pydantic import BaseModel
 
-log = logging.getLogger("homework-lamp.llm")
+log = logging.getLogger("lumi.llm")
 PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
 T = TypeVar("T", bound=BaseModel)
 
@@ -23,6 +23,10 @@ def prompt(name: str, **kwargs) -> str:
 
 
 def enabled() -> bool:
+    """Gemini is used only with a key AND MOCK_MODE unset. MOCK_MODE=1 forces the deterministic
+    mock (sample worksheets + templates + keyword rules) for offline demos and rehearsals."""
+    if os.getenv("MOCK_MODE", "").strip().lower() in ("1", "true", "yes", "on"):
+        return False
     return bool(os.getenv("GEMINI_API_KEY"))
 
 

@@ -57,13 +57,7 @@ export function useRemoteCamera(sessionId: string, enabled: boolean): CameraSour
     });
     const dataUrl = await viaSocket;
     if (dataUrl) return dataUrlToBlob(dataUrl);
-    try {
-      const r = await fetch(`${BACKEND}/api/lamp/capture`);
-      if (r.ok) return dataUrlToBlob((await r.json()).image);
-    } catch {
-      /* no lamp configured */
-    }
-    return canvasToBlob(canvas);
+    return canvasToBlob(canvas); // no high-res reply in time: use the latest preview frame
   }, [canvas]);
 
   return { element: ready ? canvas : null, ready, error: null, captureHighRes, connected };

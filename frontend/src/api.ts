@@ -66,13 +66,46 @@ export interface ReportResponse {
     false_alarms: number;
     explanations: Record<string, number>;
     note: string;
+    demo: boolean;
   } | null;
 }
 
+/** HTTP error with the backend's machine-readable code when present ({detail: {code, message}}). */
+export class ApiError extends Error {
+  constructor(public status: number, public code: string | null, message: string) {
+    super(message);
+  }
+}
+
 async function json<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  if (!res.ok) {
+    const text = await res.text();
+    let code: string | null = null;
+    try {
+      const detail = JSON.parse(text)?.detail;
+      code = typeof detail === "object" && detail ? detail.code ?? null : null;
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(res.status, code, `${res.status} ${text}`);
+  }
   return res.json() as Promise<T>;
 }
+
+/** fetch with a timeout, so a hung backend never strands the child (docs/02-learning-design.md). */
+async function fetchT(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctl = new AbortController();
+  const id = window.setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctl.signal });
+  } catch (e) {
+    throw new ApiError(0, (e as Error).name === "AbortError" ? "timeout" : "network", String(e));
+  } finally {
+    window.clearTimeout(id);
+  }
+}
+
+const TEACH_TIMEOUT_MS = 35_000; // > backend GEMINI_TIMEOUT (25 s) for the explanation-rating call
 
 const MAX_UPLOAD_SIDE = 1600;
 
@@ -136,12 +169,7 @@ export async function resetSession(sessionId: string): Promise<void> {
   await fetch(`${BACKEND}/api/session/${sessionId}/reset`, { method: "POST" });
 }
 
-/** Fire-and-forget LED status for the ESP32 lamp (no-op if LAMP_URL isn't set on the backend). */
-export function setLamp(state: "off" | "idle" | "thinking" | "correct" | "hint" | "error"): void {
-  fetch(`${BACKEND}/api/lamp/led?state=${state}`, { method: "POST" }).catch(() => {});
-}
-
-// ---------- Teach Lumi mode (teach-lumi-spec.md §7.2) ----------
+// ---------- Teach Lumi mode (docs/05-architecture-and-api.md) ----------
 
 export type TeachStep =
   | "practice_first" | "mark" | "fix" | "help" | "find" | "explain" | "demo" | "sure" | "next" | "done";
@@ -167,6 +195,7 @@ export interface TeachTurn {
 
 export interface TeachWorksheet {
   ready: boolean;
+  demo: boolean;
   worksheet_id: string | null;
   problems: LumiProblem[];
   concepts: string[];
@@ -175,12 +204,12 @@ export interface TeachWorksheet {
 
 export interface TeachMark { id: number; mark: "circle" | "check" | "none"; correction?: string | null }
 
-export async function teachWorksheet(sessionId: string, language: Language, force = false): Promise<TeachWorksheet> {
-  return json(await fetch(`${BACKEND}/api/teach/worksheet`, {
+export async function teachWorksheet(sessionId: string, language: Language, force = false, demo = false): Promise<TeachWorksheet> {
+  return json(await fetchT(`${BACKEND}/api/teach/worksheet`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: sessionId, language, force }),
-  }));
+    body: JSON.stringify({ session_id: sessionId, language, force, demo }),
+  }, TEACH_TIMEOUT_MS));
 }
 
 export async function teachTurn(body: {
@@ -195,9 +224,101 @@ export async function teachTurn(body: {
   chip_id?: string;
   agree?: boolean;
 }): Promise<TeachTurn> {
-  return json(await fetch(`${BACKEND}/api/teach/turn`, {
+  return json(await fetchT(`${BACKEND}/api/teach/turn`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  }));
+  }, TEACH_TIMEOUT_MS));
+}
+
+// ---------- Lumi's Town (docs/03-lumis-town.md) ----------
+
+export type Concept = "carry" | "borrow" | "off_by_one" | "mul";
+
+export interface TownPlace {
+  concept: Concept;
+  name: string;
+  emoji: string;
+  stars: number;
+  unlocked: boolean;
+  need: string | null;
+  teaser: string | null;
+}
+
+export interface TownInfo {
+  dream: string;
+  unlock_stars: number;
+  places: TownPlace[];
+  scrapbook: { concept: Concept; label: string; quote: string; stars: number }[];
+}
+
+export interface TownScene {
+  concept: Concept;
+  unlocked: boolean;
+  title: string;
+  problem: string | null;
+  lines: string[];
+  answer: string | null;
+  say: string;
+  /** Every digit the illustrated scene draws (from the backend; the browser does no arithmetic). */
+  parts: SceneParts | null;
+}
+
+export interface SceneParts {
+  op: "+" | "-" | "*";
+  a: number;
+  b: number;
+  answer: number;
+  a_digits: [number, number] | null;
+  b_digits: [number, number] | null;
+  regroup: boolean | null;
+  ones: number | null;
+  tens: number | null;
+  seq: number[] | null;
+  borrow_tens: number | null;
+  borrow_ones: number | null;
+}
+
+export async function town(sessionId: string, language: Language): Promise<TownInfo> {
+  return json(await fetchT(`${BACKEND}/api/teach/town`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+export async function townScene(sessionId: string, language: Language, concept: Concept): Promise<TownScene> {
+  return json(await fetchT(`${BACKEND}/api/teach/scene`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language, concept }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+// ---------- Saved progress (docs/06-privacy-and-safety.md) ----------
+
+/** Must match backend store.CONSENT_VERSION; bump both when the consent text changes. */
+export const CONSENT_VERSION = "2026-10-27";
+
+export interface ProgressSummary { stars: Record<string, number>; skills_taught: number }
+export interface ProfileInfo { profile_id: string; summary: ProgressSummary }
+
+export async function createProfile(sessionId: string): Promise<ProfileInfo> {
+  return json(await fetchT(`${BACKEND}/api/profile`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, consent: true, consent_version: CONSENT_VERSION }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+export async function attachProfile(sessionId: string, profileId: string): Promise<ProfileInfo> {
+  return json(await fetchT(`${BACKEND}/api/profile/attach`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, profile_id: profileId }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+export async function deleteProfile(profileId: string): Promise<{ deleted: boolean }> {
+  return json(await fetchT(`${BACKEND}/api/profile/${profileId}`, { method: "DELETE" }, TEACH_TIMEOUT_MS));
 }

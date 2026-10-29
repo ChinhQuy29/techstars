@@ -38,7 +38,7 @@ export default function PhoneCamera({ sessionId }: { sessionId: string }) {
         stream = s;
         video.current!.srcObject = s;
         await video.current!.play();
-        setStatus("Streaming to the lamp screen");
+        setStatus("Sending to the Lumi screen");
         timer = window.setInterval(() => {
           if (!socket.connected || !video.current?.videoWidth) return;
           socket.emit("frame", { image: snap(small, PREVIEW_W, 0.6) });
@@ -57,7 +57,7 @@ export default function PhoneCamera({ sessionId }: { sessionId: string }) {
 
   return (
     <div className="flex min-h-full flex-col items-center gap-4 bg-black p-4 text-center">
-      <h1 className="text-2xl font-bold text-lamp">Homework Lamp camera</h1>
+      <h1 className="text-2xl font-bold text-sun">Lumi · phone camera</h1>
       <p className="text-slate-400">Hold the phone ~35 cm above the worksheet, pointing down.</p>
       <video ref={video} playsInline muted className="w-full max-w-md rounded-2xl border border-slate-700" />
       <p className="text-sm text-slate-300">{status}</p>

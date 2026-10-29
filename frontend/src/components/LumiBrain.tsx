@@ -17,11 +17,13 @@ function Star({ fill, pop }: { fill: 0 | 0.5 | 1; pop: boolean }) {
   );
 }
 
-/** "Lumi's Brain": per-concept stars that rise only from the child's teaching (teach-lumi-spec.md §5). */
+/** "Lumi's Brain": per-concept stars that rise only from the child's teaching (docs/02-learning-design.md). */
 export default function LumiBrain({ mastery, popConcept, s }: { mastery: Record<string, number>; popConcept: string | null; s: Strings }) {
   return (
     <div className="w-full rounded-2xl bg-gradient-to-br from-violet-50 to-sky-50 p-4 ring-1 ring-violet-100">
-      <h3 className="mb-2 text-lg font-extrabold text-violet-700">🧠 {s.lumisBrain}</h3>
+      <h3 className="mb-2 text-lg font-extrabold text-violet-700">
+        🧠 {s.lumisBrain} <span className="text-sm font-semibold text-violet-400">· {s.thisSession}</span>
+      </h3>
       <ul className="space-y-1">
         {TEACHABLE.map((c) => {
           const v = mastery[c] ?? 0;

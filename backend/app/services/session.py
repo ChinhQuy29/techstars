@@ -32,10 +32,14 @@ class Session:
     last_grade: list[GradedProblem] = field(default_factory=list)
     last_fixed: list[int] = field(default_factory=list)
     grade_count: int = 0
-    # Teach mode (see teach-lumi-spec.md): current worksheet + Lumi's per-concept stars (0..3).
+    # Teach mode (see docs/02-learning-design.md): current worksheet + Lumi's per-concept stars (0..3).
     teach: Optional["TeachState"] = None
     lumi_mastery: dict[str, float] = field(default_factory=dict)
     teach_quotes: dict[str, tuple[str, str]] = field(default_factory=dict)  # concept -> (quality, text)
+    town_visits: dict[str, int] = field(default_factory=dict)  # Lumi's Town: scene visits per concept (fresh problem each visit)
+    # Saved progress (docs/06-privacy-and-safety.md): set only after a grown-up opts in.
+    profile_id: Optional[str] = None
+    saved_ready: set[str] = field(default_factory=set)  # Teach-ready concepts from earlier days
 
     def log(self, type_: str, **data) -> None:
         self.events.append({"type": type_, "t": round(time.time(), 2), **data})
@@ -72,6 +76,7 @@ class TeachProblem:
     outcome: Optional[str] = None
     child_fix: Optional[str] = None
     quote: Optional[str] = None
+    found: bool = False  # a missed mistake the child has since found (or Lumi pointed to)
     # per-problem conversation state (server-owned)
     stage: Optional[str] = None  # explain | fix | find | sure | demo | next
     fix_tries: int = 0
@@ -94,6 +99,8 @@ class TeachState:
     current: Optional[int] = None
     done: bool = False
     last_turn: Optional[dict] = None
+    demo: bool = False  # fixed scripted worksheet (adult demo action), isolated in the report
+    started: float = field(default_factory=time.time)
 
     def get(self, problem_id: Optional[int]) -> Optional[TeachProblem]:
         return next((p for p in self.problems if p.id == problem_id), None)
