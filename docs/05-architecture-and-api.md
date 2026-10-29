@@ -21,7 +21,8 @@ backend/app/
   services/
     llm.py         Gemini client; enabled() = key set and MOCK_MODE off; timeout, thinking level, error kinds, timing logs
     vision.py      photo → VisionExtraction; mock: byte-matched sample sidecars, else samples in order
-    math_check.py  SymPy check, diagnose (carry/borrow/off_by_one/mul), concepts_of, practice problems, TEACHABLE, CONCEPTS
+    math_check.py  SymPy check, diagnose (carry/borrow/off_by_one/mul), concepts_of, practice problems, TEACHABLE (original four), CONCEPTS
+    concepts.py    the newer eight: generators, answer kinds, is_correct/diagnose, steps, hints, texts, RULES; ALL_CONCEPTS
     tutor.py       Help hint ladder, templates T, leak guard (CONFIDENCE_THRESHOLD 0.6)
     teach.py       Teach engine: TT templates, _RULES, _make, worksheets, DEMO_SHEET, demo_steps, respond(), guards
     town.py        PLACES, UNLOCK_STARS, teasers, scene(), parts()
@@ -29,7 +30,7 @@ backend/app/
     profile.py     snapshot / merge_into / attach / autosave / forget / summary
     session.py     in-memory Session, ProblemState, TeachState, TeachProblem
   prompts/         extract, error_step, tutor_system, tutor_user, report, teach_explain
-backend/tests/     test_api, test_math_check, test_teach, test_town, test_profile
+backend/tests/     test_api, test_math_check, test_teach, test_concepts, test_town, test_profile
 frontend/src/
   App.tsx          modes welcome/teach/help/town, Help loop, grown-up panel, session + profile
   api.ts           typed client, ApiError, 35 s timeouts, CONSENT_VERSION
@@ -61,14 +62,17 @@ bruno/             API requests · deferred/ parked ESP32 sketch (unused)
 | `POST /grade` (multipart `image`, `session_id`) | `{session_id, hand_blocking, unreadable, problems[], fixed_ids, mock, llm_error}`; a problem = `{id, problem, child_answer, correct_answer, is_correct, answered, bbox, answer_bbox, error_step, error_bbox, confidence, needs_confirmation}`; boxes `[ymin,xmin,ymax,xmax]` 0–1000 |
 | `POST /tutor` | `{session_id, language, action: react\|hint\|chat, problem_id, child_said, history}` → `{emotion, say, focus_problem_id, hint_level, attempts, revealed, practice_problem}` |
 | `POST /report` | `{session_id, language}` → `{score, total, correct, fixed, hints_used, concepts, practice_problems, summary, events (no teach_*), teach?{taught, quotes, caught, planted, missed, false_alarms, explanations, note, demo}}` |
-| `POST /teach/worksheet` | `{session_id, language, force, demo}` → `{ready, demo, worksheet_id, problems[{id, problem, lumi_answer}], concepts, turn}`; 503 `generation_failed` |
+| `POST /teach/concepts` | `{session_id, language}` → `{concepts[{concept, label, stars, ready, gate: help\|warmup}]}` (all twelve) |
+| `POST /teach/warmup` | `{session_id, language, concept}` → `{warmup_id, concept, say, problems[{id, problem, kind, visual}]}` (newer concepts only; 400 otherwise) |
+| `POST /teach/warmup/check` | `{session_id, language, warmup_id, answers[2]}` → `{passed, results[2], say, emotion}`; 409 `stale_warmup` |
+| `POST /teach/worksheet` | `{session_id, language, force, demo, concept?}` → `{ready, needs: help\|warmup\|null, demo, worksheet_id, problems[{id, problem, lumi_answer, kind, visual}], concepts, turn}`; 400 `unknown_concept`; 503 `generation_failed` |
 | `POST /teach/turn` | `{session_id, language, worksheet_id, action: check\|fix\|find\|explain\|confirm\|next, marks[{id, mark: circle\|check\|none, correction}], problem_id, answer, child_said, chip_id, agree}` → TeachTurn; 409 `stale_worksheet` |
 | `POST /teach/town`, `/teach/scene` | see [03](03-lumis-town.md) |
 | `POST /profile` | `{session_id, consent: true, consent_version}` → `{profile_id, summary}`; 400 `consent_required`, 409 `consent_outdated` |
 | `POST /profile/attach` | `{session_id, profile_id}` → merge + attach; 404 if gone |
 | `DELETE /profile/{32hex}` | delete now, detach live sessions |
 
-**TeachTurn:** `{emotion, say, step: practice_first|mark|fix|help|find|explain|demo|sure|next|done, focus_problem_id, highlight_ids, chips[{id, text}], demo{problem, steps, answer}, outcomes[{id, outcome}] (unfound misses omitted), mastery, mastery_up, help_level, stats{caught, planted, false_alarms}}`. Structured errors: `{"detail": {"code", "message"}}`.
+**TeachTurn:** `{emotion, say, step: practice_first|mark|fix|help|find|explain|demo|sure|next|done, focus_problem_id, highlight_ids, chips[{id, text}], demo{problem, steps, answer, visual}, outcomes[{id, outcome}] (unfound misses omitted), mastery (all twelve), mastery_up, help_level, stats{caught, planted, false_alarms}, unlocks[{kind: place\|story, key, title, emoji}]}`. `kind` is `number | time | compare` (which keypad); `visual` is `ruler | shape | fractions | bars` data for `MathVisual`. Structured errors: `{"detail": {"code", "message"}}`.
 
 ## State machines
 - **Help (client):** SLEEPING → WATCHING → (Check my work / Auto-snap) CAPTURING → THINKING → RESULT → WATCHING; 60 s idle → SLEEPING. Idle in Teach and Town.

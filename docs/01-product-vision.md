@@ -42,7 +42,9 @@ Never claim: answers any homework, replaces teachers, guaranteed grades, "proven
 - **Business:** will parents pay for understanding plus evidence? Ask about current behavior first, offer a concrete pilot and price, track real sign-ups, return and payment, and interview families who leave.
 - **Promising signals:** kids get "you're the teacher" without long instructions, finish sessions alone, explain in their own words, do better on new problems, and return voluntarily; parents value the report. Report failed sessions too.
 
-## Long-term vision (not in scope; needs owner approval)
+## Long-term vision
+
+*Status: the moon story for ages 6–10 is approved and being built ([08](08-status-and-roadmap.md)); older learners and other subjects still need owner approval.*
 **Every learner teaches their own Lumi**, from elementary school to college and beyond, and **Lumi's dream is to go to the moon.** Each taught concept acts like a choice in a story game: it moves Lumi down a different path (engineer, pilot, scientist, performer…), but every path ends on the moon, so nearly every learner sees a different story that proves Lumi learned from *them*. Lumi's Town is chapter 1 (the shops earn money for the trip).
 
 Rules for when it's built:

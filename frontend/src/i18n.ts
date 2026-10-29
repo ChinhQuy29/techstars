@@ -16,7 +16,15 @@ const en = {
     upload: "Upload photo", newSession: "New session", camera: "Camera", cameraIsOff: "Camera is off",
     putWorksheet: "Turn on the camera, hold your worksheet up so Lumi can see it, then tap Check my work. Or try a sample page below!",
     status: { SLEEPING: "😴 Sleeping", WATCHING: "🙂 Ready", CAPTURING: "📸 Snap!", THINKING: "🤔 Thinking", RESULT: "💬 Talking" },
-    concepts: { carry: "Carrying", borrow: "Borrowing", off_by_one: "Careful counting", mul: "Times tables" },
+    concepts: {
+      carry: "Carrying", borrow: "Borrowing", off_by_one: "Careful counting", mul: "Times tables",
+      share: "Sharing", patterns: "Patterns", big_numbers: "Big numbers", time: "Time",
+      measure: "Measuring", shapes: "Shapes", fractions: "Fractions", graphs: "Bar graphs",
+    },
+    chooseTitle: "What do you want to teach Lumi today?", chooseSub: "Pick any skill. Lumi needs your help!",
+    lumiPicks: "Lumi, you pick!", teachThis: "Teach", needsHelp: "Practice in Help me first", needsWarmup: "Quick warm-up first",
+    warmupTitle: "Quick warm-up", warmupCheck: "Check my answers", warmupGo: "Teach Lumi now!", warmupRetry: "Try two more",
+    teachSomethingElse: "Teach something else", allSkills: "Show all skills", fewerSkills: "Show fewer",
     tryAgain: "Try again", startOver: "Start over", oopsError: "Oops, Lumi got stuck. Let's try that again!",
     micOff: "Mic is off — tap a card", holdForGrownups: "Hold for grown-ups", thisSession: "this session",
     demoSheet: "Demo worksheet", deleteData: "Delete this session's data",
@@ -54,7 +62,15 @@ const STRINGS: Record<Language, Strings> = {
     upload: "Subir foto", newSession: "Nueva sesión", camera: "Cámara", cameraIsOff: "La cámara está apagada",
     putWorksheet: "Enciende la cámara, muestra tu hoja para que Lumi la vea y toca Revisa mi trabajo. ¡O prueba una hoja de ejemplo abajo!",
     status: { SLEEPING: "😴 Durmiendo", WATCHING: "🙂 Listo", CAPTURING: "📸 ¡Foto!", THINKING: "🤔 Pensando", RESULT: "💬 Hablando" },
-    concepts: { carry: "Llevar", borrow: "Pedir prestado", off_by_one: "Contar con cuidado", mul: "Tablas" },
+    concepts: {
+      carry: "Llevar", borrow: "Pedir prestado", off_by_one: "Contar con cuidado", mul: "Tablas",
+      share: "Repartir", patterns: "Patrones", big_numbers: "Números grandes", time: "La hora",
+      measure: "Medir", shapes: "Cuerpos geométricos", fractions: "Fracciones", graphs: "Gráficas de barras",
+    },
+    chooseTitle: "¿Qué quieres enseñarle hoy a Lumi?", chooseSub: "Elige cualquier habilidad. ¡Lumi necesita tu ayuda!",
+    lumiPicks: "¡Lumi, elige tú!", teachThis: "Enseñar", needsHelp: "Practica primero en Ayúdame", needsWarmup: "Primero un calentamiento",
+    warmupTitle: "Calentamiento rápido", warmupCheck: "Revisa mis respuestas", warmupGo: "¡Enséñale a Lumi!", warmupRetry: "Probar dos más",
+    teachSomethingElse: "Enseñar otra cosa", allSkills: "Ver todas las habilidades", fewerSkills: "Ver menos",
     tryAgain: "Intentar otra vez", startOver: "Empezar de nuevo", oopsError: "¡Uy, Lumi se trabó! ¡Intentémoslo otra vez!",
     micOff: "Micrófono apagado — toca una tarjeta", holdForGrownups: "Mantener presionado (adultos)", thisSession: "esta sesión",
     demoSheet: "Hoja de demostración", deleteData: "Borrar los datos de esta sesión",
@@ -86,7 +102,15 @@ const STRINGS: Record<Language, Strings> = {
     upload: "Tải ảnh lên", newSession: "Phiên mới", camera: "Camera", cameraIsOff: "Camera đang tắt",
     putWorksheet: "Bật camera, giơ bài tập cho Lumi nhìn thấy, rồi chạm Chấm bài giúp mình. Hoặc thử bài mẫu bên dưới!",
     status: { SLEEPING: "😴 Đang ngủ", WATCHING: "🙂 Sẵn sàng", CAPTURING: "📸 Chụp!", THINKING: "🤔 Đang nghĩ", RESULT: "💬 Đang nói" },
-    concepts: { carry: "Nhớ sang hàng chục", borrow: "Mượn ở hàng chục", off_by_one: "Đếm cẩn thận", mul: "Bảng cửu chương" },
+    concepts: {
+      carry: "Nhớ sang hàng chục", borrow: "Mượn ở hàng chục", off_by_one: "Đếm cẩn thận", mul: "Bảng cửu chương",
+      share: "Chia đều", patterns: "Quy luật dãy số", big_numbers: "Số lớn", time: "Thời gian",
+      measure: "Đo độ dài", shapes: "Hình khối", fractions: "Phân số", graphs: "Biểu đồ cột",
+    },
+    chooseTitle: "Hôm nay bạn muốn dạy Lumi điều gì?", chooseSub: "Chọn kỹ năng nào cũng được. Lumi cần bạn giúp!",
+    lumiPicks: "Lumi tự chọn nhé!", teachThis: "Dạy", needsHelp: "Luyện tập ở Giúp mình trước", needsWarmup: "Khởi động nhanh trước",
+    warmupTitle: "Khởi động nhanh", warmupCheck: "Kiểm tra đáp án", warmupGo: "Dạy Lumi ngay!", warmupRetry: "Thử hai bài nữa",
+    teachSomethingElse: "Dạy điều khác", allSkills: "Xem tất cả kỹ năng", fewerSkills: "Thu gọn",
     tryAgain: "Thử lại", startOver: "Làm lại từ đầu", oopsError: "Ối, Lumi bị kẹt rồi. Mình thử lại nhé!",
     micOff: "Micro đang tắt — chạm vào một ý", holdForGrownups: "Giữ nút (dành cho người lớn)", thisSession: "phiên này",
     demoSheet: "Bài mẫu để trình diễn", deleteData: "Xóa dữ liệu của phiên này",
@@ -107,8 +131,15 @@ const STRINGS: Record<Language, Strings> = {
 
 export const t = (lang: Language): Strings => STRINGS[lang];
 
-export const CONCEPT_EMOJI: Record<string, string> = { carry: "➕", borrow: "➖", off_by_one: "🔢", mul: "✖️" };
-export const TEACHABLE = ["carry", "borrow", "off_by_one", "mul"] as const;
+export const CONCEPT_EMOJI: Record<string, string> = {
+  carry: "➕", borrow: "➖", off_by_one: "🔢", mul: "✖️",
+  share: "🍕", patterns: "🔁", big_numbers: "💯", time: "⏰", measure: "📏", shapes: "🧊", fractions: "🍰", graphs: "📊",
+};
+/** Every concept the child can teach (same order as the backend's ALL_CONCEPTS). */
+export const TEACHABLE = [
+  "carry", "borrow", "off_by_one", "mul", "share", "patterns", "big_numbers", "time", "measure", "shapes", "fractions", "graphs",
+] as const;
+export type TeachConcept = (typeof TEACHABLE)[number];
 
 /** "52 - 17" → "52 − 17", "6 * 7" → "6 × 7" for display. */
 export const pretty = (p: string) => p.replace(/\*/g, "×").replace(/\//g, "÷").replace(/ - /g, " − ");

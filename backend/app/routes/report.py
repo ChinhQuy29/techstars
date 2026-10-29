@@ -8,7 +8,8 @@ from ..schemas import (
     PracticeProblem, ReportRequest, ReportResponse, TeachReport, TeachReportConcept, TeachReportQuote,
 )
 from ..services import llm
-from ..services.math_check import CONCEPTS, TEACHABLE, practice_for_concept
+from ..services.concepts import ALL_CONCEPTS as TEACHABLE
+from ..services.math_check import CONCEPTS, practice_for_concept
 from ..services.session import Session, get_session
 from ..services.tutor import LANGUAGE_NAMES
 

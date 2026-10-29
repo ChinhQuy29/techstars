@@ -3,9 +3,11 @@
 The behavioral source of truth. Contracts: [05](05-architecture-and-api.md). Town: [03](03-lumis-town.md). All lines Lumi says live in `teach.TT`, `tutor.T`, `town.PLACES` (en/es/vi); examples below are English.
 
 ## Scope
-- Ages 6–10, whole-number arithmetic. Three header tabs: **🧑‍🏫 Teach Lumi**, **🙋 Help me**, **🏘️ Lumi's Town**.
+- Ages 6–10, primary-school math (US grades 1–4). Three header tabs: **🧑‍🏫 Teach Lumi**, **🙋 Help me**, **🏘️ Lumi's Town**.
 - Languages en/es/vi everywhere (UI, speech, templates). Changing language restarts Teach with a new worksheet.
-- Help mode: `+ − × ÷` (remainders like `17 ÷ 5 = 3 r 2`). Teach mode: only these four concepts:
+- Help mode: `+ − × ÷` (remainders like `17 ÷ 5 = 3 r 2`). Teach mode: these twelve concepts.
+
+**The original four** (SymPy expressions, `math_check.py`; ready via Help mode):
 
 | Tag | Kid label | Lumi's planted mistake | Shape |
 |---|---|---|---|
@@ -14,7 +16,29 @@ The behavioral source of truth. Contracts: [05](05-architecture-and-api.md). Tow
 | `off_by_one` | Careful counting | correct ± 1 | 2-digit ± 2-digit, no regrouping |
 | `mul` | Times tables | `a × (b ± 1)` | single digits 2–9 |
 
-Out of scope: fractions, word problems, division in Teach, "teach Lumi anything".
+**The newer eight** (`concepts.py`; ready via a quick warm-up). Problems are sentences with `?` where the answer goes, some with a picture the frontend draws from backend numbers:
+
+| Tag | Kid label | Grade (US) | Problem | Lumi's planted mistake | Answer / picture |
+|---|---|---|---|---|---|
+| `share` | Sharing | 3 | `24 ÷ 4 = ?` | took away instead of sharing (20) | number |
+| `patterns` | Patterns | 2–3 | `5, 10, 15, 20, ?` | added 1 instead of the jump (21) | number |
+| `big_numbers` | Big numbers | 2–4 | "In 384,400, the 8 is worth ?" | one place too few (8,000) | number |
+| `time` | Time | 1–3 | `6:30 + 45 min = ?` | 100 minutes in an hour (6:75) | `h:mm` |
+| `measure` | Measuring | 2 | "The pencil is ? cm long." | read the end, not from the start (9) | number · ruler |
+| `shapes` | Shapes | K–2 | "A cube has ? flat faces." | only counted the faces in view (3) | number · 3D drawing with hidden edges dashed |
+| `fractions` | Fractions | 3 | `1/4 ? 1/2` | bigger bottom number is bigger (>) | `< = >` · fraction bars |
+| `graphs` | Bar graphs | 2–3 | "How many more 🍎 than 🍐?" | read one bar instead of comparing | number · bar chart |
+
+Every newer problem is checked when generated: one right answer computed in Python, and the planted answer must be recognized by `concepts.diagnose()` as that concept's mistake. Each has its own demo steps, hint ladder (levels 1–3; 4 reveals with the rule), three chips and explanation keywords, in en/es/vi.
+
+Out of scope: word problems, algebra, "teach Lumi anything".
+
+## Choosing what to teach
+Teach mode opens on a **concept picker**: "What do you want to teach Lumi today?". Every concept appears with Lumi's stars and its state: **Teach** (ready), **Practice in Help me first** (original four), or **Quick warm-up first** (newer eight). The child picks any concept in any order; **🎲 Lumi, you pick!** keeps the old behavior (Lumi chooses among ready concepts). After a sheet: **📚 More homework** (same concept) or **🔀 Teach something else**.
+
+- **Warm-up** (newer concepts, first time): the child solves two problems of that concept on the matching keypad. The backend checks them (answers never reach the browser); both right → the concept is ready (`warm_ready`, saved with progress); otherwise **Try two more**.
+- **Chosen worksheet:** all 2–3 planted mistakes are the chosen concept; the correct rows mix in other ready concepts (the chosen one weighted ×2), so the whole page still needs checking. A chosen concept at 3 stars → review mode.
+- **Keypads:** digits (up to 6), time (digits and `:`), or compare (`<`, `=`, `>`).
 
 ## Teach Lumi loop
 The **server owns the flow**; the client renders `step` and sends actions.
@@ -30,7 +54,7 @@ Gate (ready concepts?) ── no → practice_first (→ Help, or adult hold "tr
  → Done: "You found X of my Y mistakes!" → More homework | Grown-up report
 ```
 
-**Gate.** A concept is ready if, in Help mode, the child solved one correctly or fixed one after hints (`concepts_of`: `+` → carry or add, plus off_by_one; `−` → borrow or sub, plus off_by_one; `×` → mul), plus readiness saved from earlier days. No ready concept → `practice_first` with **🙋 Practice with Lumi** and **🔒 Grown-up: try anyway** (hold 1.5 s; sends `force`, uses carry + off_by_one). All ready concepts at 3 stars → review mode ("I think I forgot a little…").
+**Gate.** An original concept is ready if, in Help mode, the child solved one correctly or fixed one after hints (`concepts_of`: `+` → carry or add, plus off_by_one; `−` → borrow or sub, plus off_by_one; `×` → mul), plus readiness saved from earlier days. No ready concept → `practice_first` with **🙋 Practice with Lumi** and **🔒 Grown-up: try anyway** (hold 1.5 s; sends `force`, uses carry + off_by_one). All ready concepts at 3 stars → review mode ("I think I forgot a little…").
 
 **Demo worksheet** (Grown-up settings → 🎬, `demo: true`, bypasses the gate, fixed seed): `23+14=37` ✓, `47+38=75` ✗ carry, `6×7=42` ✓, `52−17=45` ✗ borrow, `34+25=59` ✓. Events carry `demo: true`; the report labels it. Nothing is faked.
 
@@ -59,7 +83,9 @@ Correct chip = `procedure` but straight to Demo with +½ (so a chip alone never 
 - **Are you sure:** Lumi checks aloud; "✅ You were right, Lumi!" → happy, "❌ Still wrong" → "let's ask a grown-up later"; → Next.
 - **Done:** caught = planted problems marked ✗.
 
-**Lumi's Brain:** stars 0–3 in ½ steps per concept; change only at demo confirmation; 3 stars → no longer planted. A game signal, never "mastery".
+**Unlock notifications:** a turn that opens something carries `unlocks` (a Town place now; story scenes later). On the `next` step the child sees "🎉 New place in Lumi's Town: …" with **Visit**. A repeated turn repeats the notification.
+
+**Lumi's Brain:** stars 0–3 in ½ steps per concept (the card shows taught skills first, "Show all skills" for the rest); change only at demo confirmation; 3 stars → no longer planted. A game signal, never "mastery".
 
 **Robustness:** each mutating action is valid in one stage; anything else repeats the last turn unchanged (so double taps can't double stars or skip problems). Stale `worksheet_id` → 409, client starts a new sheet. Timeouts/network errors → 🔁 Try again / 📚 Start over.
 
@@ -73,7 +99,7 @@ Reads the child's own worksheet; the source of Teach readiness.
 - **Error step:** rule-based `diagnose()` first; a second Gemini call only if rules can't explain it and work is visible.
 
 ## Personality
-Curious, slightly younger peer; asks more than tells; 1–2 sentence lines, all spoken by TTS; praise the teaching, at most once per turn. **No sad face**: Lumi's own mistakes are cheerful ("Oops, silly me!"). Emotions: `sleeping idle listening thinking happy celebrating encouraging curious confused`. The report tells adults the mistakes are deliberate.
+Curious, slightly younger peer; asks more than tells; 1–2 sentence lines, all spoken by TTS; praise the teaching, at most once per turn. **No sad face in teaching**: Lumi's own mistakes are cheerful ("Oops, silly me!"), so Lumi never looks hurt by a child's answer or absence. Exception: story scenes may show gentle disappointment after a setback, always followed by recovery. Emotions: `sleeping idle listening thinking happy celebrating encouraging curious confused`. The report tells adults the mistakes are deliberate.
 
 ## Safety rules
 1. SymPy judges every answer (Lumi's, the child's, demos, Help grading, practice, Town). The LLM only extracts, rates and phrases one sentence.

@@ -40,6 +40,8 @@ class Session:
     # Saved progress (docs/06-privacy-and-safety.md): set only after a grown-up opts in.
     profile_id: Optional[str] = None
     saved_ready: set[str] = field(default_factory=set)  # Teach-ready concepts from earlier days
+    warm_ready: set[str] = field(default_factory=set)  # newer concepts unlocked by passing a quick warm-up
+    warmup: Optional[dict] = None  # the warm-up in progress: {id, concept, items}
 
     def log(self, type_: str, **data) -> None:
         self.events.append({"type": type_, "t": round(time.time(), 2), **data})
@@ -72,6 +74,9 @@ class TeachProblem:
     planted: bool
     concept: str
     error_step: Optional[str] = None
+    kind: str = "number"  # how the child types an answer: number | time | compare
+    visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart, drawn by the frontend
+    data: dict = field(default_factory=dict)  # the numbers behind the problem (newer concepts)
     # filled in after the child checks the page
     outcome: Optional[str] = None
     child_fix: Optional[str] = None

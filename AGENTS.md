@@ -3,7 +3,7 @@
 Rules for any AI coding agent working in this repo. Read this, then the docs it points to.
 
 ## Product in one paragraph
-Lumi is a web app where a child (6–10) **teaches** a friendly robot math. Lumi brings homework with deliberate, verified mistakes; the child finds, fixes and explains them; Lumi solves a new problem "like you taught me". Help mode grades the child's own worksheet photo with hints, not answers. Lumi's Town shows what each taught skill lets Lumi do. Parents get an honest report. Goal: kids who understand math and come back, in an app that is **playful where the child acts and polished everywhere**. Math only (carry, borrow, careful counting, times tables); software only (no lamp, LED or hardware concepts, a dropped early idea). New subjects, ages, providers, accounts or social features are proposals until the owner approves them.
+Lumi is a web app where a child (6–10) **teaches** a friendly robot math. Lumi brings homework with deliberate, verified mistakes; the child finds, fixes and explains them; Lumi solves a new problem "like you taught me". Help mode grades the child's own worksheet photo with hints, not answers. Lumi's Town shows what each taught skill lets Lumi do. Parents get an honest report. Goal: kids who understand math and come back, in an app that is **playful where the child acts and polished everywhere**. Math only: twelve primary-school concepts (carry, borrow, careful counting, times tables, sharing, patterns, big numbers, time, measuring, shapes, fractions, bar graphs) that the child picks in any order; software only (no lamp, LED or hardware concepts, a dropped early idea). New subjects, ages, providers, accounts or social features are proposals until the owner approves them.
 
 ## Docs
 | | |
@@ -29,7 +29,7 @@ Docs = intended behavior; code = implementation constraints. If they disagree (o
 7. Voice, camera and an API key are never required; chips, typing and the keypad always work; mock mode runs everything.
 8. Every error offers Try again / Start over; adult actions are hold-to-confirm in Grown-up settings.
 9. Nothing persists without adult opt-in; only `mastery, quotes, ready, town_visits` are stored; the child's words never go in the event log; `CONSENT_VERSION` matches in `store.py` and `api.ts`.
-10. One mascot renderer (`LumiMascot`), expressions follow backend state, no sad face; no dark patterns (streaks, timers, leaderboards, purchases, guilt).
+10. One mascot renderer (`LumiMascot`), expressions follow backend state, no sad face while teaching (gentle disappointment only in story setbacks); no dark patterns (streaks, timers, leaderboards, purchases, guilt).
 11. The must-keep UI rules in [04](docs/04-character-ui-and-art.md) beat any design skill or template; the visual style may change, Lumi's character may not.
 
 ## Conventions

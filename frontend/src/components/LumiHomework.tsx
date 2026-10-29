@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import type { LumiProblem, TeachOutcome, TeachStep } from "../api";
-import { pretty, type Strings } from "../i18n";
+import type { Strings } from "../i18n";
+import MathVisual from "./MathVisual";
+import ProblemText, { isSentence } from "./ProblemText";
 
 export interface RowMark { mark: "circle" | "check"; correction?: string }
 
@@ -40,33 +42,48 @@ export default function LumiHomework(p: Props) {
           const glowing = p.highlightIds.includes(pr.id);
           const badge = outcome ? BADGE[outcome] : undefined;
           const crossed = m?.mark === "circle";
+          // Sentence problems (newer concepts) wrap and may carry a picture; sums stay on one line.
+          const sentence = isSentence(pr.problem);
+          const answer = (
+            <span className="whitespace-nowrap">
+              <span className={`relative ${crossed ? "text-slate-400" : "text-indigo-700"}`}>
+                {pr.lumi_answer}
+                {crossed && <span className="absolute left-[-4px] right-[-4px] top-1/2 h-1 -rotate-6 rounded bg-rose-500" />}
+              </span>
+              {crossed && m?.correction && <span className="ml-1.5 text-rose-600">{m.correction}</span>}
+            </span>
+          );
           return (
             <motion.li
               key={pr.id}
               layout
               animate={glowing ? { backgroundColor: ["rgba(251,191,36,0.0)", "rgba(251,191,36,0.35)", "rgba(251,191,36,0.0)"] } : {}}
               transition={glowing ? { duration: 1.4, repeat: Infinity } : {}}
-              className={`relative flex h-16 items-center gap-3 pr-3 ${focused ? "bg-yellow-100/80" : ""}`}
+              className={`relative flex items-center gap-3 pr-3 ${sentence ? "min-h-16 py-2" : "h-16"} ${focused ? "bg-yellow-100/80" : ""}`}
             >
-              <span className="w-[54px] shrink-0 text-center text-xl font-bold text-rose-400">{pr.id}</span>
+              <span className="w-[54px] shrink-0 self-start pt-3 text-center text-xl font-bold text-rose-400">{pr.id}</span>
               <button
                 disabled={!finding}
                 onClick={() => p.onPick(pr.id)}
-                className={`font-hand flex min-w-0 flex-1 items-baseline gap-1.5 overflow-hidden whitespace-nowrap rounded-xl px-1 text-left text-[1.6rem] text-slate-800 sm:gap-3 sm:px-2 sm:text-4xl ${
+                className={`font-hand flex min-w-0 flex-1 flex-col items-start gap-1 rounded-xl px-1 text-left text-slate-800 sm:px-2 ${
                   finding ? "cursor-pointer hover:bg-amber-100" : "cursor-default"
                 }`}
               >
-                <span>{pretty(pr.problem)} =</span>
-                <span className={`relative ${crossed ? "text-slate-400" : "text-indigo-700"}`}>
-                  {pr.lumi_answer}
-                  {crossed && <span className="absolute left-[-4px] right-[-4px] top-1/2 h-1 -rotate-6 rounded bg-rose-500" />}
+                <span
+                  className={
+                    sentence
+                      ? "text-xl leading-snug sm:text-3xl"
+                      : "flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap text-[1.6rem] sm:gap-3 sm:text-4xl"
+                  }
+                >
+                  <ProblemText problem={pr.problem} answer={answer} />
+                  {focused && !marking && <span className="ml-2 hidden text-3xl sm:inline">👈</span>}
                 </span>
-                {crossed && m?.correction && <span className="text-rose-600">{m.correction}</span>}
-                {focused && !marking && <span className="hidden text-3xl sm:inline">👈</span>}
+                {pr.visual && <MathVisual visual={pr.visual} className="mt-1" />}
               </button>
 
               {marking ? (
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 gap-2 self-center">
                   <button
                     onClick={() => p.onMark(pr.id, "check")}
                     aria-pressed={m?.mark === "check"}

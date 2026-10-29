@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import { CONCEPT_EMOJI, TEACHABLE, type Strings } from "../i18n";
 
 /** One star that can be empty, half or full. */
@@ -19,13 +20,17 @@ function Star({ fill, pop }: { fill: 0 | 0.5 | 1; pop: boolean }) {
 
 /** "Lumi's Brain": per-concept stars that rise only from the child's teaching (docs/02-learning-design.md). */
 export default function LumiBrain({ mastery, popConcept, s }: { mastery: Record<string, number>; popConcept: string | null; s: Strings }) {
+  const [all, setAll] = useState(false);
+  // Twelve skills is a lot for a small card: show what Lumi has learned (at least four rows), the rest on demand.
+  const taught = TEACHABLE.filter((c) => (mastery[c] ?? 0) > 0 || c === popConcept);
+  const shown = all ? TEACHABLE : taught.length >= 4 ? taught : [...taught, ...TEACHABLE.filter((c) => !taught.includes(c))].slice(0, 4);
   return (
     <div className="w-full rounded-2xl bg-gradient-to-br from-violet-50 to-sky-50 p-4 ring-1 ring-violet-100">
       <h3 className="mb-2 text-lg font-extrabold text-violet-700">
         🧠 {s.lumisBrain} <span className="text-sm font-semibold text-violet-400">· {s.thisSession}</span>
       </h3>
       <ul className="space-y-1">
-        {TEACHABLE.map((c) => {
+        {shown.map((c) => {
           const v = mastery[c] ?? 0;
           return (
             <li key={c} className="flex items-center justify-between gap-2">
@@ -42,6 +47,11 @@ export default function LumiBrain({ mastery, popConcept, s }: { mastery: Record<
           );
         })}
       </ul>
+      {shown.length < TEACHABLE.length || all ? (
+        <button className="btn-small mt-2 bg-white/70 text-violet-700" onClick={() => setAll((v) => !v)} aria-expanded={all}>
+          {all ? `▲ ${s.fewerSkills}` : `▼ ${s.allSkills}`}
+        </button>
+      ) : null}
     </div>
   );
 }

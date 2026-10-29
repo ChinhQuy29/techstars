@@ -62,7 +62,8 @@ def test_gate_blocks_fresh_session_then_force_works():
     assert w["ready"] is False and w["turn"]["step"] == "practice_first"
     w = worksheet("teach-gate", force=True)
     assert w["ready"] and len(w["problems"]) == 5
-    assert set(w["problems"][0]) == {"id", "problem", "lumi_answer"}  # no truth fields leak to the client
+    # no truth fields leak to the client (kind/visual only say how to type and what to draw)
+    assert set(w["problems"][0]) == {"id", "problem", "lumi_answer", "kind", "visual"}
     planted = [p for p in truth("teach-gate").values() if p.planted]
     assert 2 <= len(planted) <= 3
     assert {p.concept for p in truth("teach-gate").values()} <= {"carry", "off_by_one"}

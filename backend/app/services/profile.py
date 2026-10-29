@@ -1,7 +1,7 @@
 """Linking an in-memory Session to a consented saved profile (store.py). Spec: docs/05-architecture-and-api.md"""
 from __future__ import annotations
 
-from .math_check import TEACHABLE
+from .concepts import ALL_CONCEPTS as TEACHABLE  # every teachable concept, original four + newer eight
 from .session import Session, _sessions
 from . import store
 

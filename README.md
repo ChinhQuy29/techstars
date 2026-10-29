@@ -40,7 +40,7 @@ npm run dev                                        # http://localhost:5173
 
 ## Tools
 
-- **Tests:** `cd backend && .venv/Scripts/python -m pytest` (86 tests). Frontend check: `cd frontend && npm run build`.
+- **Tests:** `cd backend && .venv/Scripts/python -m pytest` (130 tests). Frontend check: `cd frontend && npm run build`.
 - **Mascot gallery:** `http://localhost:5173/?mascot=gallery`.
 - **Phone camera:** tunnel the Vite server (`ngrok http 5173` or `cloudflared tunnel --url http://localhost:5173`), choose Phone camera in Grown-up settings, scan the QR.
 - **API testing:** open `bruno/` in Bruno. **Sample worksheets:** `python scripts/make_worksheets.py`.

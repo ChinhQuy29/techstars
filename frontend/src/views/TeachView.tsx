@@ -1,13 +1,19 @@
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api";
-import type { Concept, Emotion, Language, TeachOutcome, TeachTurn, TeachWorksheet, TownPlace } from "../api";
+import type {
+  Concept, Emotion, Language, TeachConceptInfo, TeachOutcome, TeachTurn, TeachUnlock, TeachWorksheet, Warmup as WarmupData, WarmupResult,
+} from "../api";
+import ConceptPicker from "../components/ConceptPicker";
 import ExplainChips from "../components/ExplainChips";
 import HoldButton from "../components/HoldButton";
 import KidKeypad from "../components/KidKeypad";
 import LumiBrain from "../components/LumiBrain";
 import LumiHomework, { type RowMark } from "../components/LumiHomework";
-import { pretty, t } from "../i18n";
+import MathVisual from "../components/MathVisual";
+import ProblemText from "../components/ProblemText";
+import Warmup from "../components/Warmup";
+import { CONCEPT_EMOJI, t, type TeachConcept } from "../i18n";
 import LumiMascot from "../components/mascot/LumiMascot";
 import { expressionFor } from "../components/mascot/lumiAssets";
 import { celebrate, sounds } from "../robot/sounds";
@@ -49,9 +55,14 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
   const applyRef = useRef<(tn: TeachTurn) => Promise<void>>(async () => {});
   const loadRef = useRef<(force?: boolean, demoSheet?: boolean) => Promise<void>>(async () => {});
   const lastAction = useRef<(() => Promise<unknown>) | null>(null);
-  // Lumi's Town (docs/03-lumis-town.md): which places were open before this turn, to announce new ones.
-  const unlockedRef = useRef<Set<Concept> | null>(null);
-  const [newPlace, setNewPlace] = useState<TownPlace | null>(null);
+  // The child chooses what to teach (any order); newer skills unlock with a quick warm-up.
+  const [phase, setPhase] = useState<"pick" | "warmup" | "teach">(demo ? "teach" : "pick");
+  const [menu, setMenu] = useState<TeachConceptInfo[]>([]);
+  const chosen = useRef<string | null>(null);
+  const [warmup, setWarmup] = useState<WarmupData | null>(null);
+  const [warmResult, setWarmResult] = useState<WarmupResult | null>(null);
+  // Something the child's teaching just opened (a Town place now, story scenes later): the backend says so.
+  const [newUnlock, setNewUnlock] = useState<TeachUnlock | null>(null);
   const { speak, listen, stopSpeaking, canListen, listening } = speech;
 
   const send = useCallback(
@@ -97,15 +108,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
       setEntry("");
       setError(null);
       if (tn.step === "fix" && tn.focus_problem_id !== null) setFound((f) => new Set(f).add(tn.focus_problem_id!));
-      if (tn.step !== "next") setNewPlace(null);
-      if (tn.mastery_up) {
-        api.town(sessionId, language).then((info) => {
-          const before = unlockedRef.current ?? new Set<Concept>();
-          const opened = info.places.find((pl) => pl.unlocked && !before.has(pl.concept));
-          unlockedRef.current = new Set(info.places.filter((pl) => pl.unlocked).map((pl) => pl.concept));
-          if (opened && mine === seq.current) setNewPlace(opened);
-        }).catch(() => {});
-      }
+      setNewUnlock(tn.unlocks?.[0] ?? null);
       if (tn.mastery_up || tn.emotion === "celebrating") celebrate();
       else if (tn.emotion === "happy") sounds.correct();
       else sounds.hint();
@@ -128,7 +131,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
       setBusy(true);
       setError(null);
       try {
-        const w = await api.teachWorksheet(sessionId, language, force, demoSheet);
+        const w = await api.teachWorksheet(sessionId, language, force, demoSheet, demoSheet ? null : chosen.current);
         wsRef.current = w;
         setWs(w);
         setMarks({});
@@ -148,20 +151,93 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
   );
   loadRef.current = load;
 
+  /** "What do you want to teach Lumi today?" */
+  const openPicker = useCallback(async () => {
+    lastAction.current = () => openPicker();
+    stopSpeaking();
+    seq.current++;
+    setPhase("pick");
+    setWs(null);
+    wsRef.current = null;
+    setTurn(null);
+    setWarmup(null);
+    setError(null);
+    setEmotion("curious");
+    setBubble(s.chooseTitle);
+    try {
+      setMenu(await api.teachConcepts(sessionId, language));
+      void speak(s.chooseTitle);
+    } catch (e) {
+      console.error(e);
+      setError(s.oopsError);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, language, speak, stopSpeaking]);
+
+  const teachConcept = (concept: string | null) => {
+    chosen.current = concept;
+    setPhase("teach");
+    void load();
+  };
+
+  const startWarmup = async (concept: string) => {
+    lastAction.current = () => startWarmup(concept);
+    chosen.current = concept;
+    setBusy(true);
+    setError(null);
+    stopSpeaking();
+    try {
+      const w = await api.startWarmup(sessionId, language, concept);
+      setWarmup(w);
+      setWarmResult(null);
+      setPhase("warmup");
+      setEmotion("curious");
+      setBubble(w.say);
+      void speak(w.say);
+    } catch (e) {
+      console.error(e);
+      setError(s.oopsError);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const checkWarmup = async (answers: string[]) => {
+    if (!warmup) return;
+    lastAction.current = () => checkWarmup(answers);
+    setBusy(true);
+    setEmotion("thinking");
+    try {
+      const r = await api.checkWarmup(sessionId, language, warmup.warmup_id, answers);
+      setWarmResult(r);
+      setEmotion(r.emotion);
+      setBubble(r.say);
+      if (r.passed) celebrate();
+      else sounds.hint();
+      void speak(r.say);
+    } catch (e) {
+      console.error(e);
+      if (e instanceof api.ApiError && e.status === 409) void startWarmup(warmup.concept);
+      else setError(s.oopsError);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const pick = (c: TeachConceptInfo) => {
+    // Ready, or an original skill (the backend explains Help-mode practice): straight to Lumi's homework.
+    if (c.ready || c.gate === "help") teachConcept(c.concept);
+    else void startWarmup(c.concept);
+  };
+
   useEffect(() => {
-    if (loadedFor.current === sessionId) return; // StrictMode runs effects twice; generate once per session
+    if (loadedFor.current === sessionId) return; // StrictMode runs effects twice; start once per session
     loadedFor.current = sessionId;
-    load(false, demo);
-  }, [sessionId, load, demo]);
+    if (demo) load(false, true);
+    else void openPicker();
+  }, [sessionId, load, demo, openPicker]);
 
   useEffect(() => () => stopSpeaking(), [stopSpeaking]);
-
-  // Remember which town places were already open, so only newly opened ones get the banner.
-  useEffect(() => {
-    api.town(sessionId, language)
-      .then((info) => (unlockedRef.current = new Set(info.places.filter((pl) => pl.unlocked).map((pl) => pl.concept))))
-      .catch(() => {});
-  }, [sessionId, language]);
 
   const talkWhy = async () => {
     stopSpeaking();
@@ -173,8 +249,9 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
     else setEmotion(turn?.emotion ?? "curious");
   };
 
-  const step = turn?.step;
+  const step = phase === "teach" ? turn?.step : undefined;
   const problems = ws?.problems ?? [];
+  const focusKind = problems.find((p) => p.id === turn?.focus_problem_id)?.kind ?? "number";
 
   // Lumi looks "thinking" while its demo steps are still appearing, then the backend's emotion
   // (happy) once the answer is shown. Purely visual: the steps/answer come from the server.
@@ -246,7 +323,14 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
 
       <section className="card flex flex-col gap-4 p-3 sm:p-5 lg:col-span-7">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-2xl font-extrabold text-amber-700">📒 {s.lumisHomework}</h2>
+          <h2 className="text-2xl font-extrabold text-amber-700">
+            📒 {s.lumisHomework}
+            {phase !== "pick" && chosen.current && (
+              <span className="ml-2 rounded-full bg-amber-100 px-3 py-1 align-middle text-base text-amber-800">
+                {CONCEPT_EMOJI[chosen.current]} {s.concepts[chosen.current as TeachConcept]}
+              </span>
+            )}
+          </h2>
           <button
             className="btn-kid !min-h-12 bg-teal-500 !py-2 text-base text-white"
             onClick={() => { stopSpeaking(); onOpenTown(null); }}
@@ -255,7 +339,20 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
           </button>
         </div>
 
-        {ws?.ready ? (
+        {phase === "pick" ? (
+          <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
+        ) : phase === "warmup" && warmup ? (
+          <Warmup
+            key={warmup.warmup_id}
+            warmup={warmup}
+            result={warmResult}
+            busy={busy}
+            onCheck={checkWarmup}
+            onRetry={() => startWarmup(warmup.concept)}
+            onTeach={() => teachConcept(warmup.concept)}
+            s={s}
+          />
+        ) : ws?.ready ? (
           <LumiHomework
             problems={problems}
             marks={marks}
@@ -280,7 +377,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
               <button className="btn-kid bg-white text-slate-800 ring-2 ring-slate-200" disabled={busy} onClick={() => lastAction.current?.()}>
                 🔁 {s.tryAgain}
               </button>
-              <button className="btn-kid bg-sun text-slate-900" disabled={busy} onClick={() => load()}>
+              <button className="btn-kid bg-sun text-slate-900" disabled={busy} onClick={() => (phase === "teach" ? load() : openPicker())}>
                 📚 {s.startOver}
               </button>
             </div>
@@ -293,9 +390,10 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
               {editing !== null && (
                 <div className="flex flex-col items-center gap-2 rounded-3xl bg-sky-50 p-4 ring-2 ring-sky-200">
                   <p className="font-bold text-sky-800">
-                    #{editing} {pretty(problems.find((p) => p.id === editing)?.problem ?? "")} = ? · {s.typeAnswer}
+                    #{editing} <ProblemText problem={problems.find((p) => p.id === editing)?.problem ?? ""} answer="?" /> · {s.typeAnswer}
                   </p>
                   <KidKeypad
+                    kind={problems.find((p) => p.id === editing)?.kind ?? "number"}
                     value={marks[editing]?.correction ?? ""}
                     onChange={(v) => setMarks((m) => ({ ...m, [editing]: { mark: "circle", correction: v } }))}
                     onSubmit={() => setEditing(null)}
@@ -312,7 +410,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
           {(step === "fix" || step === "help") && (
             <div className="flex flex-col items-center gap-3">
               <p className="text-lg font-bold text-sky-800">{s.typeAnswer}</p>
-              <KidKeypad value={entry} onChange={setEntry} onSubmit={busy ? undefined : submitFix} />
+              <KidKeypad kind={focusKind} value={entry} onChange={setEntry} onSubmit={busy ? undefined : submitFix} />
               <button className="btn-kid bg-green-500 px-8 text-white" disabled={!entry || busy} onClick={submitFix}>
                 ✅ {s.tellLumi}
               </button>
@@ -376,18 +474,23 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
           {step === "demo" && turn?.demo && (
             <div className="w-full rounded-3xl bg-violet-50 p-5 ring-2 ring-violet-200">
               <p className="mb-1 text-sm font-bold uppercase tracking-wide text-violet-500">🤖 {s.newTry}</p>
-              <p className="font-hand mb-3 text-5xl text-slate-800">
-                {pretty(turn.demo.problem)} ={" "}
-                <motion.span
-                  key={turn.demo.problem}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 + (turn.demo.steps.length - 1) * 1.6 }}
-                  className="inline-block text-indigo-700"
-                >
-                  {turn.demo.answer}
-                </motion.span>
+              <p className={`font-hand mb-3 text-slate-800 ${turn.demo.problem.includes("?") ? "text-3xl sm:text-4xl" : "text-5xl"}`}>
+                <ProblemText
+                  problem={turn.demo.problem}
+                  answer={
+                    <motion.span
+                      key={turn.demo.problem}
+                      initial={{ opacity: 0, scale: 0.5 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.6 + (turn.demo.steps.length - 1) * 1.6 }}
+                      className="inline-block text-indigo-700"
+                    >
+                      {turn.demo.answer}
+                    </motion.span>
+                  }
+                />
               </p>
+              {turn.demo.visual && <MathVisual visual={turn.demo.visual} className="mb-3" />}
               <ol className="space-y-2">
                 {turn.demo.steps.map((line, i) => (
                   <motion.li
@@ -423,19 +526,19 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
             </div>
           )}
 
-          {step === "next" && newPlace && (
+          {step === "next" && newUnlock && (
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="flex w-full flex-wrap items-center justify-center gap-3 rounded-3xl bg-teal-50 p-4 text-center ring-2 ring-teal-200"
             >
-              <span className="text-4xl" aria-hidden>{newPlace.emoji}</span>
-              <p className="text-xl font-extrabold text-teal-800">
-                🎉 {s.newPlace} {newPlace.name}
+              <span className="text-4xl" aria-hidden>{newUnlock.emoji}</span>
+              <p className="text-xl font-extrabold text-teal-800" role="status">
+                🎉 {s.newPlace} {newUnlock.title}
               </p>
               <button
                 className="btn-kid bg-teal-500 text-white"
-                onClick={() => { stopSpeaking(); onOpenTown(newPlace.concept); }}
+                onClick={() => { stopSpeaking(); onOpenTown(newUnlock.kind === "place" ? (newUnlock.key as Concept) : null); }}
               >
                 👋 {s.visit}
               </button>
@@ -458,6 +561,9 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
                 <button className="btn-kid bg-sun text-slate-900" disabled={busy} onClick={() => load()}>
                   📚 {s.moreHomework}
                 </button>
+                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={openPicker}>
+                  🔀 {s.teachSomethingElse}
+                </button>
                 <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={onShowReport}>
                   👪 {s.report}
                 </button>
@@ -470,7 +576,15 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
               <button className="btn-kid bg-sky-500 px-8 text-2xl text-white" onClick={onPracticeFirst}>
                 🙋 {s.practice}
               </button>
-              <HoldButton label={s.tryAnyway} holdLabel={s.holdForGrownups} disabled={busy} onConfirm={() => load(true)} />
+              <HoldButton
+                label={s.tryAnyway}
+                holdLabel={s.holdForGrownups}
+                disabled={busy}
+                onConfirm={() => { chosen.current = null; void load(true); }}
+              />
+              <button className="btn-small bg-white text-slate-600 ring-1 ring-slate-200" onClick={openPicker}>
+                🔀 {s.teachSomethingElse}
+              </button>
             </div>
           )}
         </div>

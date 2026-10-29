@@ -129,11 +129,16 @@ TeachOutcome = Literal["caught_fixed", "caught_unfixed", "missed", "false_alarm"
 ExplainQuality = Literal["concept", "procedure", "vague", "incorrect"]
 
 
+AnswerKind = Literal["number", "time", "compare"]
+
+
 class LumiProblemOut(BaseModel):
     """Client-safe view of one of Lumi's problems: no truth fields."""
     id: int
-    problem: str
+    problem: str  # newer concepts mark the answer's place with "?"; the original four are "a op b"
     lumi_answer: str
+    kind: AnswerKind = "number"  # which keypad the child gets
+    visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart for the frontend to draw
 
 
 class TeachChip(BaseModel):
@@ -145,6 +150,15 @@ class TeachDemo(BaseModel):
     problem: str
     steps: list[str]
     answer: str
+    visual: Optional[dict] = None
+
+
+class TeachUnlock(BaseModel):
+    """Something the child's teaching just opened (a Town place now; story scenes later)."""
+    kind: Literal["place", "story"]
+    key: str
+    title: str
+    emoji: str
 
 
 class TeachOutcomeOut(BaseModel):
@@ -171,6 +185,7 @@ class TeachTurn(BaseModel):
     mastery_up: Optional[str] = None
     help_level: int = 0
     stats: Optional[TeachStats] = None
+    unlocks: list[TeachUnlock] = []
 
 
 class TeachWorksheetRequest(BaseModel):
@@ -178,10 +193,12 @@ class TeachWorksheetRequest(BaseModel):
     language: Language = "en"
     force: bool = False  # adult-only: skip the readiness gate with {carry, off_by_one}
     demo: bool = False   # adult-only: the fixed canonical demo worksheet (47 + 38 = 75 ...)
+    concept: Optional[str] = None  # the concept the child chose to teach (None: Lumi picks)
 
 
 class TeachWorksheetResponse(BaseModel):
     ready: bool
+    needs: Optional[Literal["help", "warmup"]] = None  # when not ready: how the child gets ready
     demo: bool = False
     worksheet_id: Optional[str] = None
     problems: list[LumiProblemOut] = []
@@ -206,6 +223,57 @@ class TeachTurnRequest(BaseModel):
     child_said: Optional[str] = None
     chip_id: Optional[str] = None
     agree: Optional[bool] = None
+
+
+class TeachConceptsRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+
+
+class TeachConceptOut(BaseModel):
+    concept: str
+    label: str
+    stars: float
+    ready: bool
+    gate: Literal["help", "warmup"]  # how a not-ready concept unlocks
+
+
+class TeachConceptsResponse(BaseModel):
+    concepts: list[TeachConceptOut]
+
+
+class WarmupRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+    concept: str
+
+
+class WarmupProblemOut(BaseModel):
+    id: int
+    problem: str
+    kind: AnswerKind = "number"
+    visual: Optional[dict] = None
+
+
+class WarmupResponse(BaseModel):
+    warmup_id: str
+    concept: str
+    say: str
+    problems: list[WarmupProblemOut]
+
+
+class WarmupCheckRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+    warmup_id: str
+    answers: list[str] = Field(default_factory=list, max_length=2)
+
+
+class WarmupCheckResponse(BaseModel):
+    passed: bool
+    results: list[bool]
+    say: str
+    emotion: Emotion
 
 
 class TeachExplainLLM(BaseModel):

@@ -175,7 +175,18 @@ export type TeachStep =
   | "practice_first" | "mark" | "fix" | "help" | "find" | "explain" | "demo" | "sure" | "next" | "done";
 export type TeachOutcome = "caught_fixed" | "caught_unfixed" | "missed" | "false_alarm" | "confirmed_ok";
 
-export interface LumiProblem { id: number; problem: string; lumi_answer: string }
+/** How the child types an answer: digits, a clock time, or a comparison sign. */
+export type AnswerKind = "number" | "time" | "compare";
+/** Pictures the app draws for a problem (all numbers come from the backend). */
+export type MathVisualData =
+  | { type: "ruler"; start: number; end: number; max: number; item: string }
+  | { type: "shape"; shape: string }
+  | { type: "fractions"; a: number; b: number }
+  | { type: "bars"; bars: { label: string; value: number }[]; max: number };
+
+/** Newer concepts mark the answer's place with "?"; the original four are "a op b". */
+export interface LumiProblem { id: number; problem: string; lumi_answer: string; kind: AnswerKind; visual: MathVisualData | null }
+export interface TeachUnlock { kind: "place" | "story"; key: string; title: string; emoji: string }
 export interface TeachChip { id: string; text: string }
 
 export interface TeachTurn {
@@ -185,16 +196,19 @@ export interface TeachTurn {
   focus_problem_id: number | null;
   highlight_ids: number[];
   chips: TeachChip[];
-  demo: { problem: string; steps: string[]; answer: string } | null;
+  demo: { problem: string; steps: string[]; answer: string; visual: MathVisualData | null } | null;
   outcomes: { id: number; outcome: TeachOutcome }[];
   mastery: Record<string, number>;
   mastery_up: string | null;
   help_level: number;
   stats: { caught: number; planted: number; false_alarms: number } | null;
+  unlocks: TeachUnlock[];
 }
 
 export interface TeachWorksheet {
   ready: boolean;
+  /** When not ready: practice in Help mode, or a quick warm-up (newer concepts). */
+  needs: "help" | "warmup" | null;
   demo: boolean;
   worksheet_id: string | null;
   problems: LumiProblem[];
@@ -204,11 +218,50 @@ export interface TeachWorksheet {
 
 export interface TeachMark { id: number; mark: "circle" | "check" | "none"; correction?: string | null }
 
-export async function teachWorksheet(sessionId: string, language: Language, force = false, demo = false): Promise<TeachWorksheet> {
+export async function teachWorksheet(
+  sessionId: string, language: Language, force = false, demo = false, concept: string | null = null,
+): Promise<TeachWorksheet> {
   return json(await fetchT(`${BACKEND}/api/teach/worksheet`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: sessionId, language, force, demo }),
+    body: JSON.stringify({ session_id: sessionId, language, force, demo, concept }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+export interface TeachConceptInfo { concept: string; label: string; stars: number; ready: boolean; gate: "help" | "warmup" }
+
+/** The concept picker: every concept, Lumi's stars, and whether the child can teach it yet. */
+export async function teachConcepts(sessionId: string, language: Language): Promise<TeachConceptInfo[]> {
+  const r: { concepts: TeachConceptInfo[] } = await json(await fetchT(`${BACKEND}/api/teach/concepts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language }),
+  }, TEACH_TIMEOUT_MS));
+  return r.concepts;
+}
+
+export interface Warmup {
+  warmup_id: string;
+  concept: string;
+  say: string;
+  problems: { id: number; problem: string; kind: AnswerKind; visual: MathVisualData | null }[];
+}
+export interface WarmupResult { passed: boolean; results: boolean[]; say: string; emotion: Emotion }
+
+/** Two problems the child solves before teaching a newer concept the first time (no answers sent). */
+export async function startWarmup(sessionId: string, language: Language, concept: string): Promise<Warmup> {
+  return json(await fetchT(`${BACKEND}/api/teach/warmup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language, concept }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+export async function checkWarmup(sessionId: string, language: Language, warmupId: string, answers: string[]): Promise<WarmupResult> {
+  return json(await fetchT(`${BACKEND}/api/teach/warmup/check`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language, warmup_id: warmupId, answers }),
   }, TEACH_TIMEOUT_MS));
 }
 

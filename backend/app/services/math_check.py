@@ -132,6 +132,14 @@ CONCEPTS = {
     "mul": "multiplication facts",
     "div": "division facts",
     "off_by_one": "careful counting (off by one)",
+    "share": "sharing into equal groups (division)",
+    "patterns": "number patterns and skip counting",
+    "big_numbers": "place value in big numbers",
+    "time": "adding time (60 minutes in an hour)",
+    "measure": "measuring length with a ruler",
+    "shapes": "faces of 3D shapes",
+    "fractions": "comparing unit fractions",
+    "graphs": "reading bar graphs",
 }
 
 

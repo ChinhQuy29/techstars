@@ -4,10 +4,13 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from ..schemas import (
-    SceneRequest, SceneResponse, TeachTurn, TeachTurnRequest, TeachWorksheetRequest, TeachWorksheetResponse,
-    TownRequest, TownResponse,
+    SceneRequest, SceneResponse, TeachConceptsRequest, TeachConceptsResponse, TeachTurn, TeachTurnRequest,
+    TeachUnlock, TeachWorksheetRequest, TeachWorksheetResponse, TownRequest, TownResponse, WarmupCheckRequest,
+    WarmupCheckResponse, WarmupRequest, WarmupResponse,
 )
 from ..services import profile, teach, town
+from ..services.concepts import ALL_CONCEPTS, NEW_CONCEPTS
+from ..services.math_check import TEACHABLE
 from ..services.session import get_session
 
 router = APIRouter()
@@ -18,13 +21,48 @@ log = logging.getLogger("lumi.teach")
 async def teach_worksheet(req: TeachWorksheetRequest) -> TeachWorksheetResponse:
     session = get_session(req.session_id)
     try:
-        resp = teach.new_worksheet(session, req.language, req.force, demo=req.demo)
+        if req.concept is not None and req.concept not in ALL_CONCEPTS:
+            raise HTTPException(400, detail={"code": "unknown_concept", "message": "Unknown concept."})
+        resp = teach.new_worksheet(session, req.language, req.force, demo=req.demo, concept=req.concept)
         profile.autosave(session)  # remembers Teach readiness for another day (only with consent)
         return resp
     except teach.TeachGenerationError:
         log.exception("teach worksheet generation failed session=%s", session.id)
         raise HTTPException(status_code=503, detail={
             "code": "generation_failed", "message": "Lumi could not make a worksheet. Please try again."})
+
+
+@router.post("/teach/concepts", response_model=TeachConceptsResponse)
+async def teach_concepts(req: TeachConceptsRequest) -> TeachConceptsResponse:
+    """The concept picker: every concept, Lumi's stars, and whether the child can teach it yet."""
+    session = get_session(req.session_id)
+    return TeachConceptsResponse(concepts=teach.concept_menu(session, req.language))
+
+
+@router.post("/teach/warmup", response_model=WarmupResponse)
+async def teach_warmup(req: WarmupRequest) -> WarmupResponse:
+    if req.concept not in NEW_CONCEPTS:
+        raise HTTPException(400, detail={"code": "no_warmup", "message": "This concept unlocks through Help mode."})
+    session = get_session(req.session_id)
+    return teach.start_warmup(session, req.language, req.concept)
+
+
+@router.post("/teach/warmup/check", response_model=WarmupCheckResponse)
+async def teach_warmup_check(req: WarmupCheckRequest) -> WarmupCheckResponse:
+    session = get_session(req.session_id)
+    out = teach.check_warmup(session, req.language, req.warmup_id, req.answers)
+    if out is None:
+        raise HTTPException(409, detail={"code": "stale_warmup", "message": "That warm-up is no longer active."})
+    profile.autosave(session)
+    return out
+
+
+def _open_places(session, language: str) -> dict[str, TeachUnlock]:
+    """Town places Lumi's stars have opened (story scenes will join this list)."""
+    return {
+        c: TeachUnlock(kind="place", key=c, title=town.PLACES[language][c]["name"], emoji=town.PLACES[language][c]["emoji"])
+        for c in TEACHABLE if session.lumi_mastery.get(c, 0.0) >= town.UNLOCK_STARS
+    }
 
 
 @router.post("/teach/turn", response_model=TeachTurn)
@@ -35,7 +73,16 @@ async def teach_turn(req: TeachTurnRequest) -> TeachTurn:
                  session.teach.worksheet_id if session.teach else None)
         raise HTTPException(status_code=409, detail={
             "code": "stale_worksheet", "message": "This worksheet is finished or out of date. Start a new one."})
+    before = _open_places(session, req.language)
     turn = await teach.respond(session, req)
+    after = _open_places(session, req.language)
+    # Notify the child about anything their teaching just opened (stars only move on demo confirmation).
+    unlocks = [u for k, u in after.items() if k not in before]
+    if unlocks:
+        turn.unlocks = unlocks
+        if session.teach is not None and session.teach.last_turn is not None:
+            # a duplicate tap repeats this exact turn, notification included
+            session.teach.last_turn["unlocks"] = [u.model_dump() for u in unlocks]
     profile.autosave(session)  # stars + best quote, only with consent
     return turn
 

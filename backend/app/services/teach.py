@@ -18,10 +18,12 @@ from types import SimpleNamespace
 from typing import Optional
 
 from ..schemas import (
-    LumiProblemOut, TeachChip, TeachDemo, TeachExplainLLM, TeachOutcomeOut, TeachStats, TeachTurn,
-    TeachTurnRequest, TeachWorksheetResponse,
+    LumiProblemOut, TeachChip, TeachConceptOut, TeachDemo, TeachExplainLLM, TeachOutcomeOut, TeachStats, TeachTurn,
+    TeachTurnRequest, TeachWorksheetResponse, WarmupCheckResponse, WarmupProblemOut, WarmupResponse,
 )
+from . import concepts as cx
 from . import llm
+from .concepts import ALL_CONCEPTS, NEW_CONCEPTS
 from .math_check import (
     TEACHABLE, _add_no_carry, _sub_smaller_from_larger, check, concepts_of, diagnose, evaluate,
     format_answer, normalize_expression, operands, operator_of,
@@ -315,6 +317,11 @@ _RULES: dict[str, dict[str, str]] = {
     },
 }
 
+_RULES.update(cx.RULES)
+for _lang in TT:
+    for _c in NEW_CONCEPTS:
+        TT[_lang]["concepts"][_c] = cx.concept_text(_lang, _c)
+
 _AFFIRM = {
     "en": r"\b(yes|yeah|yep|right|correct|good|great|exactly|perfect|well done)\b",
     "es": r"\b(s[ií]|correcto|bien|exacto|perfecto|muy bien)\b",
@@ -385,7 +392,18 @@ def _make(concept: str, planted: bool, rng: random.Random) -> tuple[str, str]:
     return expr, (str(wrong) if planted else correct)
 
 
-def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: set[str]) -> TeachProblem:
+def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: set[str],
+             lang: str = "en") -> TeachProblem:
+    if concept in NEW_CONCEPTS:
+        for _ in range(50):
+            item = cx.make(concept, rng, lang)  # verified: right answer, planted mistake = this concept
+            if item.problem in used:
+                continue
+            used.add(item.problem)
+            lumi = cx.display(item, item.wrong if planted else item.answer, lang)
+            return TeachProblem(id=pid, problem=item.problem, lumi_answer=lumi, correct_answer=item.answer,
+                                planted=planted, concept=concept, kind=item.kind, visual=item.visual, data=item.data)
+        raise TeachGenerationError(f"could not generate a {concept} problem")
     for _ in range(50):
         expr, lumi = _make(concept, planted, rng)
         if expr in used:
@@ -405,13 +423,13 @@ def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: se
 
 
 def ready_concepts(session: Session) -> set[str]:
-    """Concepts the child has shown in Help mode (solved correctly, or fixed after hints),
-    plus concepts shown on earlier days when progress is saved (T5)."""
-    ready: set[str] = set(session.saved_ready)
+    """Concepts the child has shown: in Help mode (solved correctly, or fixed after hints) for the original
+    four, in a quick warm-up for the newer eight, plus anything shown on earlier days (saved progress)."""
+    ready: set[str] = set(session.saved_ready) | session.warm_ready
     for st in session.problems.values():
         if (st.last is not None and st.last.is_correct) or st.fixed:
-            ready |= concepts_of(st.key)
-    return ready & set(TEACHABLE)
+            ready |= concepts_of(st.key) & set(TEACHABLE)
+    return ready & set(ALL_CONCEPTS)
 
 
 def _demo_problems() -> list[TeachProblem]:
@@ -426,8 +444,12 @@ def _demo_problems() -> list[TeachProblem]:
     return problems
 
 
+def _problem_out(p: TeachProblem) -> LumiProblemOut:
+    return LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer, kind=p.kind, visual=p.visual)
+
+
 def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random.Random] = None,
-                  demo: bool = False) -> TeachWorksheetResponse:
+                  demo: bool = False, concept: Optional[str] = None) -> TeachWorksheetResponse:
     if demo:  # explicit adult demo action: fixed sheet, bypasses the gate on purpose
         st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(), demo=True)
         session.teach = st
@@ -436,11 +458,18 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
         turn = _turn(session, "happy", TT[lang]["intro"], "mark")
         return TeachWorksheetResponse(
             ready=True, demo=True, worksheet_id=st.worksheet_id, concepts=["carry", "borrow"],
-            problems=[LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer) for p in st.problems],
-            turn=turn,
+            problems=[_problem_out(p) for p in st.problems], turn=turn,
         )
     rng = rng or random.Random()
     ready = ready_concepts(session)
+    if concept is not None and concept not in ready:
+        # The child picked something they haven't shown yet: practice first (Help mode or a warm-up).
+        session.teach = None
+        needs = "warmup" if concept in NEW_CONCEPTS else "help"
+        say = TT[lang]["practice_first"] if needs == "help" else cx.WARMUP_TEXT[lang]["intro"].format(
+            label=TT[lang]["concepts"][concept]["label"])
+        turn = TeachTurn(emotion="encouraging", say=say, step="practice_first", mastery=_mastery(session))
+        return TeachWorksheetResponse(ready=False, needs=needs, turn=turn)
     if not ready and force:
         ready = {"carry", "off_by_one"}
     if not ready:
@@ -450,19 +479,27 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
         return TeachWorksheetResponse(ready=False, turn=turn)
 
     stars = lambda c: session.lumi_mastery.get(c, 0.0)  # noqa: E731
-    ordered = [c for c in TEACHABLE if c in ready]
-    pool = [c for c in ordered if stars(c) < MAX_STARS]
-    review = not pool
-    pool = pool or ordered
-    primary = min(pool, key=lambda c: (stars(c), rng.random()))
+    ordered = [c for c in ALL_CONCEPTS if c in ready]
     n_planted = rng.choice([2, 3])
-    weights = [2 if c == primary else 1 for c in pool]
-    planted = [primary] + rng.choices(pool, weights=weights, k=n_planted - 1)
-    correct = rng.choices(pool, k=N_PROBLEMS - n_planted)
+    if concept is not None:
+        # The child chose what to teach: every planted mistake is that concept; the correct rows mix in
+        # other concepts they know (the chosen one twice as often), so the whole page still needs checking.
+        review = stars(concept) >= MAX_STARS
+        pool = [concept] + [c for c in ordered if c != concept]
+        planted = [concept] * n_planted
+        correct = rng.choices(pool, weights=[2] + [1] * (len(pool) - 1), k=N_PROBLEMS - n_planted)
+    else:
+        pool = [c for c in ordered if stars(c) < MAX_STARS]
+        review = not pool
+        pool = pool or ordered
+        primary = min(pool, key=lambda c: (stars(c), rng.random()))
+        weights = [2 if c == primary else 1 for c in pool]
+        planted = [primary] + rng.choices(pool, weights=weights, k=n_planted - 1)
+        correct = rng.choices(pool, k=N_PROBLEMS - n_planted)
     plan = [(c, True) for c in planted] + [(c, False) for c in correct]
     rng.shuffle(plan)
     used: set[str] = set()
-    problems = [_problem(i + 1, c, p, rng, used) for i, (c, p) in enumerate(plan)]
+    problems = [_problem(i + 1, c, p, rng, used, lang) for i, (c, p) in enumerate(plan)]
 
     st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=problems, review=review)
     session.teach = st
@@ -470,10 +507,57 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
                 planted=[p.id for p in problems if p.planted], demo=False)
     turn = _turn(session, "happy", TT[lang]["review_intro" if review else "intro"], "mark")
     return TeachWorksheetResponse(
-        ready=True, worksheet_id=st.worksheet_id, concepts=sorted(set(pool), key=TEACHABLE.index),
-        problems=[LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer) for p in problems],
-        turn=turn,
+        ready=True, worksheet_id=st.worksheet_id, concepts=sorted(set(pool), key=ALL_CONCEPTS.index),
+        problems=[_problem_out(p) for p in problems], turn=turn,
     )
+
+
+# ---------- the concept menu and the warm-up (gate for the newer concepts) ----------
+
+def concept_menu(session: Session, lang: str) -> list[TeachConceptOut]:
+    """Every concept the child can choose to teach, with Lumi's stars and what unlocks it."""
+    ready = ready_concepts(session)
+    return [
+        TeachConceptOut(concept=c, label=TT[lang]["concepts"][c]["label"], stars=session.lumi_mastery.get(c, 0.0),
+                        ready=c in ready, gate="warmup" if c in NEW_CONCEPTS else "help")
+        for c in ALL_CONCEPTS
+    ]
+
+
+def start_warmup(session: Session, lang: str, concept: str, rng: Optional[random.Random] = None) -> WarmupResponse:
+    if concept not in NEW_CONCEPTS:
+        raise ValueError(concept)
+    rng = rng or random.Random()
+    items, seen = [], set()
+    while len(items) < 2:
+        it = cx.make(concept, rng, lang)
+        if it.problem not in seen:
+            seen.add(it.problem)
+            items.append(it)
+    wid = uuid.uuid4().hex[:8]
+    session.warmup = {"id": wid, "concept": concept, "answers": [it.answer for it in items],
+                      "kinds": [it.kind for it in items]}
+    session.log("warmup_started", concept=concept)
+    say = cx.WARMUP_TEXT[lang]["intro"].format(label=TT[lang]["concepts"][concept]["label"])
+    return WarmupResponse(warmup_id=wid, concept=concept, say=say, problems=[
+        WarmupProblemOut(id=i + 1, problem=it.problem, kind=it.kind, visual=it.visual) for i, it in enumerate(items)])
+
+
+def check_warmup(session: Session, lang: str, warmup_id: str, answers: list[str]) -> Optional[WarmupCheckResponse]:
+    w = session.warmup
+    if not w or w["id"] != warmup_id:
+        return None
+    results = [cx.is_correct(k, a, (answers[i] if i < len(answers) else ""))
+               for i, (k, a) in enumerate(zip(w["kinds"], w["answers"]))]
+    passed = all(results)
+    session.warmup = None
+    session.log("warmup_checked", concept=w["concept"], passed=passed)
+    label = TT[lang]["concepts"][w["concept"]]["label"]
+    if passed:
+        session.warm_ready.add(w["concept"])
+    say = cx.WARMUP_TEXT[lang]["pass" if passed else "fail"].format(label=label)
+    return WarmupCheckResponse(passed=passed, results=results, say=say,
+                               emotion="celebrating" if passed else "encouraging")
 
 
 # ---------- demo / check narration (numbers from Python, answer from SymPy) ----------
@@ -503,6 +587,32 @@ def demo_steps(expr: str, lang: str) -> list[str]:
     return []
 
 
+def _item(p: TeachProblem) -> "cx.Item":
+    return cx.item_from(p.concept, p.problem, p.correct_answer, p.kind, p.visual, p.data)
+
+
+def _steps(p: TeachProblem, lang: str) -> list[str]:
+    return cx.steps(_item(p), lang) if p.concept in NEW_CONCEPTS else demo_steps(p.problem, lang)
+
+
+def _show(p: TeachProblem, answer: str, lang: str) -> str:
+    """An answer the way the child sees it (e.g. 80,000 / 80.000)."""
+    return cx.display(_item(p), answer, lang) if p.concept in NEW_CONCEPTS else answer
+
+
+def _answer_ok(p: TeachProblem, answer: Optional[str]) -> bool:
+    if p.concept in NEW_CONCEPTS:
+        return cx.is_correct(p.kind, p.correct_answer, answer)
+    return bool(answer) and check(p.problem, answer).is_correct
+
+
+def _cline(p: TeachProblem, lang: str, key: str, **kw) -> str:
+    """A concept's line, with this problem's numbers filled in (some newer lines name the digit or object)."""
+    line = TT[lang]["concepts"][p.concept][key]
+    fields = cx._fields(_item(p), lang) if p.concept in NEW_CONCEPTS else {}
+    return line.format(**{**fields, **kw}) if ("{" in line) else line
+
+
 def _chips(lang: str, concept: str, rng: random.Random) -> list[TeachChip]:
     texts = TT[lang]["concepts"][concept]["chips"]
     chips = [TeachChip(id=f"c{i}", text=t) for i, t in enumerate(texts)]  # c0 is the correct one
@@ -513,7 +623,7 @@ def _chips(lang: str, concept: str, rng: random.Random) -> list[TeachChip]:
 # ---------- turn engine ----------
 
 def _mastery(session: Session) -> dict[str, float]:
-    return {c: session.lumi_mastery.get(c, 0.0) for c in TEACHABLE}
+    return {c: session.lumi_mastery.get(c, 0.0) for c in ALL_CONCEPTS}
 
 
 def _stats(st: TeachState) -> TeachStats:
@@ -569,12 +679,14 @@ def _open(session: Session, p: TeachProblem, lang: str, prefix: str = "") -> Tea
         p.stage = "fix"
         if p.child_fix:
             p.fix_tries = 1
-            line = t["concepts"][p.concept]["wrong_fix"].format(answer=p.child_fix)
+            line = _cline(p, lang, "wrong_fix", answer=p.child_fix)
             return _turn(session, "confused", f"{prefix} {line}", "fix", p)
         return _turn(session, "happy", f"{prefix} {t['found_ask'].format(id=p.id)}", "fix", p)
     if p.outcome == "false_alarm":
         p.stage = "sure"
-        steps = " ".join(demo_steps(p.problem, lang)) + " " + t["so"].format(answer=p.correct_answer)
+        steps = " ".join(_steps(p, lang))
+        if p.concept not in NEW_CONCEPTS:  # the newer concepts' steps already end with the answer
+            steps += " " + t["so"].format(answer=_show(p, p.correct_answer, lang))
         return _turn(session, "curious", f"{prefix} {t['sure'].format(check=steps)}", "sure", p)
     # missed
     p.stage, p.nudge = "find", 1
@@ -582,6 +694,10 @@ def _open(session: Session, p: TeachProblem, lang: str, prefix: str = "") -> Tea
 
 
 def _help_line(p: TeachProblem, lang: str) -> str:
+    if p.concept in NEW_CONCEPTS:
+        if p.help_level >= 4:
+            return TT[lang]["help4"].format(answer=_show(p, p.correct_answer, lang), explain=_cline(p, lang, "rule"))
+        return cx.hint(_item(p), lang, p.help_level)
     if p.help_level >= 4:
         return TT[lang]["help4"].format(answer=p.correct_answer, explain=HELP_T[lang]["explain"])
     stub = SimpleNamespace(problem=normalize_expression(p.problem))
@@ -595,16 +711,22 @@ def _help_line(p: TeachProblem, lang: str) -> str:
 def _start_demo(session: Session, p: TeachProblem, lang: str, reaction: str, gain: float) -> TeachTurn:
     st, t = session.teach, TT[lang]
     rng = _rng(st, p, 1)
-    expr = next(e for e, _ in iter(lambda: _make(p.concept, False, rng), None) if e != p.problem)
-    answer = format_answer(expr, evaluate(expr))
-    steps = demo_steps(expr, lang)
-    so = t["so"].format(answer=answer)
+    visual = None
+    if p.concept in NEW_CONCEPTS:  # a fresh problem of the same concept, never the one just discussed
+        item = next(i for i in iter(lambda: cx.make(p.concept, rng, lang), None) if i.problem != p.problem)
+        expr, answer, steps, visual = item.problem, cx.display(item, item.answer, lang), cx.steps(item, lang), item.visual
+    else:
+        expr = next(e for e, _ in iter(lambda: _make(p.concept, False, rng), None) if e != p.problem)
+        answer = format_answer(expr, evaluate(expr))
+        steps = demo_steps(expr, lang)
+    so = t["so"].format(answer=answer) if p.concept not in NEW_CONCEPTS else ""  # newer steps end with the answer
     p.stage = "demo"
     p.gain = 0.0 if p.role_switched else gain
     p.demo = {"problem": expr, "answer": answer}
     quote = t["you_said"].format(quote=f"“{p.quote}”") if p.quote else ""
     say = " ".join(x for x in [reaction, quote, t["like_taught"], *steps, so, t["did_i"]] if x)
-    return _turn(session, "happy", say, "demo", p, demo=TeachDemo(problem=expr, steps=[*steps, so], answer=answer))
+    return _turn(session, "happy", say, "demo", p,
+                 demo=TeachDemo(problem=expr, steps=[*steps, so] if so else steps, answer=answer, visual=visual))
 
 
 async def _rate(session: Session, p: TeachProblem, lang: str, text: str) -> tuple[str, Optional[str], Optional[str]]:
@@ -618,7 +740,7 @@ async def _rate(session: Session, p: TeachProblem, lang: str, text: str) -> tupl
             llm.prompt(
                 "teach_explain", robot_name=ROBOT_NAME, language_name=LANGUAGE_NAMES[lang],
                 concept=c["label"], problem=_pretty(p.problem), lumi_answer=p.lumi_answer,
-                correct_answer=p.correct_answer, error_step=p.error_step or "(unknown)",
+                correct_answer=_show(p, p.correct_answer, "en"), error_step=p.error_step or "(unknown)",
                 child_said=text, followups=p.followups,
             ),
             temperature=0.4, label="teach_rate",
@@ -656,7 +778,7 @@ async def _explain(session: Session, p: TeachProblem, req: TeachTurnRequest) -> 
         if p.incorrect >= 2:
             p.role_switched = True
             session.log("teach_role_switch", problem=p.problem, reason="explanation")
-            return _start_demo(session, p, lang, t["let_me_help"].format(rule=c["rule"]), 0.0)
+            return _start_demo(session, p, lang, t["let_me_help"].format(rule=_cline(p, lang, "rule")), 0.0)
         line = reaction or t["incorrect_expl"].format(lumi=p.lumi_answer)
         return _turn(session, "confused", line, "explain", p, chips=_chips(lang, p.concept, _rng(st, p, 2)))
     if quality == "concept":
@@ -665,11 +787,11 @@ async def _explain(session: Session, p: TeachProblem, req: TeachTurnRequest) -> 
         if chip_final or p.followups >= 1:
             return _start_demo(session, p, lang, reaction or t["praise_procedure"], max(p.gain, 0.5))
         p.followups, p.gain = 1, 0.5
-        return _turn(session, "curious", reaction or c["ask_why"], "explain", p)
+        return _turn(session, "curious", reaction or _cline(p, lang, "ask_why"), "explain", p)
     # vague (after a "why?" follow-up to a procedure answer, move on and keep the ½ star)
     if p.followups < 2 and p.gain == 0:
         p.followups += 1
-        return _turn(session, "curious", reaction or c["point"], "explain", p,
+        return _turn(session, "curious", reaction or _cline(p, lang, "point"), "explain", p,
                      chips=_chips(lang, p.concept, _rng(st, p, 3)))
     return _start_demo(session, p, lang, t["thanks_move_on"], p.gain)
 
@@ -703,7 +825,7 @@ def _check(session: Session, req: TeachTurnRequest) -> TeachTurn:
             fix = (m.correction or "").strip() or None
             p.child_fix = fix
             if p.planted:
-                p.outcome = "caught_fixed" if fix and check(p.problem, fix).is_correct else "caught_unfixed"
+                p.outcome = "caught_fixed" if _answer_ok(p, fix) else "caught_unfixed"
             else:
                 p.outcome = "false_alarm"
         else:  # "check" or unmarked count as "you got it right"
@@ -747,7 +869,7 @@ def _find(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachTurn
 def _fix(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachTurn:
     st, lang, t = session.teach, req.language, TT[req.language]
     answer = (req.answer or "").strip()
-    if answer and check(p.problem, answer).is_correct:
+    if _answer_ok(p, answer):
         session.log("teach_fixed", problem=p.problem, tries=p.fix_tries, help_level=p.help_level)
         p.stage = "explain"
         line = t["help_fixed"] if p.help_level else t["fix_right"]
@@ -760,7 +882,7 @@ def _fix(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachTurn:
         p.help_level, p.role_switched = 1, True
         session.log("teach_role_switch", problem=p.problem, reason="fix")
         return _turn(session, "encouraging", f"{t['role_switch']} {_help_line(p, lang)}", "help", p)
-    line = t["concepts"][p.concept]["wrong_fix"].format(answer=answer or "?")
+    line = _cline(p, lang, "wrong_fix", answer=answer or "?")
     return _turn(session, "confused", line, "fix", p)
 
 
@@ -769,7 +891,7 @@ def _confirm(session: Session, p: TeachProblem, req: TeachTurnRequest) -> TeachT
     if p.stage == "sure":
         p.stage = "next"
         if req.agree is False:
-            return _turn(session, "encouraging", t["fa_disagree"].format(answer=p.correct_answer), "next", p)
+            return _turn(session, "encouraging", t["fa_disagree"].format(answer=_show(p, p.correct_answer, lang)), "next", p)
         return _turn(session, "happy", t["fa_agree"], "next", p)
     # demo
     gain = p.gain
