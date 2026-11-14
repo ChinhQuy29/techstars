@@ -7,6 +7,9 @@ import { useCaptureTrigger } from "./camera/useCaptureTrigger";
 import { useHandDetector } from "./camera/useHandDetector";
 import { useRemoteCamera } from "./camera/useRemoteCamera";
 import { useWebcam } from "./camera/useWebcam";
+import ServerSetting from "./components/ServerSetting";
+import { App as NativeApp } from "@capacitor/app";
+import { isNativeApp } from "./platform";
 import { t } from "./i18n";
 import { celebrate, sounds } from "./robot/sounds";
 import { useSpeech } from "./robot/useSpeech";
@@ -357,6 +360,25 @@ export default function App() {
     setAppMode("town");
   };
 
+  // Android back button (app only): step back a screen; never throw away a lesson. From Teach or the welcome
+  // screen it sends the app to the background (state kept) instead of closing it. docs/09-android-app.md.
+  const backRef = useRef<() => void>(() => {});
+  backRef.current = () => {
+    if (showReport) setShowReport(false);
+    else if (appMode === "town") {
+      if (teachAlive) switchMode("teach");
+      else switchMode("welcome");
+    } else if (appMode === "help") switchMode("welcome");
+    else void NativeApp.minimizeApp();
+  };
+  useEffect(() => {
+    if (!isNativeApp) return;
+    const handle = NativeApp.addListener("backButton", () => backRef.current());
+    return () => {
+      void handle.then((h) => h.remove());
+    };
+  }, []);
+
   // Deep links for testing (the admin portal opens these in the same tab, so the session carries over):
   // /?go=teach | town | journey | demo
   useEffect(() => {
@@ -544,9 +566,11 @@ export default function App() {
             <button className="btn-kid bg-violet-500 text-white" disabled={!result?.problems.length} onClick={() => askTutor("hint")}>
               💡 {s.hint}
             </button>
-            <button className="btn-kid bg-sky-500 text-white" disabled={!speech.canListen || speech.listening} onClick={talk}>
-              🎤 {s.talk}
-            </button>
+            {!isNativeApp && (
+              <button className="btn-kid bg-sky-500 text-white" disabled={!speech.canListen || speech.listening} onClick={talk}>
+                🎤 {s.talk}
+              </button>
+            )}
           </TutorView>
 
           <section className="grid gap-5 lg:grid-cols-12">
@@ -607,10 +631,12 @@ export default function App() {
             session <code>{sessionId}</code> · {mode}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <select value={source} onChange={(e) => setSource(e.target.value as Source)} className="rounded-lg bg-slate-100 px-3 py-2">
-              <option value="webcam">Webcam</option>
-              <option value="remote">Phone camera</option>
-            </select>
+            {!isNativeApp && (
+              <select value={source} onChange={(e) => setSource(e.target.value as Source)} className="rounded-lg bg-slate-100 px-3 py-2">
+                <option value="webcam">Webcam</option>
+                <option value="remote">Phone camera</option>
+              </select>
+            )}
             <button className="btn-small bg-slate-100" onClick={newSession}>
               {s.newSession}
             </button>
@@ -624,6 +650,7 @@ export default function App() {
               🗑 {s.deleteData}
             </button>
           </div>
+          {isNativeApp && <ServerSetting />}
           <SavedProgress
             s={s}
             saving={!!profileId}

@@ -16,6 +16,7 @@ Lumi is a web app where a child (6–10) **teaches** a friendly robot math. Lumi
 | [06 Privacy and safety](docs/06-privacy-and-safety.md) | data map, consent, pilot |
 | [07 Testing and demo](docs/07-testing-and-demo.md) | test coverage, manual run, demo script |
 | [08 Status and roadmap](docs/08-status-and-roadmap.md) | built, unverified, next, out of scope |
+| [09 Android app](docs/09-android-app.md) | Android plan, stages, build steps, test results (keep it current while working on the app) |
 
 Docs = intended behavior; code = implementation constraints. If they disagree (or docs disagree with each other), name it and ask; when a change is approved, update docs in the same change. Never invent requirements, assets, endpoints, libraries or test results. For large or ambiguous tasks, summarize requirements, current state, gaps and risks, and propose steps first; wait for approval when asked.
 
@@ -45,6 +46,7 @@ cd backend && .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000 
 cd backend && .venv/Scripts/python -m pytest
 cd frontend && npm install && npm run dev        # http://localhost:5173, proxies /api and /socket.io
 cd frontend && npm run build                     # type-check + build
+cd frontend && npm run android:build             # Android: web build + copy into frontend/android (then gradlew assembleDebug, docs/09)
 ```
 No key or `MOCK_MODE=1` → deterministic mock mode. Develop and test in mock mode first. To test features without teaching, run the backend with `LUMI_ADMIN=1` and open `/?admin=1` (presets, stars, story choices, previews); never enable it on a deployed server.
 
@@ -73,3 +75,5 @@ Skills the owner has installed: `idea-refine`, `interview-me`, `spec-driven-deve
 - Check 375 px: notebook rows wrapped and town tags overlapped before.
 - Gemini: thinking `low`, 25 s timeout, filler line; demo in mock mode.
 - Fire side effects once per state change (the sleep timer once spammed requests).
+- Android app view has no `speechSynthesis` or speech recognition: guard every browser API, check with `isNativeApp` (`platform.ts`), test on the emulator.
+- TypeScript 7 can't load `capacitor.config.ts`; keep the Capacitor config in JSON. Gradle needs Android Studio's Java 21.

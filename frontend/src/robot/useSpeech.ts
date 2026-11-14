@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Language } from "../api";
+import { TextToSpeech } from "@capacitor-community/text-to-speech";
+import { isNativeApp } from "../platform";
 
 export const LANG_TAGS: Record<Language, string> = { en: "en-US", es: "es-ES", vi: "vi-VN" };
 
@@ -21,11 +23,14 @@ interface Recognition {
 type RecognitionCtor = new () => Recognition;
 
 function getRecognition(): RecognitionCtor | null {
+  if (isNativeApp) return null; // Android's app view has no speech recognition (voice input is a v2 item, docs/09)
   const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
 /** TTS (speechSynthesis) + STT (SpeechRecognition) with a language-matched voice. */
+const hasTTS = typeof window !== "undefined" && "speechSynthesis" in window;
+
 export function useSpeech(language: Language) {
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
@@ -34,6 +39,7 @@ export function useSpeech(language: Language) {
   const phraseRec = useRef<Recognition | null>(null);
 
   useEffect(() => {
+    if (!hasTTS) return;
     const load = () => setVoices(speechSynthesis.getVoices());
     load();
     speechSynthesis.addEventListener("voiceschanged", load);
@@ -43,7 +49,22 @@ export function useSpeech(language: Language) {
   const speak = useCallback(
     (text: string) =>
       new Promise<void>((resolve) => {
-        if (!("speechSynthesis" in window) || !text) return resolve();
+        if (!text) return resolve();
+        if (isNativeApp) {
+          // Android's app view has no speechSynthesis: use the phone's own text-to-speech engine.
+          let finished = false;
+          const end = () => {
+            if (finished) return;
+            finished = true;
+            setSpeaking(false);
+            resolve();
+          };
+          setSpeaking(true);
+          TextToSpeech.speak({ text, lang: LANG_TAGS[language], rate: 0.95, pitch: 1.25 }).then(end, end);
+          window.setTimeout(end, 1500 + text.length * 90);
+          return;
+        }
+        if (!hasTTS) return resolve();
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         const tag = LANG_TAGS[language];
@@ -67,7 +88,8 @@ export function useSpeech(language: Language) {
   );
 
   const stopSpeaking = useCallback(() => {
-    speechSynthesis.cancel();
+    if (isNativeApp) void TextToSpeech.stop().catch(() => {});
+    else if (hasTTS) speechSynthesis.cancel();
     setSpeaking(false);
   }, []);
 

@@ -7,12 +7,14 @@
 - **Lumi's Journey:** three acts × four versions unlocked by concept pairs in any order, choices, mystery clues, "What if…?" stories, four moon endings with the child's quotes, story notifications, saved choices; placeholder pictures.
 - **UI:** one mascot (9 expressions, 2 poses), kid design system, en/es/vi, accessibility basics, 375 px.
 - **Admin portal** (`/?admin=1`, dev only): presets, per-skill stars/readiness/quotes, story choices, problem and scene previews, deep links into the app.
+- **Android app** (Capacitor, debug APK): the whole app on a phone, back camera in Help, Lumi's voice through the phone's text-to-speech, server address in Grown-up settings, Android back button, Lumi icon and opening screen. Tested on the emulator and the owner's Galaxy Z Flip5 ([09](09-android-app.md)); no voice input yet.
 - 153 tests pass; frontend builds; main flows verified in the browser (picker, warm-up, a full Time sheet, all four pictures, Spanish, 375 px).
 
 ## Not verified
 Real mic with children; real Gemini rating; Help camera after the restyle and real lighting; tablets; OS reduced motion end to end; fresh checkout elsewhere; backup demo video; how long kids watch scenes.
 
 ## Next
+0. **Android demo:** deploy the backend (mock mode) to Render and point the app at it ([09](09-android-app.md) stage 6).
 1. **Story art:** 16 scene pictures (`docs/assets/story/story_<key>.png`), then rerun `scripts/town_art.py`.
 2. **Startup Weekend readiness** (Nov 13–15, 2026): fresh-checkout run, backup video, rehearsal.
 3. **Parent interviews** and a concrete pilot offer.

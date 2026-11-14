@@ -21,7 +21,7 @@ Run the backend with `LUMI_ADMIN=1` (the dev launch configs do; never on a deplo
 **When adding features:** new lines in all three languages; every displayed number asserted against SymPy; stale/duplicate/out-of-order tests for new actions; any new stored field whitelisted, documented in [06](06-privacy-and-safety.md) and tested.
 
 ## Manual acceptance run
-Mock mode first: fresh start from the README · demo sheet with chips only · voice explanations (Chrome) · mic denied · backend stopped mid-turn and restarted · double-tapped Confirm/Next · gate and hold button · Help: worksheet-1 → hints to reveal → worksheet-2 → report · webcam (and optionally Auto-snap, phone) · town: earn a star → banner → scene; locked teaser; back to homework · saved progress: consent → restart → Welcome back → delete · Teach-only report · Español and Tiếng Việt · 375 px and tablet · keyboard and reduced motion · clean console.
+Mock mode first: fresh start from the README · demo sheet with chips only · voice explanations (Chrome) · mic denied · backend stopped mid-turn and restarted · double-tapped Confirm/Next · gate and hold button · Help: worksheet-1 → hints to reveal → worksheet-2 → report · webcam (and optionally Auto-snap, phone) · town: earn a star → banner → scene; locked teaser; back to homework · saved progress: consent → restart → Welcome back → delete · Teach-only report · Español and Tiếng Việt · 375 px and tablet · keyboard and reduced motion · clean console. Android app: the manual test list and results in [09](09-android-app.md).
 
 ## 90-second demo (mock mode; keep a backup video)
 1. Grown-up settings → **🎬 Demo worksheet** (or grade worksheet-1 then worksheet-2 in Help, then open Teach).

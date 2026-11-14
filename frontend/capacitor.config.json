@@ -1,0 +1,9 @@
+{
+  "appId": "app.lumi.learn",
+  "appName": "Lumi",
+  "webDir": "dist",
+  "backgroundColor": "#fdf8ee",
+  "android": {
+    "allowMixedContent": true
+  }
+}

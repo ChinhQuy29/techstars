@@ -1,4 +1,30 @@
-export const BACKEND = (import.meta.env.VITE_BACKEND_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const clean = (url: string | null | undefined) => (url ?? "").trim().replace(/\/$/, "");
+const SERVER_KEY = "lumi_server_url";
+
+/** Server address baked into the build (`VITE_BACKEND_URL`); empty on the web, where /api is same-origin. */
+export const DEFAULT_BACKEND = clean(import.meta.env.VITE_BACKEND_URL as string | undefined);
+
+function savedBackend(): string | null {
+  try {
+    return localStorage.getItem(SERVER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Backend base URL. In the Android app the grown-up can override it (laptop fallback, docs/09-android-app.md). */
+export let BACKEND = clean(savedBackend()) || DEFAULT_BACKEND;
+
+/** Save (or with null, forget) the server address chosen in Grown-up settings. Takes effect immediately. */
+export function setBackend(url: string | null) {
+  try {
+    if (url === null) localStorage.removeItem(SERVER_KEY);
+    else localStorage.setItem(SERVER_KEY, clean(url));
+  } catch {
+    /* storage blocked: the change lasts for this run only */
+  }
+  BACKEND = clean(url) || DEFAULT_BACKEND;
+}
 
 export type Emotion =
   | "sleeping" | "idle" | "listening" | "thinking" | "happy"
@@ -105,7 +131,9 @@ async function fetchT(url: string, init: RequestInit, ms: number): Promise<Respo
   }
 }
 
-const TEACH_TIMEOUT_MS = 35_000; // > backend GEMINI_TIMEOUT (25 s) for the explanation-rating call
+const TEACH_TIMEOUT_MS = 35_000; // > backend GEMINI_TIMEOUT (25 s) for the explanation-rating call (/teach/turn)
+// Every other call is pure Python on the server: fail fast so Try again shows quickly on bad Wi-Fi (docs/09).
+const QUICK_TIMEOUT_MS = 12_000;
 
 const MAX_UPLOAD_SIDE = 1600;
 
@@ -225,7 +253,7 @@ export async function teachWorksheet(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language, force, demo, concept }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export interface TeachConceptInfo { concept: string; label: string; stars: number; ready: boolean; gate: "help" | "warmup" }
@@ -236,7 +264,7 @@ export async function teachConcepts(sessionId: string, language: Language): Prom
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
   return r.concepts;
 }
 
@@ -254,7 +282,7 @@ export async function startWarmup(sessionId: string, language: Language, concept
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language, concept }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export async function checkWarmup(sessionId: string, language: Language, warmupId: string, answers: string[]): Promise<WarmupResult> {
@@ -262,7 +290,7 @@ export async function checkWarmup(sessionId: string, language: Language, warmupI
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language, warmup_id: warmupId, answers }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export async function teachTurn(body: {
@@ -337,7 +365,7 @@ export async function town(sessionId: string, language: Language): Promise<TownI
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export async function townScene(sessionId: string, language: Language, concept: Concept): Promise<TownScene> {
@@ -345,7 +373,7 @@ export async function townScene(sessionId: string, language: Language, concept: 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language, concept }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 // ---------- Lumi's Journey (docs/03-lumis-town.md) ----------
@@ -371,7 +399,7 @@ export async function journey(sessionId: string, language: Language): Promise<Jo
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 /** Plays a scene; opening an available version of the current act chooses it (409 if not open). */
@@ -380,7 +408,7 @@ export async function storyScene(sessionId: string, language: Language, key: str
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, language, key }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 // ---------- Saved progress (docs/06-privacy-and-safety.md) ----------
@@ -396,7 +424,7 @@ export async function createProfile(sessionId: string): Promise<ProfileInfo> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, consent: true, consent_version: CONSENT_VERSION }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export async function attachProfile(sessionId: string, profileId: string): Promise<ProfileInfo> {
@@ -404,9 +432,9 @@ export async function attachProfile(sessionId: string, profileId: string): Promi
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ session_id: sessionId, profile_id: profileId }),
-  }, TEACH_TIMEOUT_MS));
+  }, QUICK_TIMEOUT_MS));
 }
 
 export async function deleteProfile(profileId: string): Promise<{ deleted: boolean }> {
-  return json(await fetchT(`${BACKEND}/api/profile/${profileId}`, { method: "DELETE" }, TEACH_TIMEOUT_MS));
+  return json(await fetchT(`${BACKEND}/api/profile/${profileId}`, { method: "DELETE" }, QUICK_TIMEOUT_MS));
 }

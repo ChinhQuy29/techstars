@@ -18,10 +18,15 @@ from .services import llm  # noqa: E402
 from .services.session import reset_session  # noqa: E402
 from .services.vision import SAMPLES_DIR, _samples  # noqa: E402
 
+# The Android app (Capacitor) loads from https://localhost; iOS from capacitor://localhost. Always allowed, so an
+# app pointed at this server works with any CORS_ORIGINS setting (docs/09-android-app.md).
+APP_ORIGINS = ["https://localhost", "capacitor://localhost"]
+_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()]
+
 api = FastAPI(title="Lumi API")
 api.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "*").split(",") if o.strip()],
+    allow_origins=_origins if "*" in _origins else _origins + APP_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -19,6 +19,11 @@ export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }
         <h3 className="text-2xl font-extrabold text-slate-800">{s.chooseTitle}</h3>
         <p className="text-slate-600">{s.chooseSub}</p>
       </div>
+      {concepts.length === 0 && (
+        <p className="animate-pulse self-center py-6 text-4xl tracking-widest text-slate-300" aria-label="loading">
+          • • •
+        </p>
+      )}
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {concepts.map((c, i) => (
           <motion.li key={c.concept} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
@@ -42,9 +47,11 @@ export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }
           </motion.li>
         ))}
       </ul>
-      <button className="btn-kid self-center bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={onLumiPicks}>
-        🎲 {s.lumiPicks}
-      </button>
+      {concepts.length > 0 && (
+        <button className="btn-kid self-center bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={onLumiPicks}>
+          🎲 {s.lumiPicks}
+        </button>
+      )}
     </div>
   );
 }

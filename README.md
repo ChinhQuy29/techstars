@@ -46,4 +46,5 @@ npm run dev                                        # http://localhost:5173
 - **Admin portal (dev only):** start the backend with `LUMI_ADMIN=1`, open `http://localhost:5173/?admin=1` to jump to any test state (stars, skills ready, story acts, endings) and preview any problem or scene.
 - **Phone camera:** tunnel the Vite server (`ngrok http 5173` or `cloudflared tunnel --url http://localhost:5173`), choose Phone camera in Grown-up settings, scan the QR.
 - **API testing:** open `bruno/` in Bruno. **Sample worksheets:** `python scripts/make_worksheets.py`.
+- **Android app:** `cd frontend && npm run android:build`, then build the APK in `frontend/android` (steps, test results and the server setting: [`docs/09-android-app.md`](docs/09-android-app.md)).
 - **Deploy:** frontend → Vercel (`frontend/vercel.json`, set `VITE_BACKEND_URL`); backend → Render (`render.yaml`) or Railway. **CI:** `.github/workflows/ci.yml`.

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { isNativeApp } from "../platform";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api";
 import type {
@@ -429,16 +430,18 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
 
           {step === "explain" && (
             <div className="flex w-full flex-col items-center gap-3">
-              <button
-                onClick={talkWhy}
-                disabled={!canListen || listening || busy}
-                className={`btn-kid relative bg-sky-500 px-8 text-2xl text-white ${listening ? "animate-pulse ring-8 ring-sky-200" : ""}`}
-              >
-                🎤 {speech.micBlocked ? s.micOff : listening ? s.listening : s.talkWhy}
-              </button>
+              {!isNativeApp && (
+                <button
+                  onClick={talkWhy}
+                  disabled={!canListen || listening || busy}
+                  className={`btn-kid relative bg-sky-500 px-8 text-2xl text-white ${listening ? "animate-pulse ring-8 ring-sky-200" : ""}`}
+                >
+                  🎤 {speech.micBlocked ? s.micOff : listening ? s.listening : s.talkWhy}
+                </button>
+              )}
               {turn?.chips.length ? (
                 <>
-                  <p className="text-slate-500">{s.orTap}</p>
+                  {!isNativeApp && <p className="text-slate-500">{s.orTap}</p>}
                   <ExplainChips chips={turn.chips} disabled={busy} onPick={(id) => send("explain", { chip_id: id })} />
                 </>
               ) : null}

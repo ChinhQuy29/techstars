@@ -13,5 +13,9 @@ services:
         value: gemini-2.5-flash
       - key: CORS_ORIGINS
         sync: false
+      # Demo deploy for the Android app (docs/09-android-app.md): mock mode, so no key or child data reaches an AI.
+      # Never add LUMI_ADMIN here.
+      - key: MOCK_MODE
+        value: "1"
       - key: SAMPLES_DIR
         value: /opt/render/project/src/test-worksheets
