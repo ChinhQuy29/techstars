@@ -18,7 +18,11 @@ sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins="*", max_http
 async def join(sid, data):
     session_id = (data or {}).get("session_id")
     role = (data or {}).get("role", "viewer")
-    if not session_id or role not in ("camera", "viewer"):
+    # Same rules as /api/frame: the relay is off unless LUMI_PHONE_CAMERA=1, and ids must be unguessable.
+    from .routes.frames import enabled  # local import: frames imports this module
+    from .services.session import valid_session_id
+
+    if not enabled() or not valid_session_id(session_id) or role not in ("camera", "viewer"):
         return {"ok": False}
     await sio.save_session(sid, {"session_id": session_id, "role": role})
     await sio.enter_room(sid, f"{role}:{session_id}")

@@ -12,7 +12,8 @@ A Lumi app that installs on the owner's Android phone for demos, built from the 
 | Where the backend runs | **Cloud + laptop.** Default: the deployed backend (Render, mock mode, `LUMI_ADMIN` off). Fallback: the laptop on the same Wi-Fi (`http://<laptop-ip>:8000`). The server address can be changed in Grown-up settings. |
 | Demo device | The owner's **Android phone**: phone layout first, emulator for development, then the phone over USB. |
 | First-version scope | Everything the web app does, **plus the phone's own camera in Help mode**. Lumi still reads its lines aloud, using the phone's own voice (the app view has no browser voice). |
-| Left out of v1 | **Voice input** (Android's app view has no browser speech recognition; chips and typing already cover it, so the mic button is hidden in the app). **Admin portal** (not in the app; still available in the laptop browser). **"Phone camera" QR option** (the phone *is* the camera). |
+| Voice input | **Added 2026-11-14 (owner request):** in Teach, the child taps a big **🎤 Tell Lumi why** button and explains out loud. Android's own speech recognizer (`@capacitor-community/speech-recognition`) turns it into text; the text goes through the same rating as typing (Gemini when a key is set, templates in mock mode) with the same safety checks. No auto-listen in the app; Help's "Talk to Lumi" stays hidden. |
+| Left out of v1 | **Admin portal** (not in the app; still available in the laptop browser). **"Phone camera" QR option** (the phone *is* the camera). |
 | Distribution | A debug APK installed over USB or sent as a file. No Play Store for the demo. |
 
 ## How it works
@@ -68,7 +69,7 @@ Also: Lumi's lines are spoken aloud by the phone's text-to-speech (emulator log;
 - Render free tier sleeps after inactivity; the first request can take ~30 s. Open the app a minute before the demo, or use the laptop fallback.
 - Venue Wi-Fi may block phone-to-laptop traffic; the phone's hotspot is a fallback for the laptop route.
 - Google Fonts need internet; bundling the two fonts would make the app fully offline-safe (later).
-- Voice input needs a native speech plugin (e.g. a Capacitor speech-recognition plugin); revisit after the demo.
+- Voice input: not yet tried with real children's voices or in Spanish/Vietnamese on the phone. Accuracy depends on the phone's recognizer and its downloaded languages. The Render backend runs in mock mode, so spoken explanations are rated by templates there, not Gemini.
 - iOS needs a Mac with Xcode and an Apple developer account for device installs.
 - When the server is down, Try again appears after 12 s (35 s for explaining, which waits for the AI). On a sleeping Render server the first call can take longer than 12 s: tap Try again, or open the app a minute early.
 - A wrong saved server address makes every screen fail until a grown-up fixes it in Grown-up settings (that panel always works).
@@ -92,3 +93,4 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - 2026-11-14 · Stage 5: Lumi icon and opening screen, 12 s timeouts for non-AI calls, picker loading dots. Installed on emulator and phone. The phone's USB debugging dropped to "unauthorized" after an adb restart (owner taps Allow on the phone to reconnect).
 - 2026-11-14 · Stage 6: Render backend live (`/api/health`: mock, admin off; CORS allows the app). App default server switched to it and rebuilt; emulator test on the cloud passed. The phone still has the laptop address saved: Grown-up settings → 🌐 Lumi server → Use default.
 - 2026-11-14 · Phone on mobile data (LTE, Wi-Fi off) against Render: picker, demo lesson and Help sample all passed. The demo no longer needs the laptop.
+- 2026-11-14 · Voice input in Teach (explain step): phone speech recognizer, big 🎤 button, mic permission asked on first tap. Emulator: recognizer available, permission prompt shown, listening → back to the button after silence (4.5 s) without leaving the step; a typed explanation runs the same path (rated, quoted, Lumi tries). Real speech not tested yet (needs the owner's phone).

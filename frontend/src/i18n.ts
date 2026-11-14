@@ -42,6 +42,12 @@ const en = {
     saveButton: "Save progress", savingOn: "✅ Saving progress on this device.", deleteSaved: "Delete saved progress",
     saveFailed: "Couldn't save right now. Please try again.",
     welcomeBack: "Welcome back! Lumi remembers {n} skills you taught.", welcomeBackOne: "Welcome back! Lumi remembers the skill you taught.",
+    // Phone layout (docs/10-mobile-ui.md)
+    home: "Home", townShort: "Town", journeyShort: "Journey", pickAny: "tap any skill", brainAsk: "What do you want to teach me today?", stepCheck: "Check", stepExplain: "Explain", stepLumiTries: "Lumi tries",
+    stopTitle: "Stop this homework?", stopBody: "Lumi's stars stay. This page of homework will be gone.",
+    keepTeaching: "Keep teaching", stopLesson: "Stop", close: "Close", language: "Language",
+    problemOf: "{n} of {total}", isLumiRight: "Did I get this one right?", fixIt: "Oops! What should the answer be?",
+    allChecked: "All checked! Tap Done checking.", checkAgain: "Check again", newPhoto: "New photo",
 };
 
 export type Strings = typeof en;
@@ -90,6 +96,11 @@ const STRINGS: Record<Language, Strings> = {
     saveButton: "Guardar progreso", savingOn: "✅ Guardando el progreso en este dispositivo.", deleteSaved: "Borrar el progreso guardado",
     saveFailed: "No se pudo guardar ahora. Inténtelo de nuevo.",
     welcomeBack: "¡Bienvenido de nuevo! Lumi recuerda {n} habilidades que le enseñaste.", welcomeBackOne: "¡Bienvenido de nuevo! Lumi recuerda la habilidad que le enseñaste.",
+    home: "Inicio", townShort: "Pueblo", journeyShort: "Viaje", pickAny: "toca cualquiera", brainAsk: "¿Qué me quieres enseñar hoy?", stepCheck: "Revisar", stepExplain: "Explicar", stepLumiTries: "Lumi prueba",
+    stopTitle: "¿Dejar esta tarea?", stopBody: "Las estrellas de Lumi se quedan. Esta hoja de tarea se borrará.",
+    keepTeaching: "Seguir enseñando", stopLesson: "Salir", close: "Cerrar", language: "Idioma",
+    problemOf: "{n} de {total}", isLumiRight: "¿Este lo hice bien?", fixIt: "¡Uy! ¿Cuál debería ser la respuesta?",
+    allChecked: "¡Todo revisado! Toca ¡Ya revisé!", checkAgain: "Revisar otra vez", newPhoto: "Otra foto",
   },
   vi: {
     teachTab: "Dạy Lumi", helpTab: "Giúp mình", grownups: "Người lớn", settings: "Cài đặt cho người lớn",
@@ -132,6 +143,11 @@ const STRINGS: Record<Language, Strings> = {
     saveButton: "Lưu tiến độ", savingOn: "✅ Đang lưu tiến độ trên thiết bị này.", deleteSaved: "Xóa tiến độ đã lưu",
     saveFailed: "Chưa lưu được. Vui lòng thử lại.",
     welcomeBack: "Chào mừng bạn quay lại! Lumi còn nhớ {n} kỹ năng bạn đã dạy.", welcomeBackOne: "Chào mừng bạn quay lại! Lumi còn nhớ kỹ năng bạn đã dạy.",
+    home: "Trang chủ", townShort: "Thị trấn", journeyShort: "Hành trình", pickAny: "chọn bất kỳ", brainAsk: "Hôm nay bạn muốn dạy mình điều gì?", stepCheck: "Kiểm tra", stepExplain: "Giải thích", stepLumiTries: "Lumi thử",
+    stopTitle: "Dừng bài tập này?", stopBody: "Sao của Lumi vẫn còn. Trang bài tập này sẽ mất.",
+    keepTeaching: "Dạy tiếp", stopLesson: "Dừng", close: "Đóng", language: "Ngôn ngữ",
+    problemOf: "{n} / {total}", isLumiRight: "Câu này mình làm đúng không?", fixIt: "Ối! Đáp án đúng phải là gì?",
+    allChecked: "Kiểm tra hết rồi! Bấm Kiểm tra xong!", checkAgain: "Kiểm tra lại", newPhoto: "Chụp ảnh khác",
   },
 };
 

@@ -6,11 +6,16 @@ Prototype; not legal advice. Institutional IRB rules come first for any KU or la
 | Data | Where | Kept |
 |---|---|---|
 | Worksheet photo | taken only on Check my work (or adult-enabled Auto-snap); to Gemini only with a key and mock off | never stored |
-| Spoken / typed explanation | speech → text in the browser; text to backend (and Gemini when enabled) | audio never sent; text not logged; best quote per concept kept |
+| Spoken / typed explanation | speech → text by the browser (web) or the phone's own speech recognizer (Android app, which may use the phone maker's speech service under the phone's settings); only the text goes to the backend (and Gemini when enabled) | the app never records, stores or uploads audio; text not logged; best quote per concept kept |
 | "Talk to Lumi" text | backend, Gemini when enabled | in-memory session only |
 | Marks, answers, outcomes, timings, stars | backend memory | session only |
 | **Saved progress** (adult opt-in) | `backend/data/lumi.db`, keyed by a random 128-bit id on the device | only stars, best quotes, ready concepts, town visits, and story choices (which version per act, scenes seen); deleted after 180 days unused or on request |
 | Names, ages, emails, accounts | not collected | — |
+
+## Access to a child's session
+- A session is identified only by a **128-bit random id** (32 hex characters) made on the device with the secure random generator; the server refuses any other id (422), so sessions can't be guessed or listed. Saved-progress ids are also 128-bit.
+- The **"phone as camera" relay** (`/api/frame`, Socket.IO) is off unless `LUMI_PHONE_CAMERA=1`, which is for laptop demos only and must never be set on a deployed server.
+- Known gaps, not yet fixed: no sign-in or app key, no rate limits, the cloud server accepts requests from any website, and the Android build is a debug build. Fix before families use the cloud server; see [08](08-status-and-roadmap.md).
 
 ## Consent and deletion
 - **💾 Save Lumi's progress on this device?** explains what's kept (en/es/vi), needs a 1.5 s hold, and records time and wording version (`CONSENT_VERSION`, identical in `store.py` and `api.ts`; a stale screen gets 409).

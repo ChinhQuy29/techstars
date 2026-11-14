@@ -9,8 +9,14 @@ import { useRemoteCamera } from "./camera/useRemoteCamera";
 import { useWebcam } from "./camera/useWebcam";
 import ServerSetting from "./components/ServerSetting";
 import { App as NativeApp } from "@capacitor/app";
-import { isNativeApp } from "./platform";
-import { t } from "./i18n";
+import { isNativeApp, useIsPhone } from "./platform";
+import BottomSheet from "./components/phone/BottomSheet";
+import PhoneTabBar, { type PhoneTab } from "./components/phone/PhoneTabBar";
+import PhoneHome from "./views/PhoneHome";
+import { pretty, t } from "./i18n";
+import MistakeOverlay from "./components/MistakeOverlay";
+import { expressionFor } from "./components/mascot/lumiAssets";
+import { motion } from "framer-motion";
 import { celebrate, sounds } from "./robot/sounds";
 import { useSpeech } from "./robot/useSpeech";
 import ParentReport from "./views/ParentReport";
@@ -84,14 +90,16 @@ const LANGS: { id: Language; label: string }[] = [
   { id: "vi", label: "Tiếng Việt" },
 ];
 
-const newSessionId = () => Math.random().toString(36).slice(2, 8);
+/** 128 random bits as 32 hex characters: the only key to this child's session, so it must be unguessable (docs/06). */
+const newSessionId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+const VALID_SESSION_ID = /^[0-9a-f]{32}$/;
 const SESSION_KEY = "lumi-session";
 
 /** Keep the session across a page refresh (this tab only), so Help-mode progress and Lumi's stars survive. */
 function initialSessionId(): string {
   try {
     const saved = sessionStorage.getItem(SESSION_KEY);
-    if (saved) return saved;
+    if (saved && VALID_SESSION_ID.test(saved)) return saved; // older short ids are replaced
   } catch {
     /* storage blocked: fall through */
   }
@@ -155,6 +163,12 @@ export default function App() {
   const [remembered, setRemembered] = useState(0);
   const [profileBusy, setProfileBusy] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  // Phone layout (docs/10-mobile-ui.md)
+  const isPhone = useIsPhone();
+  const [phoneStart, setPhoneStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
+  const [grownupsOpen, setGrownupsOpen] = useState(false);
+  const [phoneCam, setPhoneCam] = useState(false); // server allows the "phone as camera" relay (LUMI_PHONE_CAMERA=1)
+  const [helpShow, setHelpShow] = useState<"camera" | "photo">("camera");
 
   const busy = useRef(false);
   const lastActivity = useRef(Date.now());
@@ -175,7 +189,12 @@ export default function App() {
   captureRef.current = cam.captureHighRes;
 
   useEffect(() => {
-    api.health().then((h) => setMode(h.mode === "mock" ? "mock mode" : h.model)).catch(() => setMode("backend offline"));
+    api.health()
+      .then((h) => {
+        setMode(h.mode === "mock" ? "mock mode" : h.model);
+        setPhoneCam(!!h.phone_camera);
+      })
+      .catch(() => setMode("backend offline"));
     api.samples().then(setSamples).catch(() => {});
   }, []);
 
@@ -354,6 +373,29 @@ export default function App() {
     setAppMode(m);
   };
 
+  /** Phone: start a lesson on the skill tapped on the Home path (null = Lumi picks). */
+  const startFromHome = (c: api.TeachConceptInfo | null) => {
+    speech.stopSpeaking();
+    setPhoneStart(c);
+    setTeachDemo(false);
+    setTeachKey((k) => k + 1);
+    setTeachAlive(true);
+    setAppMode("teach");
+  };
+
+  /** Phone: leave the lesson for Home (after "Stop this homework?"). */
+  const exitLesson = () => {
+    setPhoneStart(undefined);
+    switchMode("welcome");
+  };
+
+  const selectTab = (tb: PhoneTab) => {
+    if (tb === "home") switchMode("welcome");
+    else if (tb === "help") switchMode("help");
+    else if (tb === "town") openTown(null);
+    else openTown(null, JOURNEY_TAB);
+  };
+
   const openTown = (concept: Concept | null, story: string | null = null) => {
     speech.stopSpeaking();
     setTownStart((t0) => ({ concept, story, key: (t0?.key ?? 0) + 1 }));
@@ -364,7 +406,8 @@ export default function App() {
   // screen it sends the app to the background (state kept) instead of closing it. docs/09-android-app.md.
   const backRef = useRef<() => void>(() => {});
   backRef.current = () => {
-    if (showReport) setShowReport(false);
+    if (grownupsOpen) setGrownupsOpen(false);
+    else if (showReport) setShowReport(false);
     else if (appMode === "town") {
       if (teachAlive) switchMode("teach");
       else switchMode("welcome");
@@ -396,6 +439,7 @@ export default function App() {
   /** Adult action (Grown-up settings): the fixed canonical demo sheet, for rehearsals and pitches. */
   const startDemo = () => {
     speech.stopSpeaking();
+    setGrownupsOpen(false);
     setTeachDemo(true);
     setTeachKey((k) => k + 1);
     setAppMode("teach");
@@ -473,50 +517,8 @@ export default function App() {
     }
   };
 
-  return (
-    <MotionConfig reducedMotion="user">
-    <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
-            <LumiMascot expression="default" animated={false} className="w-11" />
-            <h1 className="text-left text-4xl font-extrabold tracking-tight text-slate-800">
-              Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
-            </h1>
-          </button>
-        </div>
-        <nav className="flex flex-wrap gap-3" aria-label="Mode">
-          <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
-            🧑‍🏫 {s.teachTab}
-          </button>
-          <button className={tab("help")} onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
-            🙋 {s.helpTab}
-          </button>
-          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
-            🏘️ {s.town}
-          </button>
-        </nav>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className="rounded-2xl bg-white px-3 py-3 text-base font-semibold shadow ring-1 ring-sky-100"
-            aria-label="Language"
-          >
-            {/* plain names: Windows renders flag emoji as letters */}
-            {LANGS.map((l) => (
-              <option key={l.id} value={l.id}>{l.label}</option>
-            ))}
-          </select>
-          <button className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200" onClick={() => setShowReport(true)}>
-            👪 {s.grownups}
-          </button>
-        </div>
-      </header>
-
-      {appMode === "welcome" ? (
-        <WelcomeView language={language} remembered={remembered} onTeach={() => switchMode("teach")} onHelp={() => switchMode("help")} />
-      ) : appMode === "teach" || appMode === "town" ? (
+  // Screen pieces shared by the desktop page and the phone frame (docs/10-mobile-ui.md).
+  const teachTownEl = (
         <>
         {appMode === "town" && townStart && (
           <TownPage
@@ -527,10 +529,12 @@ export default function App() {
             startConcept={townStart.concept}
             startStory={townStart.story}
             onBackToHomework={() => switchMode("teach")}
+            phone={isPhone}
+            showBack={!isPhone || teachAlive}
           />
         )}
         {(appMode === "teach" || teachAlive) && (
-        <div hidden={appMode !== "teach"}>
+        <div hidden={appMode !== "teach"} className={isPhone ? "h-full" : undefined}>
         <TeachView
           key={`${sessionId}-${teachKey}-${language}`}
           sessionId={sessionId}
@@ -540,11 +544,16 @@ export default function App() {
           onShowReport={() => setShowReport(true)}
           onOpenTown={openTown}
           demo={teachDemo}
+          phone={isPhone}
+          startWith={phoneStart}
+          onExit={exitLesson}
         />
         </div>
         )}
         </>
-      ) : (
+  );
+
+  const helpEl = (
         <>
           <TutorView
             emotion={emotion}
@@ -622,16 +631,129 @@ export default function App() {
             </div>
           </section>
         </>
-      )}
+  );
 
-      <details className="card p-4 text-sm text-slate-600">
-        <summary className="cursor-pointer font-bold text-slate-700">🔧 {s.settings}</summary>
+  // Phone Help (docs/10-mobile-ui.md): one thing at a time: start → camera → photo with circles.
+  useEffect(() => {
+    if (captureUrl) setHelpShow("photo");
+  }, [captureUrl]);
+  const showPhoto = helpShow === "photo" && !!captureUrl;
+  const phoneHelpEl = (
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 items-start gap-2 px-3 pt-1 pb-2">
+        <LumiMascot expression={expressionFor(emotion)} pose="threeQuarter" talking={speech.speaking} label="auto" className="w-16 shrink-0" />
+        {bubble && (
+          <motion.div
+            key={bubble}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            aria-live="polite"
+            className="max-h-28 flex-1 overflow-y-auto rounded-2xl bg-sky-50 px-3 py-2 text-base leading-snug text-slate-900 ring-2 ring-sky-200"
+          >
+            {bubble}
+          </motion.div>
+        )}
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3">
+        {showPhoto ? (
+          <>
+            <div className="flex justify-center">
+              <MistakeOverlay
+                imageUrl={captureUrl!}
+                problems={result?.problems ?? []}
+                focusId={focusId}
+                onSelect={(id) => { setFocusId(id); askTutor("hint", undefined, id); }}
+              />
+            </div>
+            {result && result.problems.length > 0 && (
+              <ul className="flex flex-wrap gap-2">
+                {result.problems.map((pr) => (
+                  <li key={pr.id}>
+                    <button
+                      onClick={() => { setFocusId(pr.id); askTutor("hint", undefined, pr.id); }}
+                      className={`btn-kid !min-h-12 !px-3 !py-2 text-base ${focusId === pr.id ? "ring-4 ring-sun" : ""} ${
+                        pr.needs_confirmation ? "bg-violet-100 text-violet-800" : !pr.answered ? "bg-slate-100 text-slate-600" : pr.is_correct ? "bg-green-100 text-green-800" : "bg-rose-100 text-rose-800"
+                      }`}
+                    >
+                      <span className="font-extrabold">#{pr.id}</span> {pretty(pr.problem)} = {pr.child_answer ?? "?"}{" "}
+                      {pr.needs_confirmation ? "❔" : pr.is_correct ? "✓" : pr.answered ? "✗" : "…"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : cameraOn ? (
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900">
+            <video ref={webcam.videoRef} playsInline muted className="aspect-[3/4] w-full object-cover" />
+            {cam.error && <div className="absolute inset-0 grid place-items-center p-4 text-center text-red-300">{cam.error}</div>}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+            <div className="text-6xl" aria-hidden>📷✏️</div>
+            <button className="btn-kid w-full bg-sun py-4 text-2xl text-slate-900" onClick={() => { touch(); setCameraOn(true); }}>
+              📷 {s.cameraOn}
+            </button>
+            <p className="text-slate-500">{s.trySampleHint}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {samples.map((x) => (
+                <button key={x.name} className="btn-kid bg-amber-100 text-amber-900" onClick={() => gradeSample(x.url)}>
+                  📄 {x.name}
+                </button>
+              ))}
+              <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={() => fileInput.current?.click()}>
+                ⬆️ {s.upload}
+              </button>
+            </div>
+          </div>
+        )}
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) runGrade(async () => f);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
+      {(showPhoto || cameraOn) && (
+        <div className="grid shrink-0 grid-cols-2 gap-3 px-3 pt-1 pb-3">
+          {showPhoto ? (
+            <>
+              <button className="btn-kid bg-violet-500 text-white" disabled={!result?.problems.length} onClick={() => askTutor("hint")}>
+                💡 {s.hint}
+              </button>
+              <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={() => { touch(); setCameraOn(true); setHelpShow("camera"); }}>
+                📷 {s.newPhoto}
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn-kid col-span-2 bg-sun py-4 text-2xl text-slate-900" disabled={!cam.ready || busy.current} onClick={() => runGrade(cam.captureHighRes)}>
+                ✅ {s.checkWork}
+              </button>
+              <button className="btn-small col-span-2 bg-slate-100 text-slate-600" onClick={() => setCameraOn(false)}>
+                {s.cameraOff}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const settingsBody = (
         <div className="mt-3 flex flex-col gap-3">
           <p>
             session <code>{sessionId}</code> · {mode}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            {!isNativeApp && (
+            {!isNativeApp && phoneCam && (
               <select value={source} onChange={(e) => setSource(e.target.value as Source)} className="rounded-lg bg-slate-100 px-3 py-2">
                 <option value="webcam">Webcam</option>
                 <option value="remote">Phone camera</option>
@@ -701,6 +823,125 @@ export default function App() {
             </div>
           )}
         </div>
+  );
+
+  if (isPhone) {
+    const inLesson = appMode === "teach";
+    const activeTab: PhoneTab | null =
+      appMode === "welcome" ? "home" : appMode === "help" ? "help" : appMode === "town" ? (townStart?.story === JOURNEY_TAB ? "journey" : "town") : null;
+    return (
+      <MotionConfig reducedMotion="user">
+        <div className="flex h-[100dvh] flex-col">
+          {!inLesson && (
+            <header className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
+              <button className="flex items-center gap-2 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+                <LumiMascot expression="default" animated={false} className="w-9" />
+                <span className="text-2xl font-extrabold tracking-tight text-slate-800">Lumi</span>
+              </button>
+              <button
+                className="btn-kid !min-h-12 bg-white !px-3 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
+                onClick={() => setGrownupsOpen(true)}
+              >
+                👪 {s.grownups}
+              </button>
+            </header>
+          )}
+          <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+            {appMode === "welcome" ? (
+              <PhoneHome key={`${sessionId}-${language}-${teachKey}`} sessionId={sessionId} language={language} remembered={remembered} onStart={startFromHome} />
+            ) : appMode === "teach" || appMode === "town" ? (
+              <div className={inLesson ? "h-full" : "p-3"}>{teachTownEl}</div>
+            ) : (
+              phoneHelpEl
+            )}
+          </main>
+          {!inLesson && <PhoneTabBar active={activeTab} onSelect={selectTab} s={s} />}
+        </div>
+
+        <BottomSheet open={grownupsOpen} onClose={() => setGrownupsOpen(false)} title={`👪 ${s.grownups}`} closeLabel={s.close}>
+          <div className="flex flex-col gap-4 text-sm text-slate-600">
+            <label className="flex items-center justify-between gap-3 text-base font-bold text-slate-700">
+              {s.language}
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
+                className="rounded-2xl bg-slate-50 px-3 py-3 text-base font-semibold ring-1 ring-slate-200"
+              >
+                {LANGS.map((l) => (
+                  <option key={l.id} value={l.id}>{l.label}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="btn-kid bg-sky-500 text-white"
+              onClick={() => { setGrownupsOpen(false); setShowReport(true); }}
+            >
+              📊 {s.report}
+            </button>
+            <div className="rounded-2xl bg-slate-50 p-3">
+              <h3 className="font-bold text-slate-700">🔧 {s.settings}</h3>
+              {settingsBody}
+            </div>
+          </div>
+        </BottomSheet>
+
+        {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}
+      </MotionConfig>
+    );
+  }
+
+  return (
+    <MotionConfig reducedMotion="user">
+    <div className="mx-auto flex min-h-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+            <LumiMascot expression="default" animated={false} className="w-11" />
+            <h1 className="text-left text-4xl font-extrabold tracking-tight text-slate-800">
+              Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
+            </h1>
+          </button>
+        </div>
+        <nav className="flex flex-wrap gap-3" aria-label="Mode">
+          <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
+            🧑‍🏫 {s.teachTab}
+          </button>
+          <button className={tab("help")} onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
+            🙋 {s.helpTab}
+          </button>
+          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
+            🏘️ {s.town}
+          </button>
+        </nav>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="rounded-2xl bg-white px-3 py-3 text-base font-semibold shadow ring-1 ring-sky-100"
+            aria-label="Language"
+          >
+            {/* plain names: Windows renders flag emoji as letters */}
+            {LANGS.map((l) => (
+              <option key={l.id} value={l.id}>{l.label}</option>
+            ))}
+          </select>
+          <button className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200" onClick={() => setShowReport(true)}>
+            👪 {s.grownups}
+          </button>
+        </div>
+      </header>
+
+      {appMode === "welcome" ? (
+        <WelcomeView language={language} remembered={remembered} onTeach={() => switchMode("teach")} onHelp={() => switchMode("help")} />
+      ) : appMode === "teach" || appMode === "town" ? (
+        teachTownEl
+      ) : (
+        helpEl
+      )}
+
+      <details className="card p-4 text-sm text-slate-600">
+        <summary className="cursor-pointer font-bold text-slate-700">🔧 {s.settings}</summary>
+        {settingsBody}
       </details>
 
       {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}

@@ -14,6 +14,8 @@ import LumiHomework, { type RowMark } from "../components/LumiHomework";
 import MathVisual from "../components/MathVisual";
 import ProblemText from "../components/ProblemText";
 import Warmup from "../components/Warmup";
+import BottomSheet from "../components/phone/BottomSheet";
+import { PointHand, useIdle } from "../components/phone/PointHand";
 import { CONCEPT_EMOJI, t, type TeachConcept } from "../i18n";
 import LumiMascot from "../components/mascot/LumiMascot";
 import { expressionFor } from "../components/mascot/lumiAssets";
@@ -30,13 +32,21 @@ interface Props {
   onOpenTown: (concept: Concept | null, story?: string | null) => void;
   /** Start with the fixed canonical demo worksheet (adult action from Grown-up settings). */
   demo?: boolean;
+  /** Phone layout (docs/10-mobile-ui.md): one problem at a time, lesson top bar, no picker or Brain. */
+  phone?: boolean;
+  /** Phone: the skill chosen on the Home path (null = let Lumi pick). Undefined = show the picker. */
+  startWith?: TeachConceptInfo | null;
+  /** Phone: leave the lesson for Home. */
+  onExit?: () => void;
 }
 
 /**
  * Teach Lumi mode (docs/02-learning-design.md). The backend drives the conversation: this view renders
  * whatever `turn.step` comes back and sends the child's action. It never decides correctness.
  */
-export default function TeachView({ sessionId, language, speech, onPracticeFirst, onShowReport, onOpenTown, demo = false }: Props) {
+export default function TeachView({
+  sessionId, language, speech, onPracticeFirst, onShowReport, onOpenTown, demo = false, phone = false, startWith, onExit,
+}: Props) {
   const s = t(language);
   const [ws, setWs] = useState<TeachWorksheet | null>(null);
   const [turn, setTurn] = useState<TeachTurn | null>(null);
@@ -65,6 +75,9 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
   // Something the child's teaching just opened (a Town place now, story scenes later): the backend says so.
   const [newUnlock, setNewUnlock] = useState<TeachUnlock | null>(null);
   const { speak, listen, stopSpeaking, canListen, listening } = speech;
+  // Phone lesson (docs/10-mobile-ui.md): which problem card is showing while marking, and the "stop?" question.
+  const [cursor, setCursor] = useState(0);
+  const [confirmStop, setConfirmStop] = useState(false);
 
   const send = useCallback(
     async (
@@ -114,7 +127,8 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
       else if (tn.emotion === "happy") sounds.correct();
       else sounds.hint();
       await speak(tn.say);
-      if (mine !== seq.current || tn.step !== "explain" || !canListen) return;
+      // Web: open the mic right after "why?". Android app: the child taps the big 🎤 button instead (docs/09).
+      if (mine !== seq.current || tn.step !== "explain" || !canListen || isNativeApp) return;
       setEmotion("listening");
       const heard = await listen();
       if (mine !== seq.current) return;
@@ -138,6 +152,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
         setMarks({});
         setEditing(null);
         setFound(new Set());
+        setCursor(0);
         apply(w.turn);
       } catch (e) {
         console.error(e);
@@ -235,6 +250,8 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
     if (loadedFor.current === sessionId) return; // StrictMode runs effects twice; start once per session
     loadedFor.current = sessionId;
     if (demo) load(false, true);
+    else if (startWith === null) teachConcept(null);
+    else if (startWith) pick(startWith);
     else void openPicker();
   }, [sessionId, load, demo, openPicker]);
 
@@ -293,85 +310,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
       marks: problems.map((p) => ({ id: p.id, mark: marks[p.id]?.mark ?? "none", correction: marks[p.id]?.correction || null })),
     });
 
-  return (
-    <div className="grid gap-5 lg:grid-cols-12">
-      <section className="card flex flex-col items-center gap-4 p-4 sm:p-5 lg:col-span-5">
-        {/* On narrow screens Lumi shrinks and sits beside the bubble, so the math stays near the top. */}
-        <div className="flex w-full flex-row items-center gap-3 lg:flex-col lg:gap-4">
-          <LumiMascot
-            expression={mascotExpression}
-            pose="threeQuarter"
-            talking={speech.speaking}
-            label="auto"
-            className="w-20 shrink-0 sm:w-28 lg:w-44"
-          />
-          {bubble && (
-            <motion.div
-              key={bubble}
-              initial={{ opacity: 0, y: 10, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              aria-live="polite"
-              className="relative w-full rounded-3xl bg-sky-50 px-4 py-3 text-lg leading-snug text-slate-900 ring-2 ring-sky-200 sm:px-5 sm:py-4 sm:text-xl"
-            >
-              {bubble}
-            </motion.div>
-          )}
-        </div>
-        <div className="hidden w-full lg:block">
-          <LumiBrain mastery={turn?.mastery ?? {}} popConcept={turn?.mastery_up ?? null} s={s} />
-        </div>
-      </section>
-
-      <section className="card flex flex-col gap-4 p-3 sm:p-5 lg:col-span-7">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-2xl font-extrabold text-amber-700">
-            📒 {s.lumisHomework}
-            {phase !== "pick" && chosen.current && (
-              <span className="ml-2 rounded-full bg-amber-100 px-3 py-1 align-middle text-base text-amber-800">
-                {CONCEPT_EMOJI[chosen.current]} {s.concepts[chosen.current as TeachConcept]}
-              </span>
-            )}
-          </h2>
-          <button
-            className="btn-kid !min-h-12 bg-teal-500 !py-2 text-base text-white"
-            onClick={() => { stopSpeaking(); onOpenTown(null); }}
-          >
-            🏘️ {s.town}
-          </button>
-        </div>
-
-        {phase === "pick" ? (
-          <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
-        ) : phase === "warmup" && warmup ? (
-          <Warmup
-            key={warmup.warmup_id}
-            warmup={warmup}
-            result={warmResult}
-            busy={busy}
-            onCheck={checkWarmup}
-            onRetry={() => startWarmup(warmup.concept)}
-            onTeach={() => teachConcept(warmup.concept)}
-            s={s}
-          />
-        ) : ws?.ready ? (
-          <LumiHomework
-            problems={problems}
-            marks={marks}
-            step={step ?? "mark"}
-            outcomes={outcomes}
-            focusId={turn?.focus_problem_id ?? null}
-            highlightIds={turn?.highlight_ids ?? []}
-            editingId={editing}
-            onMark={setMark}
-            onEdit={setEditing}
-            onPick={(id) => send("find", { problem_id: id })}
-            s={s}
-          />
-        ) : (
-          <div className="grid h-72 place-items-center rounded-3xl border-4 border-dashed border-amber-200 bg-amber-50 text-7xl">📚</div>
-        )}
-
-        {error && (
+  const errorBox = error && (
           <div role="alert" className="flex flex-col items-center gap-3 rounded-3xl bg-rose-50 p-4 text-center ring-2 ring-rose-200">
             <p className="text-lg font-bold text-rose-800">😵 {error}</p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -383,8 +322,9 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
               </button>
             </div>
           </div>
-        )}
+  );
 
+  const actionArea = (
         <div className="flex flex-col items-center gap-4">
           {step === "mark" && (
             <>
@@ -430,18 +370,20 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
 
           {step === "explain" && (
             <div className="flex w-full flex-col items-center gap-3">
-              {!isNativeApp && (
+              {(canListen || speech.micBlocked) && (
                 <button
                   onClick={talkWhy}
                   disabled={!canListen || listening || busy}
-                  className={`btn-kid relative bg-sky-500 px-8 text-2xl text-white ${listening ? "animate-pulse ring-8 ring-sky-200" : ""}`}
+                  className={`btn-kid relative bg-sky-500 px-8 text-2xl text-white ${phone ? "w-full py-5" : ""} ${
+                    listening ? "animate-pulse ring-8 ring-sky-200" : ""
+                  }`}
                 >
                   🎤 {speech.micBlocked ? s.micOff : listening ? s.listening : s.talkWhy}
                 </button>
               )}
               {turn?.chips.length ? (
                 <>
-                  {!isNativeApp && <p className="text-slate-500">{s.orTap}</p>}
+                  {(canListen || speech.micBlocked) && <p className="text-slate-500">{s.orTap}</p>}
                   <ExplainChips chips={turn.chips} disabled={busy} onPick={(id) => send("explain", { chip_id: id })} />
                 </>
               ) : null}
@@ -568,7 +510,7 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
                 <button className="btn-kid bg-sun text-slate-900" disabled={busy} onClick={() => load()}>
                   📚 {s.moreHomework}
                 </button>
-                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={openPicker}>
+                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={phone && onExit ? onExit : openPicker}>
                   🔀 {s.teachSomethingElse}
                 </button>
                 <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={onShowReport}>
@@ -580,8 +522,9 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
 
           {step === "practice_first" && (
             <div className="flex flex-col items-center gap-3">
+              {/* Same words as Lumi's line ("Tap Help me"), so the child can find it; on phones the tab bar is hidden here. */}
               <button className="btn-kid bg-sky-500 px-8 text-2xl text-white" onClick={onPracticeFirst}>
-                🙋 {s.practice}
+                🙋 {s.helpTab}
               </button>
               <HoldButton
                 label={s.tryAnyway}
@@ -589,12 +532,360 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
                 disabled={busy}
                 onConfirm={() => { chosen.current = null; void load(true); }}
               />
-              <button className="btn-small bg-white text-slate-600 ring-1 ring-slate-200" onClick={openPicker}>
+              <button className="btn-small bg-white text-slate-600 ring-1 ring-slate-200" onClick={phone && onExit ? onExit : openPicker}>
                 🔀 {s.teachSomethingElse}
               </button>
             </div>
           )}
         </div>
+  );
+
+  // ---------- Phone lesson (docs/10-mobile-ui.md) ----------
+  const markedCount = problems.filter((p) => marks[p.id]).length;
+  // The lesson's three parts as notebook tabs (instead of a progress bar): check the sheet, explain, Lumi tries.
+  const lessonStages = [
+    { emoji: "✓", label: s.stepCheck },
+    { emoji: "💬", label: s.stepExplain },
+    { emoji: "🤖", label: s.stepLumiTries },
+  ];
+  const stageIdx =
+    step === "mark" ? 0 : ["find", "fix", "help", "explain"].includes(step ?? "") ? 1 : ["demo", "sure"].includes(step ?? "") ? 2 : 3;
+  const idle = useIdle(5000, `${step}-${cursor}-${editing}-${busy}-${markedCount}`);
+
+  /** Lumi says what to do next: shown in the bubble and spoken. */
+  const lumiSays = (line: string) => {
+    setBubble(line);
+    setEmotion("curious");
+    void speak(line);
+  };
+
+  /** After a problem is marked: the next unmarked card, or the whole sheet when all are marked. */
+  const advance = (justMarked: number) => {
+    const isMarked = (id: number) => id === justMarked || !!marks[id];
+    const order = [...problems.slice(cursor + 1), ...problems.slice(0, cursor + 1)];
+    const nextP = order.find((p) => !isMarked(p.id));
+    const idx = nextP ? problems.indexOf(nextP) : problems.length;
+    setCursor(idx);
+    lumiSays(idx < problems.length ? s.isLumiRight : s.allChecked);
+  };
+
+  const markCard = (id: number, mark: RowMark["mark"]) => {
+    sounds.pop();
+    setMark(id, mark);
+    if (mark === "check") advance(id);
+    else lumiSays(s.fixIt);
+  };
+
+  const card = step === "mark" && cursor < problems.length ? problems[cursor] : null;
+  const cardMark = card ? marks[card.id] : undefined;
+  const sheetRows =
+    step === "mark" || step === "find"
+      ? problems
+      : ["fix", "help", "explain", "sure"].includes(step ?? "")
+        ? problems.filter((p) => p.id === turn?.focus_problem_id)
+        : [];
+
+  // Phone: during the demo the steps are on the card, so the bubble keeps only the opening and the question.
+  let phoneBubble = bubble;
+  const demoLines = step === "demo" ? turn?.demo?.steps ?? [] : [];
+  if (demoLines.length && bubble.includes(demoLines[0]) && bubble.includes(demoLines[demoLines.length - 1])) {
+    const a = bubble.indexOf(demoLines[0]);
+    const b = bubble.indexOf(demoLines[demoLines.length - 1]) + demoLines[demoLines.length - 1].length;
+    phoneBubble = `${bubble.slice(0, a).trim()} ${bubble.slice(b).trim()}`.trim();
+  }
+
+  if (phone) {
+    return (
+      <div className="flex h-full flex-col">
+        {/* Lesson top: a labelled Home button, the skill, and notebook tabs for the lesson's three parts. */}
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
+          <button
+            className="btn-kid !min-h-12 shrink-0 bg-white !px-3 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
+            onClick={() => (phase !== "teach" || !ws || step === "done" ? onExit?.() : setConfirmStop(true))}
+          >
+            🏠 {s.home}
+          </button>
+          {phase !== "pick" && chosen.current && (
+            <span className="truncate rounded-full bg-amber-100 px-3 py-1.5 text-base font-extrabold text-amber-800">
+              {CONCEPT_EMOJI[chosen.current]} {s.concepts[chosen.current as TeachConcept]}
+            </span>
+          )}
+        </div>
+        {phase === "teach" && ws?.ready && (
+          <ol className="flex shrink-0 gap-1 px-3 pb-2" aria-label={s.lumisHomework}>
+            {lessonStages.map((st, i) => (
+              <li
+                key={st.label}
+                aria-current={i === stageIdx ? "step" : undefined}
+                className={`flex-1 truncate rounded-t-xl border-b-4 px-1 py-1 text-center text-sm font-extrabold ${
+                  i < stageIdx
+                    ? "border-teal-400 bg-teal-50 text-teal-700"
+                    : i === stageIdx
+                      ? "border-amber-500 bg-amber-100 text-amber-900"
+                      : "border-slate-200 bg-white/60 text-slate-400"
+                }`}
+              >
+                {i < stageIdx ? "✓" : st.emoji} {st.label}
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {/* Lumi and what it says. */}
+        <div className="flex shrink-0 items-start gap-2 px-3 pb-2">
+          <LumiMascot expression={mascotExpression} pose="threeQuarter" talking={speech.speaking} label="auto" className="w-16 shrink-0" />
+          {bubble && (
+            <motion.div
+              key={bubble}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              aria-live="polite"
+              className="max-h-32 flex-1 overflow-y-auto rounded-2xl bg-sky-50 px-3 py-2 text-base leading-snug text-slate-900 ring-2 ring-sky-200"
+            >
+              {phoneBubble}
+            </motion.div>
+          )}
+        </div>
+
+        <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3 ${card && editing === null ? "justify-center" : ""}`}>
+          {phase === "pick" ? (
+            <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
+          ) : phase === "warmup" && warmup ? (
+            <Warmup
+              key={warmup.warmup_id}
+              warmup={warmup}
+              result={warmResult}
+              busy={busy}
+              onCheck={checkWarmup}
+              onRetry={() => startWarmup(warmup.concept)}
+              onTeach={() => teachConcept(warmup.concept)}
+              s={s}
+            />
+          ) : step === "practice_first" ? (
+            // No worksheet yet: this skill needs Help-mode practice first. Show the Help me button right under Lumi's line.
+            <div className="relative">
+              {actionArea}
+              <PointHand show={idle && !busy} className="top-16 inset-x-0 flex justify-center" />
+            </div>
+          ) : !ws?.ready ? (
+            !error && <p className="animate-pulse self-center py-10 text-4xl tracking-widest text-slate-300" aria-label="loading">• • •</p>
+          ) : card ? (
+            <>
+              {/* One problem at a time. */}
+              <motion.div
+                key={card.id}
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="notebook flex flex-col gap-2 rounded-3xl py-4 pr-4 pl-[68px] shadow-inner ring-1 ring-amber-200"
+              >
+                <p className="text-sm font-extrabold text-rose-400">
+                  {s.problemOf.replace("{n}", String(cursor + 1)).replace("{total}", String(problems.length))}
+                </p>
+                <p className={`font-hand text-slate-800 ${card.problem.includes("?") ? "text-2xl leading-snug" : "text-5xl"}`}>
+                  <ProblemText
+                    problem={card.problem}
+                    answer={
+                      <span className="whitespace-nowrap">
+                        <span className={`relative ${cardMark?.mark === "circle" ? "text-slate-400" : "text-indigo-700"}`}>
+                          {card.lumi_answer}
+                          {cardMark?.mark === "circle" && <span className="absolute left-[-4px] right-[-4px] top-1/2 h-1 -rotate-6 rounded bg-rose-500" />}
+                        </span>
+                        {cardMark?.mark === "circle" && cardMark.correction && <span className="ml-1.5 text-rose-600">{cardMark.correction}</span>}
+                      </span>
+                    }
+                  />
+                </p>
+                {card.visual && <MathVisual visual={card.visual} />}
+              </motion.div>
+
+              {/* Dots: one per problem; tap to go back to one. */}
+              <div className="flex justify-center gap-2" aria-hidden>
+                {problems.map((p, i) => (
+                  <button
+                    key={p.id}
+                    tabIndex={-1}
+                    onClick={() => { setEditing(null); setCursor(i); }}
+                    className={`h-3.5 w-3.5 rounded-full ${i === cursor ? "ring-2 ring-violet-500 ring-offset-2" : ""} ${
+                      marks[p.id] ? "bg-violet-400" : "bg-slate-300"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {editing === card.id && (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="font-bold text-sky-800">{s.typeAnswer}</p>
+                  <KidKeypad
+                    kind={card.kind ?? "number"}
+                    value={marks[card.id]?.correction ?? ""}
+                    onChange={(v) => setMarks((m) => ({ ...m, [card.id]: { mark: "circle", correction: v } }))}
+                    onSubmit={() => { setEditing(null); advance(card.id); }}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {sheetRows.length > 0 && (
+                <LumiHomework
+                  problems={sheetRows}
+                  marks={marks}
+                  step={step ?? "mark"}
+                  outcomes={outcomes}
+                  focusId={turn?.focus_problem_id ?? null}
+                  highlightIds={turn?.highlight_ids ?? []}
+                  editingId={editing}
+                  onMark={setMark}
+                  onEdit={setEditing}
+                  onPick={(id) => send("find", { problem_id: id })}
+                  s={s}
+                />
+              )}
+              {step === "mark" && editing !== null && (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="font-bold text-sky-800">{s.typeAnswer}</p>
+                  <KidKeypad
+                    kind={problems.find((p) => p.id === editing)?.kind ?? "number"}
+                    value={marks[editing]?.correction ?? ""}
+                    onChange={(v) => setMarks((m) => ({ ...m, [editing]: { mark: "circle", correction: v } }))}
+                    onSubmit={() => setEditing(null)}
+                  />
+                </div>
+              )}
+              {step !== "mark" && (
+                <div className="relative">
+                  {actionArea}
+                  <PointHand show={idle && !busy && step === "next"} className="-bottom-10 inset-x-0 flex justify-center" />
+                </div>
+              )}
+            </>
+          )}
+          {errorBox}
+        </div>
+
+        {/* One big action at the bottom while marking. */}
+        {phase === "teach" && step === "mark" && ws?.ready && editing === null && (
+          <div className="relative shrink-0 px-3 pt-1 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {card ? (
+              <div className="grid grid-cols-2 gap-3">
+                <button className="btn-kid bg-green-500 py-4 text-2xl text-white" disabled={busy} onClick={() => markCard(card.id, "check")}>
+                  ✓ {s.right}
+                </button>
+                <button className="btn-kid bg-orange-500 py-4 text-2xl text-white" disabled={busy} onClick={() => markCard(card.id, "circle")}>
+                  ✗ {s.oops}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                <button className="btn-kid w-full bg-sun py-4 text-2xl text-slate-900" disabled={!allMarked || busy} onClick={doneChecking}>
+                  📝 {s.doneChecking}
+                </button>
+                {!allMarked && <p className="text-sm text-slate-500">{s.markAll}</p>}
+              </div>
+            )}
+            <PointHand show={idle && !busy} dir="down" className="-top-9 inset-x-0 flex justify-center" />
+          </div>
+        )}
+
+        <BottomSheet open={confirmStop} onClose={() => setConfirmStop(false)} title={s.stopTitle} closeLabel={s.close}>
+          <div className="flex flex-col gap-3 pb-2">
+            <p className="text-base text-slate-600">{s.stopBody}</p>
+            <button className="btn-kid bg-violet-500 py-4 text-xl text-white" onClick={() => setConfirmStop(false)}>
+              🧑‍🏫 {s.keepTeaching}
+            </button>
+            <button
+              className="btn-kid bg-white text-rose-700 ring-2 ring-rose-200"
+              onClick={() => { setConfirmStop(false); stopSpeaking(); onExit?.(); }}
+            >
+              🚪 {s.stopLesson}
+            </button>
+          </div>
+        </BottomSheet>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-12">
+      <section className="card flex flex-col items-center gap-4 p-4 sm:p-5 lg:col-span-5">
+        {/* On narrow screens Lumi shrinks and sits beside the bubble, so the math stays near the top. */}
+        <div className="flex w-full flex-row items-center gap-3 lg:flex-col lg:gap-4">
+          <LumiMascot
+            expression={mascotExpression}
+            pose="threeQuarter"
+            talking={speech.speaking}
+            label="auto"
+            className="w-20 shrink-0 sm:w-28 lg:w-44"
+          />
+          {bubble && (
+            <motion.div
+              key={bubble}
+              initial={{ opacity: 0, y: 10, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              aria-live="polite"
+              className="relative w-full rounded-3xl bg-sky-50 px-4 py-3 text-lg leading-snug text-slate-900 ring-2 ring-sky-200 sm:px-5 sm:py-4 sm:text-xl"
+            >
+              {bubble}
+            </motion.div>
+          )}
+        </div>
+        <div className="hidden w-full lg:block">
+          <LumiBrain mastery={turn?.mastery ?? {}} popConcept={turn?.mastery_up ?? null} s={s} />
+        </div>
+      </section>
+
+      <section className="card flex flex-col gap-4 p-3 sm:p-5 lg:col-span-7">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-2xl font-extrabold text-amber-700">
+            📒 {s.lumisHomework}
+            {phase !== "pick" && chosen.current && (
+              <span className="ml-2 rounded-full bg-amber-100 px-3 py-1 align-middle text-base text-amber-800">
+                {CONCEPT_EMOJI[chosen.current]} {s.concepts[chosen.current as TeachConcept]}
+              </span>
+            )}
+          </h2>
+          <button
+            className="btn-kid !min-h-12 bg-teal-500 !py-2 text-base text-white"
+            onClick={() => { stopSpeaking(); onOpenTown(null); }}
+          >
+            🏘️ {s.town}
+          </button>
+        </div>
+
+        {phase === "pick" ? (
+          <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
+        ) : phase === "warmup" && warmup ? (
+          <Warmup
+            key={warmup.warmup_id}
+            warmup={warmup}
+            result={warmResult}
+            busy={busy}
+            onCheck={checkWarmup}
+            onRetry={() => startWarmup(warmup.concept)}
+            onTeach={() => teachConcept(warmup.concept)}
+            s={s}
+          />
+        ) : ws?.ready ? (
+          <LumiHomework
+            problems={problems}
+            marks={marks}
+            step={step ?? "mark"}
+            outcomes={outcomes}
+            focusId={turn?.focus_problem_id ?? null}
+            highlightIds={turn?.highlight_ids ?? []}
+            editingId={editing}
+            onMark={setMark}
+            onEdit={setEditing}
+            onPick={(id) => send("find", { problem_id: id })}
+            s={s}
+          />
+        ) : (
+          <div className="grid h-72 place-items-center rounded-3xl border-4 border-dashed border-amber-200 bg-amber-50 text-7xl">📚</div>
+        )}
+
+        {errorBox}
+
+        {actionArea}
       </section>
 
       {/* Narrow screens: Lumi's Brain goes below the worksheet so the math stays on top. */}

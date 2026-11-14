@@ -14,7 +14,7 @@ services:
       - key: CORS_ORIGINS
         sync: false
       # Demo deploy for the Android app (docs/09-android-app.md): mock mode, so no key or child data reaches an AI.
-      # Never add LUMI_ADMIN here.
+      # Never add LUMI_ADMIN or LUMI_PHONE_CAMERA here.
       - key: MOCK_MODE
         value: "1"
       - key: SAMPLES_DIR

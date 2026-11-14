@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import time
+import os
+import re
 import uuid
 from dataclasses import dataclass, field
 from typing import Optional
@@ -116,9 +118,25 @@ class TeachState:
 
 _sessions: dict[str, Session] = {}
 
+# Session ids are the only key to a child's in-memory session (marks, explanations, report), so they must be
+# unguessable: 128 random bits as 32 hex characters, made on the device (docs/06-privacy-and-safety.md).
+_SESSION_ID = re.compile(r"^[0-9a-f]{32}$")
+
+
+class InvalidSessionId(ValueError):
+    """A session id that isn't 32 hex characters (main.py answers 422)."""
+
+
+def valid_session_id(session_id: Optional[str]) -> bool:
+    if os.getenv("LUMI_LOOSE_SESSION_IDS") == "1":  # tests only (tests/conftest.py): readable ids like "p-day2"
+        return bool(session_id)
+    return bool(session_id and _SESSION_ID.match(session_id))
+
 
 def get_session(session_id: Optional[str]) -> Session:
-    sid = session_id or uuid.uuid4().hex[:8]
+    sid = session_id or uuid.uuid4().hex
+    if not valid_session_id(sid):
+        raise InvalidSessionId("session id must be 32 hex characters")
     if sid not in _sessions:
         _sessions[sid] = Session(id=sid)
     return _sessions[sid]

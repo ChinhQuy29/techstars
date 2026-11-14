@@ -185,7 +185,7 @@ export async function report(sessionId: string, language: Language): Promise<Rep
   }));
 }
 
-export async function health(): Promise<{ ok: boolean; mode: "gemini" | "mock"; model: string }> {
+export async function health(): Promise<{ ok: boolean; mode: "gemini" | "mock"; model: string; phone_camera?: boolean }> {
   return json(await fetch(`${BACKEND}/api/health`));
 }
 

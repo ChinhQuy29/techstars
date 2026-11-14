@@ -41,13 +41,19 @@ interface Props {
   /** Go straight into this story scene (from a "new story scene" notification). */
   startStory?: string | null;
   onBackToHomework: () => void;
+  /** Phone layout (docs/10-mobile-ui.md): Town and Journey are bottom tabs, so the header only switches Town/Scrapbook. */
+  phone?: boolean;
+  /** Show "Back to homework" (phone: only while a lesson is paused). Default true. */
+  showBack?: boolean;
 }
 
 /**
  * Lumi's Town page (docs/03-lumis-town.md): an illustrated map, and one illustrated scene per skill
  * the child has taught. Read-only: places open from Lumi's stars; every number comes from the backend.
  */
-export default function TownPage({ sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework }: Props) {
+export default function TownPage({
+  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, phone = false, showBack = true,
+}: Props) {
   const s = t(language);
   const [info, setInfo] = useState<TownInfo | null>(null);
   const [scene, setScene] = useState<TownScene | null>(null);
@@ -117,13 +123,15 @@ export default function TownPage({ sessionId, language, speech, startConcept = n
     <section className="flex flex-col gap-4" aria-label={s.town}>
       {/* header */}
       <div className="card flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
-        <h2 className="text-3xl font-extrabold text-teal-700">🏘️ {scene ? scene.title : s.town}</h2>
+        <h2 className={`font-extrabold text-teal-700 ${phone ? "text-2xl" : "text-3xl"}`}>
+          {scene ? `🏘️ ${scene.title}` : phone && tab === "journey" ? `🌙 ${s.journey}` : `🏘️ ${s.town}`}
+        </h2>
         <div className="flex flex-wrap gap-2">
           {scene ? (
             <button className="btn-kid !min-h-12 bg-white !py-2 text-base text-slate-700 ring-2 ring-slate-200" onClick={backToTown}>
               🗺️ {s.town}
             </button>
-          ) : (
+          ) : phone && tab === "journey" ? null : (
             <>
               <button
                 className={`btn-small ${tab === "town" ? "bg-teal-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
@@ -139,18 +147,22 @@ export default function TownPage({ sessionId, language, speech, startConcept = n
               >
                 📔 {s.scrapbook}
               </button>
-              <button
-                className={`btn-small ${tab === "journey" ? "bg-indigo-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
-                onClick={() => setTab("journey")}
-                aria-pressed={tab === "journey"}
-              >
-                🌙 {s.journey}
-              </button>
+              {!phone && (
+                <button
+                  className={`btn-small ${tab === "journey" ? "bg-indigo-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
+                  onClick={() => setTab("journey")}
+                  aria-pressed={tab === "journey"}
+                >
+                  🌙 {s.journey}
+                </button>
+              )}
             </>
           )}
-          <button className="btn-kid !min-h-12 bg-violet-500 !py-2 text-base text-white" onClick={() => { stopSpeaking(); onBackToHomework(); }}>
-            📒 {s.backToHomework}
-          </button>
+          {showBack && (
+            <button className="btn-kid !min-h-12 bg-violet-500 !py-2 text-base text-white" onClick={() => { stopSpeaking(); onBackToHomework(); }}>
+              📒 {s.backToHomework}
+            </button>
+          )}
         </div>
       </div>
 

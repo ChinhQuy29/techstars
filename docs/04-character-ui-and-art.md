@@ -24,8 +24,8 @@ The expression follows backend state; it never decides anything. Animations are 
 - **Two audiences:** playful and easy for children; polished and trustworthy for parents. *Playful where the child acts, polished everywhere.*
 - **Professional bar:** one design system (type scale, 4/8 px spacing, small palette with Lumi's colors as anchor, consistent radii, shadows and control states); white space and alignment; at most one or two playful accents per screen; crisp numerals; no layout shift; loading states, never blank waits; calm, structured adult screens; honest copy, no fake badges.
 - **Child buttons ≥ 56 px with an emoji + 1–3 words** (the emoji carries the meaning for non-readers; don't swap for line icons). Pressed feedback; nothing hover-only; big keypad keys.
-- Right/wrong never by color alone (✓/✗ + words). One clear next action per step. Every spoken line also shown as text. Lumi's handwriting visibly differs from app text. The worksheet stays near the top on phones; rows never wrap.
-- Grown-up controls in a collapsed **🔧 Grown-up settings** panel; adult actions are hold-to-confirm (`HoldButton`, 1.5 s, mouse/touch/Enter/Space). Every error offers Try again / Start over. Celebrate only real achievements. No dark patterns.
+- Right/wrong never by color alone (✓/✗ + words). One clear next action per step. Every spoken line also shown as text. Lumi's handwriting visibly differs from app text. Rows never wrap. On phones the lesson shows one problem at a time and the whole sheet before Done checking ([10](10-mobile-ui.md)).
+- Grown-up controls in a collapsed **🔧 Grown-up settings** panel (on phones, inside the 👪 Grown-ups sheet); adult actions are hold-to-confirm (`HoldButton`, 1.5 s, mouse/touch/Enter/Space). Every error offers Try again / Start over. Celebrate only real achievements. No dark patterns.
 - Accessibility: contrast ≥ 4.5:1, visible focus, full keyboard use, reduced motion, 375 px with no horizontal scroll, tablets, decorative art `aria-hidden`, captions `aria-live`.
 - No text or numbers inside artwork.
 
@@ -36,7 +36,7 @@ Sky-to-cream background (`#dff3ff` → `#fdf6dc`); white rounded cards; fonts `B
 With a skill like `ui-ux-pro-max`: describe a learning app for ages 6–10 that must also look professional to parents; ask for a restrained full design system; apply it to the current style only; must-keep rules win (it discourages emoji icons and allows 44 px targets); keep the mascot and town art.
 
 ## Screens
-Content and order are required; arrangement may change.
+Content and order are required; arrangement may change. **Phones** (under 768 px and the Android app) use the layout in [10](10-mobile-ui.md): a bottom tab bar (Home · Help · Town · Journey), Lumi's Brain as Home (any skill, any order), one-problem-at-a-time lessons with notebook step tabs, and a Grown-ups sheet holding the language picker, report and settings.
 - **Header:** logo · tabs Teach Lumi / Help me / Lumi's Town · language picker (names, not flags) · 👪 Grown-ups.
 - **Welcome:** "Hi! I'm Lumi", waving mascot, two big choices, "Welcome back!" with saved progress.
 - **Teach:** Lumi area (mascot, speech bubble, Lumi's Brain) + Lumi's Homework notebook + an action area by step: `mark` Done checking · `fix`/`help` keypad + Tell Lumi · `find` tap the mistake · `explain` mic, chips, I'm not sure, type why · `demo` steps + 👍/🤔 · `sure` ✅/❌ · `next` Next (+ new-place banner) · `done` trophy, More homework, report · `practice_first` Practice with Lumi + hold "try anyway". Plus 🏘️ and the recovery card. Narrow: Brain moves below the worksheet.

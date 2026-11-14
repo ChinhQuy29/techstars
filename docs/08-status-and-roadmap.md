@@ -6,14 +6,16 @@
 - **Town (T1–T5):** illustrated map and scenes with backend digits, teasers, scrapbook, banner, opt-in saved progress; the 31 ChatGPT illustrations are the primary visuals with SVG fallback.
 - **Lumi's Journey:** three acts × four versions unlocked by concept pairs in any order, choices, mystery clues, "What if…?" stories, four moon endings with the child's quotes, story notifications, saved choices; placeholder pictures.
 - **UI:** one mascot (9 expressions, 2 poses), kid design system, en/es/vi, accessibility basics, 375 px.
+- **Phone layout** ([10](10-mobile-ui.md)): bottom tab bar, Lumi's Brain Home (free choice of skill), one-problem-at-a-time lessons with notebook step tabs, pointing-hand hints and short Lumi lines, a one-step-at-a-time Help, Grown-ups sheet. Checked in the browser at 360 px and on the emulator; not yet on the owner's phone.
 - **Admin portal** (`/?admin=1`, dev only): presets, per-skill stars/readiness/quotes, story choices, problem and scene previews, deep links into the app.
-- **Android app** (Capacitor, debug APK): the whole app on a phone, back camera in Help, Lumi's voice through the phone's text-to-speech, server address in Grown-up settings, Android back button, Lumi icon and opening screen. Tested on the emulator and the owner's Galaxy Z Flip5 ([09](09-android-app.md)); no voice input yet.
+- **Android app** (Capacitor, debug APK): the whole app on a phone, back camera in Help, Lumi's voice through the phone's text-to-speech, server address in Grown-up settings, Android back button, Lumi icon and opening screen. Tested on the emulator and the owner's Galaxy Z Flip5 ([09](09-android-app.md)). Voice explanations in Teach through the phone's speech recognizer (big 🎤 button); real speech not yet tested.
 - 153 tests pass; frontend builds; main flows verified in the browser (picker, warm-up, a full Time sheet, all four pictures, Spanish, 375 px).
 
 ## Not verified
 Real mic with children; real Gemini rating; Help camera after the restyle and real lighting; tablets; OS reduced motion end to end; fresh checkout elsewhere; backup demo video; how long kids watch scenes.
 
 ## Next
+- **Security before real families:** sign-in or app key, rate limits, CORS limited to the app, a release-signed Android build, privacy policy and consent review (COPPA). Done: unguessable session ids, phone-camera relay off by default ([06](06-privacy-and-safety.md)).
 0. **Android demo:** works on the owner's phone over mobile data with the Render backend; rehearse it and record a backup video ([09](09-android-app.md)).
 1. **Story art:** 16 scene pictures (`docs/assets/story/story_<key>.png`), then rerun `scripts/town_art.py`.
 2. **Startup Weekend readiness** (Nov 13–15, 2026): fresh-checkout run, backup video, rehearsal.
@@ -22,7 +24,8 @@ Real mic with children; real Gemini rating; Help camera after the restyle and re
 5. **T6 refreshers**, then **T7 chapters**.
 6. **HRI lab pilot** (Help vs. Teach; town vs. stars-only).
 7. **Deferred:** printable Lumi worksheet with camera reading of paper ✓/✗ marks.
-8. **Vision (approval needed):** older learners and other subjects ([01](01-product-vision.md)).
+8. **Science pilot (proposal, approval needed):** one "Float or sink" lesson for ages 5–8 behind a grown-up setting ([11](11-science-pilot.md)).
+9. **Vision (approval needed):** older learners and other subjects ([01](01-product-vision.md)).
 
 ## Out of scope
 Hardware of any kind (the parked ESP32 sketch in `deferred/` is unused); chatbot or "teach anything"; word problems, algebra; adaptive TTS voice, demo "slips"; accounts, LMS, teacher dashboards; social features, leaderboards, ads, purchases, loot; AI memory beyond the whitelist; other ages/subjects until approved.

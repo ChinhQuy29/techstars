@@ -17,6 +17,7 @@ Lumi is a web app where a child (6–10) **teaches** a friendly robot math. Lumi
 | [07 Testing and demo](docs/07-testing-and-demo.md) | test coverage, manual run, demo script |
 | [08 Status and roadmap](docs/08-status-and-roadmap.md) | built, unverified, next, out of scope |
 | [09 Android app](docs/09-android-app.md) | Android plan, stages, build steps, test results (keep it current while working on the app) |
+| [10 Phone layout](docs/10-mobile-ui.md) | phone UI: tab bar, Lumi's Brain Home, one problem at a time, guidance |
 
 Docs = intended behavior; code = implementation constraints. If they disagree (or docs disagree with each other), name it and ask; when a change is approved, update docs in the same change. Never invent requirements, assets, endpoints, libraries or test results. For large or ambiguous tasks, summarize requirements, current state, gaps and risks, and propose steps first; wait for approval when asked.
 
@@ -72,8 +73,10 @@ Skills the owner has installed: `idea-refine`, `interview-me`, `spec-driven-deve
 - Draw the mascot's arms after the body.
 - Hide the Help score in Teach-only reports (it said "0 problems").
 - Chips are the child speaking to Lumi ("You forgot…").
-- Check 375 px: notebook rows wrapped and town tags overlapped before.
+- Check 375 px: notebook rows wrapped and town tags overlapped before. Phones (< 768 px) use their own layout (docs/10): test both phone and desktop after UI changes.
+- The pointing hand must never lean toward an answer or a skill: only single next actions, or centred between ✓ and ✗.
+- Don't copy another app's look (the owner rejected a Duolingo-like path and progress bar); build on Lumi's own world: its brain screen, notebook, town, moon.
 - Gemini: thinking `low`, 25 s timeout, filler line; demo in mock mode.
 - Fire side effects once per state change (the sleep timer once spammed requests).
-- Android app view has no `speechSynthesis` or speech recognition: guard every browser API, check with `isNativeApp` (`platform.ts`), test on the emulator.
+- Android app view has no `speechSynthesis` or Web Speech recognition: the app uses native plugins (text-to-speech, speech-recognition) behind `useSpeech`; guard every browser API with `isNativeApp` (`platform.ts`), test on the emulator. The app never records or uploads audio itself.
 - TypeScript 7 can't load `capacitor.config.ts`; keep the Capacitor config in JSON. Gradle needs Android Studio's Java 21.

@@ -26,6 +26,11 @@ export const sounds = {
   thinking: () => [440, 554, 659].forEach((f, i) => tone(f, i * 0.12, 0.18, "triangle", 0.06)),
   correct: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, 0.25, "triangle", 0.12)),
   hint: () => [392, 494].forEach((f, i) => tone(f, i * 0.12, 0.2, "sine", 0.1)),
+  /** Soft, neutral blip for each mark on the phone lesson (never says right or wrong). */
+  pop: () => {
+    tone(660, 0, 0.07, "sine", 0.08);
+    tone(990, 0.06, 0.09, "sine", 0.07);
+  },
 };
 
 export function celebrate() {

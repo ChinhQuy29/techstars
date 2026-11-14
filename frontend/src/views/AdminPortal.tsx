@@ -22,6 +22,8 @@ interface Problem { problem: string; answer: string; planted: string; kind: stri
 interface ScenePreview { title: string; emoji: string; act: number; lines: { emotion: string; text: string }[] }
 
 const SESSION_KEY = "lumi-session";
+/** Same rule as the app: 32 hex characters (the server refuses guessable ids, docs/06). */
+const newSid = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 const PRESETS: { id: string; label: string; hint: string }[] = [
   { id: "fresh", label: "Fresh start", hint: "nothing taught, nothing ready" },
   { id: "town_open", label: "Town open", hint: "4 original skills at 1★, journey started" },
@@ -45,14 +47,15 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 
 function readSession(): string {
   try {
-    return sessionStorage.getItem(SESSION_KEY) ?? "";
+    const saved = sessionStorage.getItem(SESSION_KEY) ?? "";
+    return /^[0-9a-f]{32}$/.test(saved) ? saved : "";
   } catch {
     return "";
   }
 }
 
 export default function AdminPortal() {
-  const [sid, setSid] = useState(() => readSession() || `admin${Math.random().toString(36).slice(2, 6)}`);
+  const [sid, setSid] = useState(() => readSession() || newSid());
   const [on, setOn] = useState<boolean | null>(null);
   const [state, setState] = useState<State | null>(null);
   const [path, setPath] = useState("engineer");
@@ -109,7 +112,7 @@ export default function AdminPortal() {
           Test session
           <input value={sid} onChange={(e) => setSid(e.target.value.replace(/\W/g, ""))} className="mt-1 rounded-lg px-2 py-1 font-mono ring-1 ring-slate-300" />
         </label>
-        <button className="btn-small bg-slate-100" onClick={() => setSid(`admin${Math.random().toString(36).slice(2, 6)}`)}>New session</button>
+        <button className="btn-small bg-slate-100" onClick={() => setSid(newSid())}>New session</button>
         <button className="btn-small bg-slate-100" onClick={refresh}>Reload state</button>
         <span className="mx-2 h-6 w-px bg-slate-200" />
         <span className="text-sm font-semibold text-slate-600">Open the app here:</span>

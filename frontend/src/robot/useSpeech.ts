@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Language } from "../api";
+import { SpeechRecognition as NativeSTT } from "@capacitor-community/speech-recognition";
 import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import { isNativeApp } from "../platform";
 
@@ -23,7 +24,7 @@ interface Recognition {
 type RecognitionCtor = new () => Recognition;
 
 function getRecognition(): RecognitionCtor | null {
-  if (isNativeApp) return null; // Android's app view has no speech recognition (voice input is a v2 item, docs/09)
+  if (isNativeApp) return null; // the Android app view has no Web Speech: the app uses the phone's recognizer instead (listenNative)
   const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
@@ -37,6 +38,13 @@ export function useSpeech(language: Language) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [micBlocked, setMicBlocked] = useState(false);
   const phraseRec = useRef<Recognition | null>(null);
+  // Android app: the phone's own speech recognizer (docs/09-android-app.md). Text only reaches the app; it never
+  // records or uploads audio itself.
+  const [nativeSTT, setNativeSTT] = useState(false);
+  useEffect(() => {
+    if (!isNativeApp) return;
+    NativeSTT.available().then((r) => setNativeSTT(r.available), () => setNativeSTT(false));
+  }, []);
 
   useEffect(() => {
     if (!hasTTS) return;
@@ -93,11 +101,39 @@ export function useSpeech(language: Language) {
     setSpeaking(false);
   }, []);
 
+  /** Android app: one phrase from the phone's recognizer; asks for the mic once; "" on silence, error or denial. */
+  const listenNative = useCallback(async (): Promise<string> => {
+    if (!nativeSTT || micBlocked) return "";
+    try {
+      let perm = await NativeSTT.checkPermissions();
+      if (perm.speechRecognition !== "granted") perm = await NativeSTT.requestPermissions();
+      if (perm.speechRecognition !== "granted") {
+        setMicBlocked(true);
+        return "";
+      }
+    } catch {
+      setMicBlocked(true);
+      return "";
+    }
+    setListening(true);
+    const safety = window.setTimeout(() => void NativeSTT.stop().catch(() => {}), 12_000);
+    try {
+      const r = await NativeSTT.start({ language: LANG_TAGS[language], maxResults: 1, partialResults: false, popup: false });
+      return (r?.matches?.[0] ?? "").trim();
+    } catch {
+      return ""; // no speech heard, or the recognizer was busy: chips and typing still work
+    } finally {
+      window.clearTimeout(safety);
+      setListening(false);
+    }
+  }, [nativeSTT, micBlocked, language]);
+
   /** One-shot listen: resolves with the final transcript ("" on silence / unsupported / denied).
    *  Never hangs: a 12 s safety timer stops it, and a denied mic is remembered (chips take over). */
   const listen = useCallback(
     () =>
       new Promise<string>((resolve) => {
+        if (isNativeApp) return void listenNative().then(resolve);
         const Ctor = getRecognition();
         if (!Ctor || micBlocked) return resolve("");
         const rec = new Ctor();
@@ -133,7 +169,7 @@ export function useSpeech(language: Language) {
           finish();
         }
       }),
-    [language, micBlocked],
+    [language, micBlocked, listenNative],
   );
 
   /** Background phrase listener for the voice fallback trigger ("check my work"). */
@@ -168,6 +204,6 @@ export function useSpeech(language: Language) {
 
   return {
     speak, stopSpeaking, listen, startPhraseListener, speaking, listening, micBlocked,
-    canListen: getRecognition() !== null && !micBlocked,
+    canListen: (isNativeApp ? nativeSTT : getRecognition() !== null) && !micBlocked,
   };
 }
