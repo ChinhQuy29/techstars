@@ -14,7 +14,7 @@
 Real mic with children; real Gemini rating; Help camera after the restyle and real lighting; tablets; OS reduced motion end to end; fresh checkout elsewhere; backup demo video; how long kids watch scenes.
 
 ## Next
-0. **Android demo:** deploy the backend (mock mode) to Render and point the app at it ([09](09-android-app.md) stage 6).
+0. **Android demo:** works on the owner's phone over mobile data with the Render backend; rehearse it and record a backup video ([09](09-android-app.md)).
 1. **Story art:** 16 scene pictures (`docs/assets/story/story_<key>.png`), then rerun `scripts/town_art.py`.
 2. **Startup Weekend readiness** (Nov 13–15, 2026): fresh-checkout run, backup video, rehearsal.
 3. **Parent interviews** and a concrete pilot offer.
