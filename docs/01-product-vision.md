@@ -44,7 +44,7 @@ Never claim: answers any homework, replaces teachers, guaranteed grades, "proven
 
 ## Long-term vision
 
-*Status: the moon story for ages 6–10 is approved and being built ([08](08-status-and-roadmap.md)); older learners and other subjects still need owner approval.*
+*Status: the moon story for ages 6–10 is built ([03 · Lumi's Journey](03-lumis-town.md)); older learners and other subjects still need owner approval.*
 **Every learner teaches their own Lumi**, from elementary school to college and beyond, and **Lumi's dream is to go to the moon.** Each taught concept acts like a choice in a story game: it moves Lumi down a different path (engineer, pilot, scientist, performer…), but every path ends on the moon, so nearly every learner sees a different story that proves Lumi learned from *them*. Lumi's Town is chapter 1 (the shops earn money for the trip).
 
 Rules for when it's built:

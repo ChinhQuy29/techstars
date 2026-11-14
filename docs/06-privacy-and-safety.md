@@ -9,13 +9,15 @@ Prototype; not legal advice. Institutional IRB rules come first for any KU or la
 | Spoken / typed explanation | speech → text in the browser; text to backend (and Gemini when enabled) | audio never sent; text not logged; best quote per concept kept |
 | "Talk to Lumi" text | backend, Gemini when enabled | in-memory session only |
 | Marks, answers, outcomes, timings, stars | backend memory | session only |
-| **Saved progress** (adult opt-in) | `backend/data/lumi.db`, keyed by a random 128-bit id on the device | only stars, best quotes, ready concepts, town visits; deleted after 180 days unused or on request |
+| **Saved progress** (adult opt-in) | `backend/data/lumi.db`, keyed by a random 128-bit id on the device | only stars, best quotes, ready concepts, town visits, and story choices (which version per act, scenes seen); deleted after 180 days unused or on request |
 | Names, ages, emails, accounts | not collected | — |
 
 ## Consent and deletion
 - **💾 Save Lumi's progress on this device?** explains what's kept (en/es/vi), needs a 1.5 s hold, and records time and wording version (`CONSENT_VERSION`, identical in `store.py` and `api.ts`; a stale screen gets 409).
 - **🗑 Delete this session's data** wipes the session. **🗑 Delete saved progress** (hold) deletes the profile immediately, clears the device id and stops all saving.
 - One profile per browser (siblings share it, a known limit). `MOCK_MODE=1` sends nothing to any AI provider. Check Gemini's data terms before any pilot; never use a provider that trains on children's data.
+
+- **Admin portal** (`/?admin=1`, backend `LUMI_ADMIN=1`): a local testing tool that edits in-memory test sessions. It is off by default and must never be enabled on a deployed server or used with real children's sessions.
 
 ## Child-safety rules
 AI never decides math, reveals, stars or flow; no praise of wrong ideas; no early answers; sanitized LLM text with template fallback; Lumi is a peer, never sad or guilt-tripping; adult actions are hold-to-confirm; no streaks, timers, leaderboards, purchases or random rewards; the report is honest (deliberate mistakes; stars aren't mastery).

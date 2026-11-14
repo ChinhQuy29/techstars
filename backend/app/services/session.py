@@ -42,6 +42,9 @@ class Session:
     saved_ready: set[str] = field(default_factory=set)  # Teach-ready concepts from earlier days
     warm_ready: set[str] = field(default_factory=set)  # newer concepts unlocked by passing a quick warm-up
     warmup: Optional[dict] = None  # the warm-up in progress: {id, concept, items}
+    # Lumi's Journey (story.py): the version chosen for each act, and the scenes already seen.
+    story_chosen: dict[int, str] = field(default_factory=dict)
+    story_seen: set[str] = field(default_factory=set)
 
     def log(self, type_: str, **data) -> None:
         self.events.append({"type": type_, "t": round(time.time(), 2), **data})

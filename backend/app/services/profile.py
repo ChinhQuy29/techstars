@@ -17,6 +17,7 @@ def snapshot(session: Session) -> dict:
         "quotes": {c: list(q) for c, q in session.teach_quotes.items() if c in TEACHABLE},
         "ready": sorted(ready_concepts(session)),
         "town_visits": dict(session.town_visits),
+        "story": {"chosen": {str(a): k for a, k in session.story_chosen.items()}, "seen": sorted(session.story_seen)},
     }
 
 
@@ -34,6 +35,19 @@ def merge_into(session: Session, data: dict) -> None:
     session.saved_ready |= {c for c in data.get("ready", []) if c in TEACHABLE}
     for c, n in data.get("town_visits", {}).items():
         session.town_visits[c] = max(session.town_visits.get(c, 0), int(n))
+    _merge_story(session, data.get("story") or {})
+
+
+def _merge_story(session: Session, saved: dict) -> None:
+    """Keep choices already made in this session; take saved ones for acts not chosen yet."""
+    from .story import ACTS, ENDINGS  # local import: story imports session too
+
+    known = {k for vs in ACTS.values() for k in vs} | set(ENDINGS.values())
+    for a, k in (saved.get("chosen") or {}).items():
+        act = int(a)
+        if act in ACTS and k in ACTS[act] and act not in session.story_chosen:
+            session.story_chosen[act] = k
+    session.story_seen |= {k for k in saved.get("seen", []) if k in known}
 
 
 def attach(session: Session, profile_id: str) -> bool:

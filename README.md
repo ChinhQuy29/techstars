@@ -5,6 +5,7 @@
 - **🧑‍🏫 Teach Lumi:** Lumi brings its own homework with deliberate mistakes. The child finds them, fixes them and explains why; Lumi then solves a new problem "like you taught me" and earns stars in *Lumi's Brain*.
 - **🙋 Help me:** the child photographs their own worksheet (webcam, phone or upload). SymPy grades it, mistakes are circled, and Lumi gives Socratic hints instead of answers. This also tells Teach mode which concepts the child is ready to teach.
 - **🏘️ Lumi's Town:** each skill the child teaches opens a place where Lumi uses exactly that math (a lemonade stand for carrying, a bakery for times tables), plus a scrapbook of the child's own explanations.
+- **🌙 Lumi's Journey:** the concepts the child teaches, in any order, decide how Lumi gets to the moon: 64 possible storylines, with choices, mystery clues and four endings.
 
 Software only. The AI never does the math: Gemini reads handwriting and rates explanations; SymPy decides every answer. With no API key the whole app runs in a deterministic mock mode.
 
@@ -40,8 +41,9 @@ npm run dev                                        # http://localhost:5173
 
 ## Tools
 
-- **Tests:** `cd backend && .venv/Scripts/python -m pytest` (130 tests). Frontend check: `cd frontend && npm run build`.
+- **Tests:** `cd backend && .venv/Scripts/python -m pytest` (153 tests). Frontend check: `cd frontend && npm run build`.
 - **Mascot gallery:** `http://localhost:5173/?mascot=gallery`.
+- **Admin portal (dev only):** start the backend with `LUMI_ADMIN=1`, open `http://localhost:5173/?admin=1` to jump to any test state (stars, skills ready, story acts, endings) and preview any problem or scene.
 - **Phone camera:** tunnel the Vite server (`ngrok http 5173` or `cloudflared tunnel --url http://localhost:5173`), choose Phone camera in Grown-up settings, scan the QR.
 - **API testing:** open `bruno/` in Bruno. **Sample worksheets:** `python scripts/make_worksheets.py`.
 - **Deploy:** frontend → Vercel (`frontend/vercel.json`, set `VITE_BACKEND_URL`); backend → Render (`render.yaml`) or Railway. **CI:** `.github/workflows/ci.yml`.

@@ -46,7 +46,7 @@ cd backend && .venv/Scripts/python -m pytest
 cd frontend && npm install && npm run dev        # http://localhost:5173, proxies /api and /socket.io
 cd frontend && npm run build                     # type-check + build
 ```
-No key or `MOCK_MODE=1` → deterministic mock mode. Develop and test in mock mode first.
+No key or `MOCK_MODE=1` → deterministic mock mode. Develop and test in mock mode first. To test features without teaching, run the backend with `LUMI_ADMIN=1` and open `/?admin=1` (presets, stars, story choices, previews); never enable it on a deployed server.
 
 ## Workflow
 Understand (docs + code) → pick relevant skills (follow their `SKILL.md`; say so if one is unavailable; use the fewest that help) → plan the smallest change with acceptance criteria → implement → validate (tests, build, browser at desktop and 375 px in mock mode, clean console) → review the diff (regressions, a11y, privacy, docs) → report. Never report a check as passing unless it ran.

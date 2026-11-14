@@ -97,5 +97,5 @@ def purge(days: int = RETENTION_DAYS) -> int:
     return cur.rowcount
 
 
-def _empty() -> dict:
-    return {"mastery": {}, "quotes": {}, "ready": [], "town_visits": {}}
+def _empty() -> dict:  # the whitelist: nothing else is ever stored
+    return {"mastery": {}, "quotes": {}, "ready": [], "town_visits": {}, "story": {"chosen": {}, "seen": []}}

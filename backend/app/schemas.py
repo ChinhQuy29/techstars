@@ -276,6 +276,66 @@ class WarmupCheckResponse(BaseModel):
     emotion: Emotion
 
 
+class StoryRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+
+
+class StoryVersion(BaseModel):
+    key: str
+    # chosen: this act's version · available: can be picked now · what_if: another act version, both concepts taught
+    # partial: one of its two concepts taught · locked: none yet · later: a future act
+    state: Literal["chosen", "available", "what_if", "partial", "locked", "later"]
+    emoji: str
+    title: str
+    concepts: list[str]  # only the concepts already taught (a clue), all of them once open
+    concept_labels: list[str]
+    seen: bool
+
+
+class StoryAct(BaseModel):
+    act: int
+    title: str
+    chosen: Optional[str] = None
+    versions: list[StoryVersion]
+
+
+class StoryEnding(BaseModel):
+    key: str
+    title: str
+    emoji: str
+    seen: bool
+
+
+class StoryResponse(BaseModel):
+    started: bool
+    say: str
+    current_act: int
+    acts: list[StoryAct]
+    ending: Optional[StoryEnding] = None
+
+
+class StorySceneRequest(BaseModel):
+    session_id: str
+    language: Language = "en"
+    key: str
+
+
+class StoryLine(BaseModel):
+    emotion: Emotion
+    text: str
+
+
+class StorySceneResponse(BaseModel):
+    key: str
+    act: int
+    title: str
+    emoji: str
+    lines: list[StoryLine]
+    what_if: bool
+    what_if_label: Optional[str] = None
+
+
 class TeachExplainLLM(BaseModel):
     """LLM structured output: rate the child's explanation + one spoken reaction sentence."""
     quality: ExplainQuality

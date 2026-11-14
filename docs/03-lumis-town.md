@@ -44,11 +44,34 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 
 `parts`: `op` (+ − *), `a`, `b`, `answer`; for + −: `a_digits`, `b_digits` ([tens, ones]), `regroup`, `ones`, `tens`; for − with borrowing: `borrow_tens`, `borrow_ones`; for ×: `seq`.
 
+## Lumi's Journey to the moon (built)
+A choices-matter story on the Town page's **🌙 Lumi's Journey** tab (`services/story.py`, `components/town/Journey.tsx`). What the child teaches, in any order, decides how Lumi gets to the moon.
+
+- **Starts** once two Town shops are open. Lumi: "What you teach me decides how I get there."
+- **Three acts, four versions each.** A version opens when **both** of its two concepts have ≥ 1 star. Every concept appears in exactly two versions.
+
+| Act | Versions (concept pair) |
+|---|---|
+| 1 · Getting ready | 🐷 Counting the savings (carrying + borrowing) · 🍪 The bake sale (times tables + sharing) · 🔭 The star map (patterns + big numbers) · 🗳️ The town vote (bar graphs + careful counting) |
+| 2 · Finding a way (the path) | 🛠️ Engineer (measuring + shapes) · 🥁 Musician (patterns + fractions) · 🔬 Scientist (bar graphs + sharing) · ✈️ Pilot (time + big numbers) |
+| 3 · The journey | 🎒 Packing supplies (times tables + fractions) · ⏰ The launch window (time + borrowing) · 🔧 Trouble in space (measuring + carrying, a setback) · 🧭 Finding the way (big numbers + careful counting) |
+| 4 · The moon | one ending per path (rocket it built, a concert, a moon rock, a pilot's salute), plus the child's own quotes for the concepts on the way |
+
+- **Choices:** acts go in order; opening an open version of the current act chooses it. When several are open, Lumi says "I have more than one idea! Which one should I try?". 4 × 4 × 4 = 64 storylines from 16 scenes.
+- **Mystery cards:** unopened versions show ❓ and only the concepts already taught (e.g. 📏 + ❔), so the child can guess what to teach next. Future acts read "Coming later".
+- **What if…?:** after an act is chosen, its other versions can still be watched (labelled "What if…?") once both concepts are taught. They never change the chosen path.
+- **Notifications:** a teaching turn that opens an unseen scene (or the ending) adds `unlocks[{kind: "story"}]`; the Teach screen shows "🎉 New story scene: …" with **Visit**, which opens that scene.
+- **Rules:** read-only (never changes stars); every number in a scene is computed in `story._numbers()` (tested); lines in en/es/vi with big numbers in each language's format; gentle sadness only in setbacks (the star map's distance, the pilot's nerves, the launch, trouble in space), always followed by recovery.
+- **Scenes:** a picture (`story_<key>` art if present, else the version's emoji on an act-colored sky), Lumi's expression per line, one line every 2.6 s, spoken; "Next" skips ahead.
+- **Saved progress:** the chosen version per act and scenes seen (`story` in the whitelist).
+- **API:** `POST /api/teach/story {session_id, language}` → `{started, say, current_act, acts[{act, title, chosen, versions[{key, state: chosen|available|what_if|partial|locked|later, emoji, title, concepts, concept_labels, seen}]}], ending}`; `POST /api/teach/story/scene {session_id, language, key}` → `{key, act, title, emoji, lines[{emotion, text}], what_if, what_if_label}`, 409 `scene_locked`.
+
 ## Roadmap
 - [x] T1 places, locks, teasers, dream · T2 illustrated scenes with backend digits · T3 scrapbook · T4 new-place banner · T5 opt-in saved progress
 - [ ] T6 gentle refreshers: after a few days Lumi asks "Can you remind me how to carry?" (curiosity, never loss; places stay open)
 - [ ] T7 chapters: places grow with stars; the child picks the next goal
-- [ ] Vision: the town becomes chapter 1 of Lumi's journey to the moon ([01](01-product-vision.md)); needs approval
+- [x] Lumi's Journey to the moon (above), with placeholder pictures
+- [ ] Story art: one picture per scene (`docs/assets/story/story_<key>.png`)
 - [ ] T8 pilot: town vs. stars-only on return and explanation quality
 
 **Watch for** kids rushing explanations to unlock places (falling share of `concept`).

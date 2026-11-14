@@ -4,12 +4,15 @@ import * as api from "../api";
 import type { Concept, Language, TownInfo, TownScene } from "../api";
 import LumiMascot from "../components/mascot/LumiMascot";
 import { BuildingArt } from "../components/town/Buildings";
+import Journey from "../components/town/Journey";
 import SkillScene from "../components/town/SkillScene";
 import { art, artUrl, TownArt } from "../components/town/townArt";
 import { t } from "../i18n";
 import type { useSpeech } from "../robot/useSpeech";
 
 const STEP_MS = 1800;
+/** `startStory` value that opens the Journey tab without playing a scene. */
+export const JOURNEY_TAB = "*";
 
 type Spot = { left: number; bottom: number; width: number };
 
@@ -35,6 +38,8 @@ interface Props {
   speech: ReturnType<typeof useSpeech>;
   /** Go straight into this place (from the "new place" banner). */
   startConcept?: Concept | null;
+  /** Go straight into this story scene (from a "new story scene" notification). */
+  startStory?: string | null;
   onBackToHomework: () => void;
 }
 
@@ -42,12 +47,12 @@ interface Props {
  * Lumi's Town page (docs/03-lumis-town.md): an illustrated map, and one illustrated scene per skill
  * the child has taught. Read-only: places open from Lumi's stars; every number comes from the backend.
  */
-export default function TownPage({ sessionId, language, speech, startConcept = null, onBackToHomework }: Props) {
+export default function TownPage({ sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework }: Props) {
   const s = t(language);
   const [info, setInfo] = useState<TownInfo | null>(null);
   const [scene, setScene] = useState<TownScene | null>(null);
   const [stage, setStage] = useState(0);
-  const [tab, setTab] = useState<"town" | "scrapbook">("town");
+  const [tab, setTab] = useState<"town" | "scrapbook" | "journey">(startStory ? "journey" : "town");
   const [bubble, setBubble] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const { speak, stopSpeaking } = speech;
@@ -86,6 +91,7 @@ export default function TownPage({ sessionId, language, speech, startConcept = n
   );
 
   useEffect(() => {
+    if (startStory) return; // the Journey tab loads itself
     load();
     if (startConcept) visit(startConcept);
     return () => stopSpeaking();
@@ -132,6 +138,13 @@ export default function TownPage({ sessionId, language, speech, startConcept = n
                 aria-pressed={tab === "scrapbook"}
               >
                 📔 {s.scrapbook}
+              </button>
+              <button
+                className={`btn-small ${tab === "journey" ? "bg-indigo-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
+                onClick={() => setTab("journey")}
+                aria-pressed={tab === "journey"}
+              >
+                🌙 {s.journey}
               </button>
             </>
           )}
@@ -283,6 +296,11 @@ export default function TownPage({ sessionId, language, speech, startConcept = n
             ))}
           </div>
         </>
+      )}
+
+      {/* Lumi's Journey to the moon */}
+      {!scene && tab === "journey" && (
+        <Journey sessionId={sessionId} language={language} speech={speech} startKey={startStory === JOURNEY_TAB ? null : startStory} s={s} />
       )}
 
       {/* the scrapbook */}

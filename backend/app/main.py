@@ -13,7 +13,7 @@ logging.getLogger("lumi").setLevel(logging.INFO)
 logging.basicConfig(format="%(levelname)s:     %(message)s")
 
 from .realtime import sio  # noqa: E402
-from .routes import frames, grade, profile, report, teach, tutor  # noqa: E402
+from .routes import admin, frames, grade, profile, report, teach, tutor  # noqa: E402
 from .services import llm  # noqa: E402
 from .services.session import reset_session  # noqa: E402
 from .services.vision import SAMPLES_DIR, _samples  # noqa: E402
@@ -26,13 +26,13 @@ api.add_middleware(
     allow_headers=["*"],
 )
 
-for r in (grade.router, tutor.router, report.router, frames.router, teach.router, profile.router):
+for r in (grade.router, tutor.router, report.router, frames.router, teach.router, profile.router, admin.router):
     api.include_router(r, prefix="/api")
 
 
 @api.get("/api/health")
 def health():
-    return {"ok": True, "mode": "gemini" if llm.enabled() else "mock", "model": llm.model_name()}
+    return {"ok": True, "mode": "gemini" if llm.enabled() else "mock", "model": llm.model_name(), "admin": admin.enabled()}
 
 
 @api.get("/api/samples")

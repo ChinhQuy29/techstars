@@ -348,6 +348,41 @@ export async function townScene(sessionId: string, language: Language, concept: 
   }, TEACH_TIMEOUT_MS));
 }
 
+// ---------- Lumi's Journey (docs/03-lumis-town.md) ----------
+
+export type StoryState = "chosen" | "available" | "what_if" | "partial" | "locked" | "later";
+export interface StoryVersion {
+  key: string; state: StoryState; emoji: string; title: string; concepts: string[]; concept_labels: string[]; seen: boolean;
+}
+export interface Journey {
+  started: boolean;
+  say: string;
+  current_act: number;
+  acts: { act: number; title: string; chosen: string | null; versions: StoryVersion[] }[];
+  ending: { key: string; title: string; emoji: string; seen: boolean } | null;
+}
+export interface StoryScene {
+  key: string; act: number; title: string; emoji: string; lines: { emotion: Emotion; text: string }[];
+  what_if: boolean; what_if_label: string | null;
+}
+
+export async function journey(sessionId: string, language: Language): Promise<Journey> {
+  return json(await fetchT(`${BACKEND}/api/teach/story`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language }),
+  }, TEACH_TIMEOUT_MS));
+}
+
+/** Plays a scene; opening an available version of the current act chooses it (409 if not open). */
+export async function storyScene(sessionId: string, language: Language, key: string): Promise<StoryScene> {
+  return json(await fetchT(`${BACKEND}/api/teach/story/scene`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, language, key }),
+  }, TEACH_TIMEOUT_MS));
+}
+
 // ---------- Saved progress (docs/06-privacy-and-safety.md) ----------
 
 /** Must match backend store.CONSENT_VERSION; bump both when the consent text changes. */

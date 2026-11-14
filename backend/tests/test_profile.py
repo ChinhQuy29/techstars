@@ -111,7 +111,7 @@ def test_only_whitelisted_fields_are_stored(temp_db):
     pid = create("p-white").json()["profile_id"]
     teach_one_concept("p-white")
     row = json.loads(sqlite3.connect(temp_db).execute("SELECT data FROM profiles WHERE id=?", (pid,)).fetchone()[0])
-    assert set(row) == {"mastery", "quotes", "ready", "town_visits"}
+    assert set(row) == {"mastery", "quotes", "ready", "town_visits", "story"}  # story = chosen acts + scenes seen
     assert "events" not in json.dumps(row) and "child_said" not in json.dumps(row)
     store.save(pid, {"mastery": {}, "name": "Alex", "photo": "x"})
     row = json.loads(sqlite3.connect(temp_db).execute("SELECT data FROM profiles WHERE id=?", (pid,)).fetchone()[0])

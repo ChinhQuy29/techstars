@@ -17,7 +17,8 @@ backend/app/
   main.py          "Lumi API": CORS, routers under /api, health/samples/reset, Socket.IO wrapper
   realtime.py      phone-camera relay (rooms camera:<sid>, viewer:<sid>; join, frame, capture_request, capture, camera_status)
   schemas.py       Pydantic models (LLM outputs + API contracts)
-  routes/          grade, tutor, report, frames, teach (worksheet, turn, town, scene), profile
+  routes/          grade, tutor, report, frames, teach (worksheet, turn, concepts, warmup, town, scene, story), profile,
+                   admin (dev-only test tools, 404 unless LUMI_ADMIN=1)
   services/
     llm.py         Gemini client; enabled() = key set and MOCK_MODE off; timeout, thinking level, error kinds, timing logs
     vision.py      photo → VisionExtraction; mock: byte-matched sample sidecars, else samples in order
@@ -26,11 +27,12 @@ backend/app/
     tutor.py       Help hint ladder, templates T, leak guard (CONFIDENCE_THRESHOLD 0.6)
     teach.py       Teach engine: TT templates, _RULES, _make, worksheets, DEMO_SHEET, demo_steps, respond(), guards
     town.py        PLACES, UNLOCK_STARS, teasers, scene(), parts()
+    story.py       Lumi's Journey: ACTS (concept pairs), states, choices, endings, computed scene numbers, TEXT
     store.py       SQLite saved progress (whitelist, CONSENT_VERSION, RETENTION_DAYS 180, purge)
     profile.py     snapshot / merge_into / attach / autosave / forget / summary
     session.py     in-memory Session, ProblemState, TeachState, TeachProblem
   prompts/         extract, error_step, tutor_system, tutor_user, report, teach_explain
-backend/tests/     test_api, test_math_check, test_teach, test_concepts, test_town, test_profile
+backend/tests/     test_api, test_math_check, test_teach, test_concepts, test_story, test_town, test_profile
 frontend/src/
   App.tsx          modes welcome/teach/help/town, Help loop, grown-up panel, session + profile
   api.ts           typed client, ApiError, 35 s timeouts, CONSENT_VERSION
@@ -67,7 +69,7 @@ bruno/             API requests · deferred/ parked ESP32 sketch (unused)
 | `POST /teach/warmup/check` | `{session_id, language, warmup_id, answers[2]}` → `{passed, results[2], say, emotion}`; 409 `stale_warmup` |
 | `POST /teach/worksheet` | `{session_id, language, force, demo, concept?}` → `{ready, needs: help\|warmup\|null, demo, worksheet_id, problems[{id, problem, lumi_answer, kind, visual}], concepts, turn}`; 400 `unknown_concept`; 503 `generation_failed` |
 | `POST /teach/turn` | `{session_id, language, worksheet_id, action: check\|fix\|find\|explain\|confirm\|next, marks[{id, mark: circle\|check\|none, correction}], problem_id, answer, child_said, chip_id, agree}` → TeachTurn; 409 `stale_worksheet` |
-| `POST /teach/town`, `/teach/scene` | see [03](03-lumis-town.md) |
+| `POST /teach/town`, `/teach/scene`, `/teach/story`, `/teach/story/scene` | see [03](03-lumis-town.md) |
 | `POST /profile` | `{session_id, consent: true, consent_version}` → `{profile_id, summary}`; 400 `consent_required`, 409 `consent_outdated` |
 | `POST /profile/attach` | `{session_id, profile_id}` → merge + attach; 404 if gone |
 | `DELETE /profile/{32hex}` | delete now, detach live sessions |
@@ -80,13 +82,13 @@ bruno/             API requests · deferred/ parked ESP32 sketch (unused)
 - **Frontend modes:** `welcome | teach | help | town`; TeachView kept mounted in town, reset on help/welcome.
 
 ## Saved progress
-Table `profiles(id, created_at, updated_at, consent_version, consented_at, data)`. Whitelist `mastery, quotes, ready, town_visits`. Merge keeps max stars, `concept` quotes over `procedure`, union of ready, max visits. Autosave after every worksheet, turn, scene and grade (no-op without consent; stops if the profile was deleted). `purge()` on create/attach. `CONSENT_VERSION` ("2026-10-27") must match in `store.py` and `api.ts`.
+Table `profiles(id, created_at, updated_at, consent_version, consented_at, data)`. Whitelist `mastery, quotes, ready, town_visits, story` (chosen version per act, scenes seen). Merge keeps max stars, `concept` quotes over `procedure`, union of ready, max visits. Autosave after every worksheet, turn, scene and grade (no-op without consent; stops if the profile was deleted). `purge()` on create/attach. `CONSENT_VERSION` ("2026-10-27") must match in `store.py` and `api.ts`.
 
 ## Events
 `graded`, `fixed`, `hint`, `child_said`, `capture_rejected`, `llm_error`; `teach_worksheet`, `teach_checked`, `teach_explained {concept, quality, source}` (never words), `teach_role_switch`, `teach_mastery_up {concept, gain, agree}`, `teach_done {caught, planted, elapsed_s, demo}`; `town_scene`. Logs (`lumi.*`, INFO) never include speech, photos or answer keys.
 
 ## Configuration
-`GEMINI_API_KEY` (empty → mock; never commit `.env`), `MOCK_MODE=1`, `GEMINI_MODEL` (code default `gemini-2.5-flash`), `GEMINI_TIMEOUT` 25, `GEMINI_VISION_THINKING` `low`, `CORS_ORIGINS`, `LUMI_DB` (default `backend/data/lumi.db`), `SAMPLES_DIR`; Vite `BACKEND_URL` (proxy, default `:8000`), `VITE_BACKEND_URL` (production). Free Gemini tier ≈ 20 requests/day/model, so demo in mock mode.
+`GEMINI_API_KEY` (empty → mock; never commit `.env`), `MOCK_MODE=1`, `GEMINI_MODEL` (code default `gemini-2.5-flash`), `GEMINI_TIMEOUT` 25, `GEMINI_VISION_THINKING` `low`, `CORS_ORIGINS`, `LUMI_DB` (default `backend/data/lumi.db`), `SAMPLES_DIR`, `LUMI_ADMIN` (dev only: enables the admin portal); Vite `BACKEND_URL` (proxy, default `:8000`), `VITE_BACKEND_URL` (production). Free Gemini tier ≈ 20 requests/day/model, so demo in mock mode.
 
 ## Run, phone camera, deploy
 Commands: [AGENTS.md](../AGENTS.md). Phone camera needs HTTPS: tunnel the Vite server (`ngrok http 5173`), pick Phone camera in Grown-up settings, scan the QR. Deploy one backend instance (sessions are in memory).

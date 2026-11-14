@@ -12,7 +12,7 @@ import { celebrate, sounds } from "./robot/sounds";
 import { useSpeech } from "./robot/useSpeech";
 import ParentReport from "./views/ParentReport";
 import TeachView from "./views/TeachView";
-import TownPage from "./views/TownPage";
+import TownPage, { JOURNEY_TAB } from "./views/TownPage";
 import TutorView from "./views/TutorView";
 import WelcomeView from "./views/WelcomeView";
 import SavedProgress from "./components/SavedProgress";
@@ -146,7 +146,7 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false);
   const [teachKey, setTeachKey] = useState(0);
   const [teachDemo, setTeachDemo] = useState(false);
-  const [townStart, setTownStart] = useState<{ concept: Concept | null; key: number } | null>(null);
+  const [townStart, setTownStart] = useState<{ concept: Concept | null; story: string | null; key: number } | null>(null);
   const [teachAlive, setTeachAlive] = useState(false); // keep the worksheet while visiting the town
   const [profileId, setProfileId] = useState<string | null>(readProfileId);
   const [remembered, setRemembered] = useState(0);
@@ -338,7 +338,7 @@ export default function App() {
     if (m === appMode) return;
     speech.stopSpeaking();
     if (m === "town") {
-      setTownStart((t0) => ({ concept: null, key: (t0?.key ?? 0) + 1 }));
+      setTownStart((t0) => ({ concept: null, story: null, key: (t0?.key ?? 0) + 1 }));
     } else if (m === "help") {
       setEmotion("idle");
       setBubble(L.hello);
@@ -351,11 +351,25 @@ export default function App() {
     setAppMode(m);
   };
 
-  const openTown = (concept: Concept | null) => {
+  const openTown = (concept: Concept | null, story: string | null = null) => {
     speech.stopSpeaking();
-    setTownStart((t0) => ({ concept, key: (t0?.key ?? 0) + 1 }));
+    setTownStart((t0) => ({ concept, story, key: (t0?.key ?? 0) + 1 }));
     setAppMode("town");
   };
+
+  // Deep links for testing (the admin portal opens these in the same tab, so the session carries over):
+  // /?go=teach | town | journey | demo
+  useEffect(() => {
+    const go = new URLSearchParams(location.search).get("go");
+    if (!go) return;
+    window.history.replaceState(null, "", location.pathname);
+    if (go === "teach") switchMode("teach");
+    else if (go === "town") openTown(null);
+    else if (go === "journey") openTown(null, JOURNEY_TAB);
+    else if (go === "demo") startDemo();
+    // once, on load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Adult action (Grown-up settings): the fixed canonical demo sheet, for rehearsals and pitches. */
   const startDemo = () => {
@@ -489,6 +503,7 @@ export default function App() {
             language={language}
             speech={speech}
             startConcept={townStart.concept}
+            startStory={townStart.story}
             onBackToHomework={() => switchMode("teach")}
           />
         )}

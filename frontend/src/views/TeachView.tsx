@@ -26,7 +26,7 @@ interface Props {
   onPracticeFirst: () => void;
   onShowReport: () => void;
   /** Open Lumi's Town page (optionally straight into one place's scene). */
-  onOpenTown: (concept: Concept | null) => void;
+  onOpenTown: (concept: Concept | null, story?: string | null) => void;
   /** Start with the fixed canonical demo worksheet (adult action from Grown-up settings). */
   demo?: boolean;
 }
@@ -534,11 +534,15 @@ export default function TeachView({ sessionId, language, speech, onPracticeFirst
             >
               <span className="text-4xl" aria-hidden>{newUnlock.emoji}</span>
               <p className="text-xl font-extrabold text-teal-800" role="status">
-                🎉 {s.newPlace} {newUnlock.title}
+                🎉 {newUnlock.kind === "story" ? s.newScene : s.newPlace} {newUnlock.title}
               </p>
               <button
                 className="btn-kid bg-teal-500 text-white"
-                onClick={() => { stopSpeaking(); onOpenTown(newUnlock.kind === "place" ? (newUnlock.key as Concept) : null); }}
+                onClick={() => {
+                  stopSpeaking();
+                  if (newUnlock.kind === "place") onOpenTown(newUnlock.key as Concept);
+                  else onOpenTown(null, newUnlock.key);
+                }}
               >
                 👋 {s.visit}
               </button>
