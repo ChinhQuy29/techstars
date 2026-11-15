@@ -33,7 +33,7 @@ export default function LumiHomework(p: Props) {
   const marking = p.step === "mark";
   const finding = p.step === "find";
   return (
-    <div className="notebook overflow-hidden rounded-3xl shadow-inner ring-1 ring-amber-200">
+    <div className="notebook lumi-workbook overflow-hidden rounded-2xl">
       <ol>
         {p.problems.map((pr) => {
           const m = p.marks[pr.id];
@@ -87,15 +87,15 @@ export default function LumiHomework(p: Props) {
                   <button
                     onClick={() => p.onMark(pr.id, "check")}
                     aria-pressed={m?.mark === "check"}
-                    className={`btn-kid h-12 !min-h-12 !px-3 ${m?.mark === "check" ? "bg-green-500 text-white" : "bg-white text-green-700 ring-2 ring-green-300"}`}
+                    className={`btn-kid lumi-mark !px-3 ${m?.mark === "check" ? "bg-green-700 text-white" : "bg-green-100 text-green-900 ring-1 ring-green-300"}`}
                   >
                     ✓ <span className="hidden sm:inline">{p.s.right}</span>
                   </button>
                   <button
                     onClick={() => (m?.mark === "circle" ? p.onEdit(pr.id) : p.onMark(pr.id, "circle"))}
                     aria-pressed={m?.mark === "circle"}
-                    className={`btn-kid h-12 !min-h-12 !px-3 ${
-                      m?.mark === "circle" ? "bg-orange-500 text-white" : "bg-white text-orange-700 ring-2 ring-orange-300"
+                    className={`btn-kid lumi-mark !px-3 ${
+                      m?.mark === "circle" ? "bg-rose-700 text-white" : "bg-rose-100 text-rose-900 ring-1 ring-rose-300"
                     } ${p.editingId === pr.id ? "ring-4 ring-sky-400" : ""}`}
                   >
                     ✗ <span className="hidden sm:inline">{p.s.oops}</span>

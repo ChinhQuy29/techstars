@@ -3,7 +3,7 @@ import type { Language } from "./api";
 /** Kid-facing UI labels. Spoken lines come from the backend (or LINES in App.tsx). English is the reference shape. */
 const en = {
     teachTab: "Teach Lumi", helpTab: "Help me", grownups: "Grown-ups", settings: "Grown-up settings",
-    right: "Right", oops: "Oops", doneChecking: "Done checking!", tellLumi: "Tell Lumi",
+    right: "Right", oops: "Oops", lessonCompleted: "Lesson completed!", doneChecking: "Done checking!", tellLumi: "Tell Lumi",
     tapMistake: "Tap the one with the mistake!", talkWhy: "Tell Lumi why", listening: "I'm listening…",
     notSure: "I'm not sure", orTap: "or tap one:", yesGotIt: "Yes, you got it!", notQuite: "Not quite",
     youWereRight: "You were right, Lumi!", stillWrong: "Still wrong", next: "Next", moreHomework: "More homework",
@@ -57,7 +57,7 @@ const STRINGS: Record<Language, Strings> = {
   en,
   es: {
     teachTab: "Enséñale a Lumi", helpTab: "Ayúdame", grownups: "Adultos", settings: "Ajustes para adultos",
-    right: "Bien", oops: "Uy", doneChecking: "¡Ya revisé!", tellLumi: "Díselo a Lumi",
+    right: "Bien", oops: "Uy", lessonCompleted: "¡Lección completada!", doneChecking: "¡Ya revisé!", tellLumi: "Díselo a Lumi",
     tapMistake: "¡Toca el que tiene el error!", talkWhy: "Dile a Lumi por qué", listening: "Te escucho…",
     notSure: "No estoy seguro", orTap: "o toca una:", yesGotIt: "¡Sí, lo lograste!", notQuite: "No del todo",
     youWereRight: "¡Tenías razón, Lumi!", stillWrong: "Sigue mal", next: "Siguiente", moreHomework: "Más tarea",
@@ -104,7 +104,7 @@ const STRINGS: Record<Language, Strings> = {
   },
   vi: {
     teachTab: "Dạy Lumi", helpTab: "Giúp mình", grownups: "Người lớn", settings: "Cài đặt cho người lớn",
-    right: "Đúng", oops: "Sai", doneChecking: "Kiểm tra xong!", tellLumi: "Nói với Lumi",
+    right: "Đúng", oops: "Sai", lessonCompleted: "Đã hoàn thành bài học!", doneChecking: "Kiểm tra xong!", tellLumi: "Nói với Lumi",
     tapMistake: "Chạm vào bài bị sai!", talkWhy: "Nói cho Lumi biết tại sao", listening: "Mình đang nghe…",
     notSure: "Mình không chắc", orTap: "hoặc chạm một ý:", yesGotIt: "Đúng rồi, bạn làm được!", notQuite: "Chưa đúng lắm",
     youWereRight: "Lumi làm đúng!", stillWrong: "Vẫn sai", next: "Tiếp", moreHomework: "Thêm bài tập",

@@ -341,7 +341,7 @@ export default function TeachView({
                   />
                 </div>
               )}
-              <button className="btn-kid bg-sun px-8 text-2xl text-slate-900" disabled={!allMarked || busy} onClick={doneChecking}>
+              <button className="btn-kid lumi-primary px-8 text-2xl" disabled={!allMarked || busy} onClick={doneChecking}>
                 📝 {s.doneChecking}
               </button>
               {!allMarked && <p className="text-slate-500">{s.markAll}</p>}
@@ -389,7 +389,7 @@ export default function TeachView({
               ) : null}
               {/* Typed reason: same rating as speech, for kids who can write and when there's no mic. */}
               <form
-                className="flex w-full max-w-lg gap-2"
+                className="lumi-explain-form flex w-full max-w-lg gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const text = typed.trim();
@@ -404,9 +404,9 @@ export default function TeachView({
                   placeholder={`✍️ ${s.typeReason}`}
                   aria-label={s.typeReason}
                   maxLength={200}
-                  className="min-h-12 flex-1 rounded-2xl bg-white px-4 text-lg ring-2 ring-sky-200 focus:outline-none focus:ring-sky-400"
+                  className="min-h-12 min-w-0 flex-1 rounded-2xl bg-white px-4 text-lg ring-2 ring-sky-200 focus:outline-none focus:ring-sky-400"
                 />
-                <button type="submit" className="btn-kid !min-h-12 bg-sky-500 !py-2 text-white" disabled={busy || !typed.trim()}>
+                <button type="submit" className="btn-kid lumi-primary !py-2" disabled={busy || !typed.trim()}>
                   ➜
                 </button>
               </form>
@@ -495,14 +495,14 @@ export default function TeachView({
           )}
 
           {step === "next" && (
-            <button className="btn-kid bg-sun px-10 text-2xl text-slate-900" disabled={busy} onClick={() => send("next")}>
+            <button className="btn-kid lumi-primary px-10 text-2xl" disabled={busy} onClick={() => send("next")}>
               {s.next} ➜
             </button>
           )}
 
           {step === "done" && turn?.stats && (
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-3 text-center">
-              <div className="text-7xl">🏆</div>
+            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="lumi-lesson-result flex w-full flex-col items-center gap-3 text-center">
+              <h3 className="text-3xl font-extrabold text-green-800">✓ {s.lessonCompleted}</h3>
               <p className="text-3xl font-extrabold text-amber-700">
                 {turn.stats.caught} / {turn.stats.planted} {s.foundStats}
               </p>
@@ -806,16 +806,16 @@ export default function TeachView({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-12">
-      <section className="card flex flex-col items-center gap-4 p-4 sm:p-5 lg:col-span-5">
+    <div className="lumi-teach grid gap-5 lg:grid-cols-12">
+      <section className="lumi-teach-side flex flex-col items-center gap-4 p-4 sm:p-5 lg:col-span-4">
         {/* On narrow screens Lumi shrinks and sits beside the bubble, so the math stays near the top. */}
-        <div className="flex w-full flex-row items-center gap-3 lg:flex-col lg:gap-4">
+        <div className="lumi-teach-character flex w-full flex-row items-center gap-3 lg:flex-col-reverse lg:gap-4">
           <LumiMascot
             expression={mascotExpression}
             pose="threeQuarter"
             talking={speech.speaking}
             label="auto"
-            className="w-20 shrink-0 sm:w-28 lg:w-44"
+            className="lumi-teach-mascot w-20 shrink-0 sm:w-28 lg:w-52"
           />
           {bubble && (
             <motion.div
@@ -823,7 +823,7 @@ export default function TeachView({
               initial={{ opacity: 0, y: 10, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               aria-live="polite"
-              className="relative w-full rounded-3xl bg-sky-50 px-4 py-3 text-lg leading-snug text-slate-900 ring-2 ring-sky-200 sm:px-5 sm:py-4 sm:text-xl"
+              className="lumi-teach-bubble relative w-full px-4 py-3 text-lg leading-snug sm:px-5 sm:py-4 sm:text-xl"
             >
               {bubble}
             </motion.div>
@@ -834,18 +834,27 @@ export default function TeachView({
         </div>
       </section>
 
-      <section className="card flex flex-col gap-4 p-3 sm:p-5 lg:col-span-7">
+      <section className="lumi-teach-workspace flex min-w-0 flex-col gap-4 p-3 sm:p-5 lg:col-span-8">
+        {phase === "teach" && ws?.ready && (
+          <progress
+            className="lumi-lesson-progress"
+            max={3}
+            value={step === "mark" ? markedCount / Math.max(1, problems.length) : step === "done" ? 3 : Math.min(stageIdx, 2) + 0.5}
+            aria-label={s.lumisHomework}
+            aria-valuetext={step === "done" ? s.lessonCompleted : lessonStages[Math.min(stageIdx, 2)].label}
+          />
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-2xl font-extrabold text-amber-700">
+          <h2 className="text-2xl font-extrabold text-slate-900">
             📒 {s.lumisHomework}
             {phase !== "pick" && chosen.current && (
-              <span className="ml-2 rounded-full bg-amber-100 px-3 py-1 align-middle text-base text-amber-800">
+              <span className="ml-2 inline-block rounded-full bg-indigo-100 px-3 py-1 align-middle text-base text-indigo-950">
                 {CONCEPT_EMOJI[chosen.current]} {s.concepts[chosen.current as TeachConcept]}
               </span>
             )}
           </h2>
           <button
-            className="btn-kid !min-h-12 bg-teal-500 !py-2 text-base text-white"
+            className="btn-kid bg-white !py-2 text-base text-slate-800 ring-1 ring-indigo-200"
             onClick={() => { stopSpeaking(); onOpenTown(null); }}
           >
             🏘️ {s.town}

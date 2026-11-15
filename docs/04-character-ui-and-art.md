@@ -2,7 +2,7 @@
 
 ## Lumi
 - A small friendly robot; a curious, kind, slightly goofy peer, a bit younger than the child. Never a lamp, a human in costume, a generic chatbot icon, a lecturer, or a guilt-tripper.
-- **Fixed features:** rounded white head and compact body; navy face screen `#0F2D3D`; big glowing cyan eyes and mouth `#6FE7EC`; teal ear panels and chest light `#4FC3C7`; small orange antenna tip `#FFB347`; short rounded limbs, arms in front of the body. Palette in `LUMI_COLORS` (`lumiAssets.ts`). Reference: `docs/assets/lumi-robot-mascot-design-reference.png` (the written features win).
+- **Final Figma art:** use the blue robot poses from the page named “new” where available. The animated fallback has a rounded white head and compact body; navy face screen `#0F2D3D`; big glowing cyan eyes and mouth `#6FE7EC`; teal ear panels and chest light `#4FC3C7`; small orange antenna tip `#FFB347`; short rounded limbs, arms in front of the body. Palette in `LUMI_COLORS` (`lumiAssets.ts`). Reference: `docs/assets/lumi-robot-mascot-design-reference.png` (the written features win).
 - **One renderer:** `components/mascot/LumiMascot.tsx` on every screen. `lumiAssets.ts` maps emotion → expression (unknown → `default`); `RASTER_ASSETS` can swap in WebP art per expression. Gallery at `/?mascot=gallery`. Usage: [mascot README](../frontend/src/components/mascot/README.md).
 
 | Emotion | Expression | When |
@@ -30,7 +30,7 @@ The expression follows backend state; it never decides anything. Animations are 
 - No text or numbers inside artwork.
 
 ### Current style (may be redesigned)
-Sky-to-cream background (`#dff3ff` → `#fdf6dc`); white rounded cards; fonts `Baloo 2` (UI) and `Patrick Hand` (Lumi's handwriting); tokens `--color-sun #facc15`, `--color-ink #0f172a`; `.card`, `.btn-kid` (56 px, 3D press shadow), `.btn-small`, `.notebook` (rule lines + red margin), focus ring `4px #38bdf8`; green right / orange wrong; confetti + WebAudio sounds.
+Figma-inspired pale blue background (`#f9faff` → `#d5e0ff`), the original stacked pencil wordmark on the desktop welcome screen, and a separate speech bubble and notebook workspace in Teach. The desktop lesson bar follows the current lesson stage. The completion card shows the real worksheet outcome. The skill picker uses blue-tinted tiles and explanation choices use stacked blue pills. The welcome actions open the existing learning modes. White rounded cards; fonts `Baloo 2` (UI) and `Patrick Hand` (Lumi's handwriting); tokens `--color-sun #facc15`, `--color-ink #0f172a`; `.card`, `.btn-kid` (56 px, 3D press shadow), `.btn-small`, `.notebook` (rule lines + red margin), focus ring `4px #38bdf8`; green right / orange wrong; confetti + WebAudio sounds.
 
 ### Design skills
 With a skill like `ui-ux-pro-max`: describe a learning app for ages 6–10 that must also look professional to parents; ask for a restrained full design system; apply it to the current style only; must-keep rules win (it discourages emoji icons and allows 44 px targets); keep the mascot and town art.

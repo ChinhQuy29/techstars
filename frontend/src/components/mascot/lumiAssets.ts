@@ -62,10 +62,19 @@ export const EXPRESSIONS: Record<LumiExpression, ExpressionSpec> = {
 };
 
 /**
- * Optional raster slots (transparent WebP/PNG in /public/assets/mascot/). Empty today: every state
- * is drawn by the SVG component. Add a file here to replace one state without touching callers.
+ * Character poses exported from the final Figma page named "new".
+ * Expressions with no matching Figma pose use the animated vector renderer.
  */
-export const RASTER_ASSETS: Partial<Record<LumiExpression, string>> = {};
+const waving = "/assets/figma-new/lumi-waving.webp";
+const puzzled = "/assets/figma-new/lumi-puzzled.webp";
+export const RASTER_ASSETS: Partial<Record<LumiExpression, string>> = {
+  default: waving,
+  happy: waving,
+  curious: puzzled,
+  confused: puzzled,
+  encourage: waving,
+  celebrate: waving,
+};
 
 /** Unknown or missing expression → default (never a broken image). */
 export function resolveExpression(x: string | null | undefined): LumiExpression {

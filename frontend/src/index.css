@@ -10,9 +10,8 @@
 html, body, #root { height: 100%; }
 body {
   @apply text-slate-800 font-display antialiased;
-  background: radial-gradient(circle at 15% 10%, #fff7d6 0%, transparent 40%),
-    linear-gradient(180deg, #dff3ff 0%, #fdf6dc 100%) fixed;
-  background-color: #eef8ff;
+  background: linear-gradient(180deg, #f9faff 0%, #d5e0ff 100%) fixed;
+  background-color: #d5e0ff;
 }
 
 /* Kid UI building blocks (docs/04-character-ui-and-art.md): chunky, high-contrast, easy to tap. */
@@ -36,13 +35,122 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px
 
 /* Lumi's notebook page: blue rule lines + red margin. */
 .notebook {
-  background-color: #fffdf5;
+  background-color: #fff;
   background-image:
-    linear-gradient(90deg, transparent 54px, #fca5a5 54px, #fca5a5 56px, transparent 56px),
-    repeating-linear-gradient(180deg, transparent 0, transparent 63px, #bfdbfe 63px, #bfdbfe 64px);
+    linear-gradient(90deg, transparent 54px, #f4d7d9 54px, #f4d7d9 56px, transparent 56px),
+    repeating-linear-gradient(180deg, transparent 0, transparent 63px, #d8e1f6 63px, #d8e1f6 64px);
 }
 .font-hand { font-family: var(--font-hand); }
 
 @media print {
   body { background: white; }
+}
+
+/* Responsive interpretation of the desktop Figma frames. */
+.lumi-primary {
+  color: #fff;
+  background: #24242b;
+  box-shadow: 0 4px 0 #10142c38;
+}
+.lumi-primary:hover:not(:disabled) { background: #37415e; }
+
+.lumi-topbar {
+  border-bottom: 1px solid #dce4f6;
+  padding-bottom: 1rem;
+}
+.lumi-topbar nav .btn-kid[aria-pressed="true"] {
+  background: #24242b;
+  color: #fff;
+}
+
+.lumi-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  width: min(100%, 67rem);
+  min-height: min(66vh, 42rem);
+  margin: auto;
+  padding: clamp(1.25rem, 4vw, 4rem);
+  gap: clamp(1.5rem, 5vw, 5rem);
+}
+.lumi-welcome-brand {
+  display: block;
+  width: min(92%, 22rem);
+  height: auto;
+  margin-inline: auto;
+}
+.lumi-welcome-content {
+  display: grid;
+  justify-items: center;
+  gap: .9rem;
+  text-align: center;
+}
+.lumi-welcome-mascot { width: clamp(7rem, 15vw, 11rem); }
+.lumi-welcome-title {
+  font-size: clamp(2rem, 3.4vw, 3.4rem);
+  line-height: 1;
+  font-weight: 800;
+  color: #202740;
+}
+
+.lumi-teach { width: min(100%, 72rem); margin-inline: auto; }
+.lumi-teach-workspace {
+  align-self: start;
+  border: 1px solid #dce3f7;
+  border-radius: 1.45rem;
+  background: #fafbff;
+  box-shadow: 0 5px 0 #28365b1a, 0 15px 35px #35467613;
+}
+.lumi-teach-character { justify-content: center; }
+.lumi-teach-mascot { filter: drop-shadow(0 12px 7px #34467324); }
+.lumi-teach-bubble {
+  max-width: 26rem;
+  background: #f8fbff;
+  border: 1px solid #e2e8f9;
+  border-radius: 1.5rem;
+  box-shadow: 0 3px 0 #25355b25;
+  color: #242c42;
+  text-align: center;
+  font-weight: 650;
+}
+.lumi-workbook { border: 1px solid #d8e1f6; box-shadow: 0 3px 0 #27376227; }
+.lumi-lesson-progress {
+  appearance: none;
+  width: min(70%, 29rem);
+  height: .45rem;
+  margin: .15rem auto;
+  border: 0;
+  border-radius: 1rem;
+  background: #cbd7e0;
+  color: #4c812f;
+  overflow: hidden;
+}
+.lumi-lesson-progress::-webkit-progress-bar { background: #cbd7e0; }
+.lumi-lesson-progress::-webkit-progress-value { background: #4c812f; border-radius: inherit; }
+.lumi-lesson-progress::-moz-progress-bar { background: #4c812f; border-radius: inherit; }
+.lumi-lesson-result {
+  padding: 1.2rem;
+  background: white;
+  border: 1px solid #dce5fb;
+  border-radius: 1.15rem;
+  box-shadow: 0 3px 0 #27376227;
+}
+.lumi-explain-choice {
+  width: 100%;
+  border: 1px solid #dce5fb;
+  border-radius: 1.25rem;
+  color: #242c42;
+  background: #edf2ff;
+  box-shadow: 0 2px 0 #293f7b21;
+}
+.lumi-explain-choice:hover:not(:disabled),
+.lumi-explain-choice:focus-visible { background: #dce6ff; }
+.lumi-mark span { white-space: nowrap; }
+
+@media (min-width: 1024px) {
+  .lumi-teach { padding-block: clamp(.5rem, 3vh, 2rem); }
+  .lumi-teach-side { align-self: start; }
+}
+@media (max-width: 767px) {
+  .lumi-explain-form .lumi-primary { flex-shrink: 0; padding-inline: .75rem; }
 }

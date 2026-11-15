@@ -14,7 +14,7 @@ export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }
   s: Strings;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="lumi-skill-picker flex flex-col gap-4">
       <div>
         <h3 className="text-2xl font-extrabold text-slate-800">{s.chooseTitle}</h3>
         <p className="text-slate-600">{s.chooseSub}</p>
@@ -31,7 +31,7 @@ export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }
               disabled={busy}
               onClick={() => onPick(c)}
               className={`flex h-full min-h-28 w-full flex-col items-center justify-center gap-1 rounded-2xl p-3 text-center shadow-sm ring-2 transition active:translate-y-0.5 ${
-                c.ready ? "bg-white ring-amber-300 hover:bg-amber-50" : "bg-slate-50 ring-slate-200 hover:bg-white"
+                c.ready ? "bg-indigo-50 ring-indigo-300 hover:bg-indigo-100" : "bg-white ring-indigo-100 hover:bg-indigo-50"
               }`}
             >
               <span className="text-4xl" aria-hidden>{CONCEPT_EMOJI[c.concept]}</span>

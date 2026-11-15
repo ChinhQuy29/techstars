@@ -35,6 +35,9 @@ export default function LumiMascot({
   const reduce = useReducedMotion();
   const moving = animated && !reduce;
   const id = useId().replace(/:/g, "");
+  const raster = RASTER_ASSETS[expression];
+  const [failedRaster, setFailedRaster] = useState<string>();
+  const useArtwork = raster !== undefined && failedRaster !== raster;
   const [blink, setBlink] = useState(false);
   const [mouthOpen, setMouthOpen] = useState(false);
   const ariaLabel = label === "auto" ? spec.label : label;
@@ -42,7 +45,7 @@ export default function LumiMascot({
 
   // Brief, infrequent blink (only for open-eye states).
   useEffect(() => {
-    if (!moving || ["arc", "closed"].includes(spec.eyes)) return;
+    if (useArtwork || !moving || ["arc", "closed"].includes(spec.eyes)) return;
     let t: number;
     const loop = () => {
       t = window.setTimeout(() => {
@@ -53,21 +56,24 @@ export default function LumiMascot({
     };
     loop();
     return () => window.clearTimeout(t);
-  }, [moving, spec.eyes]);
+  }, [moving, spec.eyes, useArtwork]);
 
   useEffect(() => {
-    if (!talking || reduce) return setMouthOpen(false);
+    if (useArtwork || !talking || reduce) return setMouthOpen(false);
     const iv = window.setInterval(() => setMouthOpen((o) => !o), 150);
     return () => window.clearInterval(iv);
-  }, [talking, reduce]);
+  }, [talking, reduce, useArtwork]);
 
-  const raster = RASTER_ASSETS[expression];
-  if (raster) {
+  if (useArtwork) {
     return (
-      <img
+      <motion.img
+        key={raster}
         src={raster}
-        width={200}
-        height={250}
+        width={272}
+        height={327}
+        onError={() => setFailedRaster(raster)}
+        animate={moving && expression === "celebrate" ? { y: [0, -8, 0] } : undefined}
+        transition={{ duration: 0.3 }}
         alt={ariaLabel ?? ""}
         aria-hidden={ariaLabel ? undefined : true}
         className={`h-auto select-none ${sizeClass} ${className}`}
