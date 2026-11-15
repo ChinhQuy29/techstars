@@ -20,28 +20,28 @@ const COPY = {
     guide: "Walk to a door to go inside.", shortcuts: "Quick access",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
     math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
-    xp: "XP", taught: "skills taught", gate: "Coming soon",
+    xp: "XP", taught: "skills taught",
     topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"], art: ["Colors", "Drawing"], astronomy: ["The Moon", "Planets"] },
   },
   es: {
     guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
     math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
-    xp: "XP", taught: "habilidades enseñadas", gate: "Próximamente",
+    xp: "XP", taught: "habilidades enseñadas",
     topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"], art: ["Colores", "Dibujo"], astronomy: ["La Luna", "Planetas"] },
   },
   vi: {
     guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
     math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
-    xp: "XP", taught: "kỹ năng đã dạy", gate: "Sắp ra mắt",
+    xp: "XP", taught: "kỹ năng đã dạy",
     topics: { english: ["Đọc", "Từ vựng"], biology: ["Cây cối", "Động vật"], art: ["Màu sắc", "Vẽ"], astronomy: ["Mặt Trăng", "Các hành tinh"] },
   },
 };
 
 const WORLD = { width: 2460, height: 640 };
 const GATE_X = 2210;
-const ROAD = { left: 22, right: GATE_X - 18, top: 501, bottom: 549, center: 539 };
+const ROAD = { left: 22, top: 501, bottom: 549, center: 539 };
 const DOOR_Y = 511;
 const XP_GOAL = 5;
 const FRAME_ORDER = [0, 1, 2, 1];
@@ -57,7 +57,12 @@ const WALK_KEYS: Record<string, Direction | undefined> = {
   arrowdown: WALK[2], s: WALK[2], arrowright: WALK[3], d: WALK[3],
 };
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
-const insideRoad = ({ x, y }: Point) => ({ x: clamp(x, ROAD.left, ROAD.right), y: clamp(y, ROAD.top, ROAD.bottom) });
+function insideRoad({ x, y }: Point): Point {
+  const roadY = clamp(y, ROAD.top, ROAD.bottom);
+  // The Figma roadblock runs diagonally between the two shoulders.
+  const rightEdge = GATE_X - 18 + (roadY - 522) * 1.75;
+  return { x: clamp(x, ROAD.left, rightEdge), y: roadY };
+}
 
 interface Props {
   sessionId: string;
@@ -241,9 +246,8 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
         <div className="study-town__world" ref={world}>
           <div className="study-town__terrain" aria-hidden />
           <div className="study-town__terrain study-town__terrain--extension" aria-hidden />
-          <div className="study-town__gate" style={{ left: GATE_X }}>
-            <span>{copy.gate}</span>
-          </div>
+          <img className="study-town__gate" style={{ left: GATE_X }} src="/assets/map_asset/roadblock.png"
+            width={128} height={112} alt="" draggable={false} />
           {HOUSES.map((house) => (
             <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button" tabIndex={-1}
               aria-haspopup="dialog" onClick={() => approach(house)}

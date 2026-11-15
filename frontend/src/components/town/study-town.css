@@ -47,29 +47,9 @@
 
 .study-town__gate {
   position: absolute;
-  top: 480px;
-  width: 20px;
-  height: 86px;
-  border: 3px solid #72482d;
-  border-radius: 5px;
-  background: repeating-linear-gradient(#bb8759 0 11px, #8b5938 11px 15px);
-  box-shadow: 4px 4px #36533b50;
+  top: 448px;
+  translate: -66px 0;
   pointer-events: none;
-}
-
-.study-town__gate span {
-  position: absolute;
-  bottom: calc(100% + 7px);
-  left: 50%;
-  translate: -50% 0;
-  padding: 7px 12px;
-  border: 2px solid #876343;
-  border-radius: 8px;
-  background: #ffe7b1;
-  color: #593e2e;
-  box-shadow: 0 3px #4d3b3150;
-  white-space: nowrap;
-  font-weight: 850;
 }
 
 .study-town__house {
