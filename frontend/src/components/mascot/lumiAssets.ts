@@ -80,6 +80,8 @@ export const RASTER_ASSETS: Partial<Record<LumiExpression, string>> = {
   sleeping: pose("sleeping"),
 };
 export const ARTWORK_SIZE = { w: 342, h: 353 } as const;
+/** The same poses dressed in a dream outfit (scripts/dream_outfits.py): taller, so hats and helmets fit. */
+export const OUTFIT_SIZE = { w: 372, h: 470 } as const;
 
 /** The little extras drawn beside Lumi's head in Figma ("?", "hmm", "Z z"). */
 export const ARTWORK_EXTRAS: Partial<Record<LumiExpression, string[]>> = {

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="372" height="470" viewBox="-11.500 -99.500 372 470" fill="none">
+<g id="sleeping">
+<g id="Ellipse 26" filter="url(#filter0_f_lumi_sleeping)">
+<ellipse cx="174.5" cy="349.5" rx="64.5" ry="12.5" fill="#2E364B" />
+</g>
+<path id="Vector 3" d="M256.457 264.963C249.205 265.042 236.023 245.657 230.338 235.955L224.09 206.382L242.49 198.86C262.924 218.166 278.507 240.315 280.713 250.752C282.918 261.189 265.522 264.865 256.457 264.963Z" fill="#374C83" />
+<path id="Vector 6" d="M194.251 349.445C184.545 348.556 180.323 329.113 179.426 319.503C202.148 317.641 216.942 306.676 221.498 301.425C228.037 305.556 240.332 316.556 237.207 327.506C233.3 341.194 206.384 350.557 194.251 349.445Z" fill="url(#paint0_linear_lumi_sleeping)" />
+<path id="Vector 5" d="M113.032 334.409C107.896 323.864 114.42 312.309 118.324 307.85C119.05 305.553 121.546 300.738 125.721 299.856C130.939 298.753 155.391 302.673 161.713 306.789C168.034 310.905 167.793 318.366 168.698 322.647C165.652 331.165 157.472 348.643 149.122 350.407C138.685 352.612 119.452 347.59 113.032 334.409Z" fill="url(#paint1_linear_lumi_sleeping)" />
+<path id="Vector 4" d="M110.078 188.021C80.2326 192.223 58.3762 223.036 51.1787 237.918C56.1796 243.145 67.8555 254.296 74.552 257.082C81.2484 259.868 88.4958 250.797 91.2825 245.914C96.015 229.453 113.002 218.82 120.903 215.561L110.078 188.021Z" fill="url(#paint2_linear_lumi_sleeping)" />
+<path id="Rectangle 1" d="M159 45.1271C160.329 34.0112 170.418 26.0776 181.534 27.4068L194.241 28.9264C205.357 30.2556 213.291 40.3444 211.962 51.4603L159 45.1271Z" fill="url(#paint3_linear_lumi_sleeping)" />
+<path id="Union" d="M278.281 104.581C278.466 100.245 282.131 96.8808 286.466 97.0659C290.802 97.2511 294.166 100.916 293.981 105.252L293.319 120.759C293.134 125.094 289.469 128.459 285.133 128.273C280.798 128.088 277.433 124.423 277.619 120.088L277.738 117.267L265.076 116.544L265.683 105.894L278.194 106.607L278.281 104.581Z" fill="#212A42" />
+<path id="Union_2" d="M55.3591 97.0644C55.748 92.7424 59.5674 89.5532 63.8894 89.942C68.211 90.331 71.3991 94.1498 71.0106 98.4715L70.7574 101.284L83.3725 102.601L82.2655 113.21L69.8015 111.909L69.6198 113.931C69.2308 118.253 65.4122 121.441 61.0903 121.052C56.7685 120.663 53.5795 116.845 53.9682 112.523L55.3591 97.0644Z" fill="url(#paint4_linear_lumi_sleeping)" />
+<path id="Vector 8" d="M305.998 267.216C301.561 281.026 296.734 279.651 292.008 278.407C283.141 276.517 282.266 265.448 276.91 267.159C271.555 268.87 273.282 273.1 274.948 282.011C276.614 290.923 273.014 294.434 264.125 294.322C255.235 294.21 249.969 288.809 250.17 272.809C250.372 256.809 257.55 251.564 268.284 246.365C279.018 241.166 310.383 253.569 305.998 267.216Z" fill="url(#paint5_linear_lumi_sleeping)" />
+<path id="Vector 19" d="M67.0519 212.711C68.7514 220.789 77.4888 236.03 98.8428 232.373" stroke="#7285B8" stroke-width="3.55594" stroke-linecap="round" />
+<path id="Vector 20" d="M81.6256 195.824C83.7127 203.81 93.1751 218.612 114.328 213.929" stroke="#7285B8" stroke-width="3.55594" stroke-linecap="round" />
+<path id="Vector 21" d="M216.96 224.244C225.111 225.55 242.471 222.851 246.704 201.604" stroke="#7285B8" stroke-width="3.55594" stroke-linecap="round" />
+<path id="Vector 22" d="M235.288 242.178C243.438 243.484 260.798 240.785 265.031 219.538" stroke="#7285B8" stroke-width="3.55594" stroke-linecap="round" />
+<path id="Vector 2" d="M109.16 298.883C87.6768 272.893 103.458 223.158 114.033 201.54C146.024 198.136 212.862 194.526 224.288 207.32C231.386 229.444 242.014 279.171 227.745 301.085C209.909 328.477 136.014 331.37 109.16 298.883Z" fill="url(#paint6_linear_lumi_sleeping)" />
+<path id="Vector 17" d="M133.285 254.847C133.215 248.437 133.63 243.081 134.221 238.67C134.88 233.754 140.541 231.521 145.069 233.547C161.874 241.067 181.668 241.314 195.922 237.898C201.372 236.592 207.635 240.714 207.36 246.311L206.7 259.771C206.585 262.115 205.334 264.286 203.245 265.354C180.107 277.193 151.397 268.174 136.757 260.581C134.616 259.471 133.311 257.259 133.285 254.847Z" fill="#212C4A" />
+<g id="Group 1">
+<path id="Vector 1" d="M188.365 45.9081C149.94 40.0795 119.657 47.8634 103.103 55.2634C96.3758 58.2704 90.8347 63.4739 87.9575 70.2572C78.7801 91.8938 77.7617 126.967 80.7598 155.871C84.2642 189.658 102.126 196.787 128.048 207.665C153.97 218.543 221.911 213.274 246.167 199.062C270.423 184.851 266.893 116.543 266.966 91.086C267.039 65.6294 248.442 55.021 188.365 45.9081Z" fill="url(#paint7_linear_lumi_sleeping)" />
+</g>
+<path id="Vector 7" d="M77.7872 279.052C63.7539 282.723 58.2246 274.078 57.2142 269.296C54.92 260.525 66.8877 256.674 62.9537 252.657C59.0196 248.64 57.3798 253.394 50.166 258.885C42.9523 264.377 38.1983 262.737 34.3057 254.744C30.413 246.752 32.8728 239.621 47.2589 232.614C61.645 225.608 69.5544 229.666 79.021 236.921C88.4876 244.176 95.3288 274.464 77.7872 279.052Z" fill="url(#paint8_linear_lumi_sleeping)" />
+<path id="Vector 78" d="M107 123C113.225 132.691 132.341 146.995 159 126.685" stroke="#121B33" stroke-width="6" stroke-linecap="round" />
+<path id="Vector 79" d="M192 128C198.225 137.691 217.341 151.995 244 131.685" stroke="#121B33" stroke-width="6" stroke-linecap="round" />
+<ellipse id="Ellipse 37" cx="171.5" cy="167.5" rx="7.5" ry="6.5" fill="#121B33" />
+<g id="outfit head" transform="matrix(0.94026 -0.20904 0.20904 0.94026 -13.31922 -4.17672)"><g id="Group 12">
+<path id="Vector 62" d="M55.9508 247.379L60.2832 226.065C124.897 297.54 202.178 280.906 232.741 263.655L228.904 282.534C147.689 312.699 79.7623 271.666 55.9508 247.379Z" fill="#C2CDEB" />
+<circle id="Ellipse 34" opacity="0.6" cx="166.555" cy="149.372" r="121.667" transform="rotate(11.4894 166.555 149.372)" fill="#D9D9D9" fill-opacity="0.5" stroke="white" stroke-width="4" />
+<path id="Vector 60" d="M287.012 174.49C214.477 17.189 96.0153 76.2688 45.8515 125.471C52.5755 79.9108 103.38 7.79818 191.074 25.6225C293.275 46.3951 296.716 137.145 287.012 174.49Z" fill="#212A42" />
+<rect id="Rectangle 12" x="33.865" y="100.206" width="19.8862" height="54.687" rx="9.94309" transform="rotate(11.4894 33.865 100.206)" fill="#212A42" />
+<rect id="Rectangle 13" x="285.967" y="157.79" width="19.8862" height="54.687" rx="9.94309" transform="rotate(11.4894 285.967 157.79)" fill="#212A42" />
+<path id="Vector 61" d="M58.4266 235.199L62.759 213.885C127.373 285.36 204.654 268.726 235.217 251.475L231.38 270.354C150.165 300.52 82.2381 259.487 58.4266 235.199Z" fill="#212A42" />
+</g>
+<path id="Vector 72" d="M88 65.912C105.5 49.5787 148.5 16.9121 217 44.912" stroke="#545F7D" stroke-width="4" stroke-linecap="round" />
+</g></g>
+<defs>
+<filter id="filter0_f_lumi_sleeping" x="94.9" y="321.9" width="159.2" height="55.2" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix" />
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+<feGaussianBlur stdDeviation="7.55" result="effect1_foregroundBlur_18_1174" />
+</filter>
+<linearGradient id="paint0_linear_lumi_sleeping" x1="204.932" y1="304.926" x2="213.754" y2="346.675" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4F73D4" />
+<stop offset="1" stop-color="#93A6D9" />
+</linearGradient>
+<linearGradient id="paint1_linear_lumi_sleeping" x1="134.286" y1="298.046" x2="145.511" y2="351.17" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4F73D4" />
+<stop offset="1" stop-color="#93A6D9" />
+</linearGradient>
+<linearGradient id="paint2_linear_lumi_sleeping" x1="75.7289" y1="205.717" x2="117.726" y2="231.496" gradientUnits="userSpaceOnUse">
+<stop stop-color="#374C83" />
+<stop offset="1" stop-color="#4D6AB5" />
+</linearGradient>
+<linearGradient id="paint3_linear_lumi_sleeping" x1="187.888" y1="28.1666" x2="185.481" y2="48.2937" gradientUnits="userSpaceOnUse">
+<stop stop-color="#E3EAFF" />
+<stop offset="1" stop-color="#9BACDB" />
+</linearGradient>
+<linearGradient id="paint4_linear_lumi_sleeping" x1="64.6599" y1="89.4233" x2="70.9767" y2="119.319" gradientUnits="userSpaceOnUse">
+<stop stop-color="#546AA8" />
+<stop offset="1" stop-color="#212A42" />
+</linearGradient>
+<linearGradient id="paint5_linear_lumi_sleeping" x1="296.958" y1="301.836" x2="265.694" y2="248.474" gradientUnits="userSpaceOnUse">
+<stop stop-color="#546AA8" />
+<stop offset="1" stop-color="#212A42" />
+</linearGradient>
+<linearGradient id="paint6_linear_lumi_sleeping" x1="167.958" y1="207.339" x2="179.604" y2="323.178" gradientUnits="userSpaceOnUse">
+<stop stop-color="#5175D2" />
+<stop offset="1" stop-color="#AFBFED" />
+</linearGradient>
+<linearGradient id="paint7_linear_lumi_sleeping" x1="121.966" y1="49.8726" x2="249.277" y2="213.781" gradientUnits="userSpaceOnUse">
+<stop stop-color="#A3B2DB" />
+<stop offset="0.991784" stop-color="#456CD4" />
+</linearGradient>
+<linearGradient id="paint8_linear_lumi_sleeping" x1="79.1889" y1="233.205" x2="22.092" y2="294.634" gradientUnits="userSpaceOnUse">
+<stop stop-color="#212A42" />
+<stop offset="1" stop-color="#546AA8" />
+</linearGradient>
+<clipPath id="outfit_body_astronaut_sleeping"><path d="M109.16 298.883C87.6768 272.893 103.458 223.158 114.033 201.54C146.024 198.136 212.862 194.526 224.288 207.32C231.386 229.444 242.014 279.171 227.745 301.085C209.909 328.477 136.014 331.37 109.16 298.883Z" /></clipPath></defs>
+</svg>
