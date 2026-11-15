@@ -2,7 +2,7 @@
 
 ## Lumi
 - A small friendly robot; a curious, kind, slightly goofy peer, a bit younger than the child. Never a lamp, a human in costume, a generic chatbot icon, a lecturer, or a guilt-tripper.
-- **Final Figma art:** use the blue robot poses from the page named “new” where available. The animated fallback has a rounded white head and compact body; navy face screen `#0F2D3D`; big glowing cyan eyes and mouth `#6FE7EC`; teal ear panels and chest light `#4FC3C7`; small orange antenna tip `#FFB347`; short rounded limbs, arms in front of the body. Palette in `LUMI_COLORS` (`lumiAssets.ts`). Reference: `docs/assets/lumi-robot-mascot-design-reference.png` (the written features win).
+- **Final Figma art:** the blue robot poses from the Figma file "Lumi", page "new": waving, excited, thinking, confused and sleeping. They are mapped to all 9 expressions; see the [mascot README](../frontend/src/components/mascot/README.md). The "sad" pose is not used. The drawn fallback has a rounded white head and compact body; navy face screen `#0F2D3D`; big glowing cyan eyes and mouth `#6FE7EC`; teal ear panels and chest light `#4FC3C7`; small orange antenna tip `#FFB347`; short rounded limbs, arms in front of the body. Palette in `LUMI_COLORS` (`lumiAssets.ts`). Reference: `docs/assets/lumi-robot-mascot-design-reference.png` (the written features win).
 - **One renderer:** `components/mascot/LumiMascot.tsx` on every screen. `lumiAssets.ts` maps emotion → expression (unknown → `default`); `RASTER_ASSETS` can swap in WebP art per expression. Gallery at `/?mascot=gallery`. Usage: [mascot README](../frontend/src/components/mascot/README.md).
 
 | Emotion | Expression | When |

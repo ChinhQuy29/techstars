@@ -1,4 +1,4 @@
-"""Lumi's dream: the child picks what Lumi wants to be, and every Teach problem gets a short story from it.
+"""Lumi's dream: the child picks what Lumi wants to be, and every Teach problem is asked as a short story from it.
 
 Only the wording changes. The math (numbers, right answer, Lumi's planted mistake) is made and checked exactly
 as before; a story is a fixed, hand-written template filled with the problem's own numbers, so it can never
@@ -7,6 +7,7 @@ change or give away an answer. No AI writes these lines. Spec: docs/12-dreams.md
 from __future__ import annotations
 
 import re
+import zlib
 from typing import Optional
 
 from .concepts import Item
@@ -25,47 +26,215 @@ GRAPH_ICONS: dict[str, dict[str, str]] = {
     "astronaut": {"🍎": "🪐", "🍐": "⭐", "🍌": "🌙", "🍇": "☄️", "🍓": "🛸"},
 }
 
-# One line per kind of problem. Placeholders come from the problem's own numbers; none of them is the answer.
-STORIES: dict[str, dict[str, dict[str, str]]] = {
+# The problem as one short question. "?" marks where Lumi's answer goes (the app fills it in), so each line has
+# exactly one "?". Placeholders come from the problem's own numbers; {problem} is the plain problem text.
+# Several versions per kind of problem, all in the same order in every language; a worksheet uses a different
+# version for each problem of the same kind (see `story`) so the page doesn't repeat itself.
+STORIES: dict[str, dict[str, dict[str, list[str]]]] = {
     "astronaut": {
         "en": {
-            "add": "⛽ The rocket has {a} litres of fuel. The crew adds {b} more.",
-            "sub": "⭐ Lumi counts {a} stars. {b} of them hide behind the Moon.",
-            "mul": "🚀 There are {a} rockets. Each rocket has {b} windows.",
-            "share": "🍱 {a} space snacks are shared equally by {b} astronauts.",
-            "patterns": "📡 Beeps from a faraway planet follow a pattern.",
-            "big_numbers": "🔭 Lumi reads a big number on the star map.",
-            "time": "🧑‍🚀 Lumi's space walk starts at {start} and lasts {m} minutes.",
-            "measure": "🎒 Lumi packs a {obj} for the trip to space.",
-            "shapes": "🛰️ Lumi builds a satellite part shaped like a {shape}.",
-            "fractions": "🍕 Two space pizzas: one is cut into {a} equal slices, the other into {b}.",
-            "graphs": "📊 Mission control counted what Lumi saw from the rocket window.",
+            "add": [
+                "⛽ The rocket has {a} L of fuel and gets {b} L more. Now it has ? L.",
+                "🌑 Lumi found {a} moon rocks, then {b} more. Rocks in the bag: ?",
+                "👽 {a} friendly aliens wave hello. {b} more fly in. That makes ? aliens!",
+                "🛰️ The space station has {a} bolts. Lumi adds {b}. Total bolts: ?",
+            ],
+            "sub": [
+                "⭐ Lumi sees {a} stars. {b} hide behind the Moon. Still shining: ?",
+                "🍪 Lumi packed {a} space cookies and ate {b} on the way. Left: ?",
+                "☄️ {a} comets zoom past. {b} fly away. ? comets are still here.",
+                "🧑‍🚀 The countdown is at {a}. Lumi counts down {b} more. Now it says ?",
+            ],
+            "mul": [
+                "🚀 {a} rockets with {b} windows each have ? windows.",
+                "🪐 Lumi jumps {b} times on each of {a} planets. That's ? jumps!",
+                "👩‍🚀 {a} astronauts each pack {b} snacks: ? snacks in all.",
+                "🌟 {a} rows of {b} stars make a picture of ? stars.",
+            ],
+            "share": [
+                "🍱 {a} snacks shared by {b} astronauts: ? each.",
+                "🌑 {a} moon rocks go into {b} boxes equally: ? per box.",
+                "🚀 {a} astronauts ride in {b} rockets, the same in each: ? per rocket.",
+                "🧃 {a} juice packs last {b} days on the Moon. Each day gets ?",
+            ],
+            "patterns": [
+                "📡 Space beeps: {problem}",
+                "🛸 The UFO's lights blink in a pattern: {problem}",
+                "🌠 Lumi counts falling stars: {problem}",
+                "🔢 The rocket's secret code: {problem}",
+            ],
+            "big_numbers": [
+                "🔭 Star map: {problem}",
+                "🌌 A faraway planet. {problem}",
+                "🚀 The rocket's serial number. {problem}",
+                "🧮 Mission control's big number. {problem}",
+            ],
+            "time": [
+                "🧑‍🚀 A {m}-minute space walk starts at {start}. It ends at ?",
+                "🚀 Launch is at {start}. The ride to orbit takes {m} min. Lumi arrives at ?",
+                "😴 Lumi naps on the space station at {start} for {m} min. Wake-up time: ?",
+                "🍝 Space lunch starts at {start} and lasts {m} minutes. It ends at ?",
+            ],
+            "measure": [
+                "🎒 Lumi's {obj} for space is ? cm long.",
+                "🧑‍🚀 Lumi's {obj} floats in zero gravity. It is ? cm long.",
+                "📦 Lumi packs a {obj} in the rocket. Its length: ? cm",
+                "🔧 Lumi measures a {obj} on the space station: ? cm.",
+            ],
+            "shapes": [
+                "🛰️ A satellite part shaped like a {shape} has ? flat faces.",
+                "🏠 Lumi's moon house is a {shape}. Flat faces: ?",
+                "📦 A space supply box is a {shape}. It has ? flat faces.",
+                "🧱 A moon base block is a {shape} with ? flat faces.",
+            ],
+            "fractions": [
+                "🍕 Space pizza slices: {problem}",
+                "🥧 Moon pie pieces: {problem}",
+                "🧀 Space cheese slices: {problem}",
+                "🍫 Rocket chocolate pieces: {problem}",
+            ],
+            "graphs": [
+                "📊 From the rocket, Lumi saw ? more {e1} than {e2}.",
+                "📊 Lumi's space chart: there are ? more {e1} than {e2}.",
+                "🔭 Through the telescope: ? more {e1} than {e2}.",
+                "📊 Mission log: {e1} beat {e2} by ?",
+            ],
         },
         "es": {
-            "add": "⛽ El cohete tiene {a} litros de combustible. La tripulación pone {b} más.",
-            "sub": "⭐ Lumi cuenta {a} estrellas. {b} se esconden detrás de la Luna.",
-            "mul": "🚀 Hay {a} cohetes. Cada cohete tiene {b} ventanas.",
-            "share": "🍱 {a} meriendas espaciales se reparten por igual entre {b} astronautas.",
-            "patterns": "📡 Los pitidos de un planeta lejano siguen un patrón.",
-            "big_numbers": "🔭 Lumi lee un número grande en el mapa de estrellas.",
-            "time": "🧑‍🚀 El paseo espacial de Lumi empieza a las {start} y dura {m} minutos.",
-            "measure": "🎒 Lumi guarda su {obj} para el viaje al espacio.",
-            "shapes": "🛰️ Lumi construye una pieza del satélite con forma de {shape}.",
-            "fractions": "🍕 Dos pizzas espaciales: una cortada en {a} trozos iguales y la otra en {b}.",
-            "graphs": "📊 El control de la misión contó lo que Lumi vio por la ventana del cohete.",
+            "add": [
+                "⛽ El cohete tiene {a} L de combustible y recibe {b} L más. Ahora tiene ? L.",
+                "🌑 Lumi encontró {a} rocas lunares y luego {b} más. Rocas en la bolsa: ?",
+                "👽 {a} extraterrestres saludan. Llegan {b} más. ¡Ya son ? extraterrestres!",
+                "🛰️ La estación espacial tiene {a} tornillos. Lumi pone {b}. Total: ?",
+            ],
+            "sub": [
+                "⭐ Lumi ve {a} estrellas. {b} se esconden tras la Luna. Siguen brillando: ?",
+                "🍪 Lumi llevó {a} galletas espaciales y se comió {b}. Quedan: ?",
+                "☄️ Pasan {a} cometas. {b} se van. Quedan ? cometas.",
+                "🧑‍🚀 La cuenta atrás va en {a}. Lumi baja {b} más. Ahora marca ?",
+            ],
+            "mul": [
+                "🚀 {a} cohetes con {b} ventanas cada uno tienen ? ventanas.",
+                "🪐 Lumi salta {b} veces en cada uno de {a} planetas. ¡Son ? saltos!",
+                "👩‍🚀 {a} astronautas llevan {b} meriendas cada uno: ? en total.",
+                "🌟 {a} filas de {b} estrellas forman un dibujo de ? estrellas.",
+            ],
+            "share": [
+                "🍱 {a} meriendas entre {b} astronautas: ? para cada uno.",
+                "🌑 {a} rocas lunares en {b} cajas iguales: ? por caja.",
+                "🚀 {a} astronautas viajan en {b} cohetes, igual en cada uno: ? por cohete.",
+                "🧃 {a} jugos duran {b} días en la Luna. Cada día toca ?",
+            ],
+            "patterns": [
+                "📡 Pitidos del espacio: {problem}",
+                "🛸 Las luces del ovni parpadean así: {problem}",
+                "🌠 Lumi cuenta estrellas fugaces: {problem}",
+                "🔢 El código secreto del cohete: {problem}",
+            ],
+            "big_numbers": [
+                "🔭 Mapa de estrellas: {problem}",
+                "🌌 Un planeta muy lejano. {problem}",
+                "🚀 El número de serie del cohete. {problem}",
+                "🧮 El gran número del control de la misión. {problem}",
+            ],
+            "time": [
+                "🧑‍🚀 Un paseo espacial de {m} minutos empieza a las {start}. Termina a las ?",
+                "🚀 El despegue es a las {start} y el viaje dura {m} min. Lumi llega a las ?",
+                "😴 Lumi duerme la siesta a las {start} durante {m} min. Despierta a las ?",
+                "🍝 La comida espacial empieza a las {start} y dura {m} min. Termina a las ?",
+            ],
+            "measure": [
+                "🎒 Para el espacio, Lumi lleva su {obj}: mide ? cm.",
+                "🧑‍🚀 Su {obj} flota sin gravedad. Mide ? cm.",
+                "📦 Lumi guarda su {obj} en el cohete. Largo: ? cm",
+                "🔧 En la estación espacial, Lumi mide su {obj}: ? cm.",
+            ],
+            "shapes": [
+                "🛰️ Una pieza del satélite con forma de {shape} tiene ? caras planas.",
+                "🏠 La casa lunar de Lumi tiene forma de {shape}. Caras planas: ?",
+                "📦 Una caja de provisiones con forma de {shape} tiene ? caras planas.",
+                "🧱 Un bloque de la base lunar con forma de {shape} tiene ? caras planas.",
+            ],
+            "fractions": [
+                "🍕 Trozos de pizza espacial: {problem}",
+                "🥧 Trozos de pastel lunar: {problem}",
+                "🧀 Trozos de queso espacial: {problem}",
+                "🍫 Trozos de chocolate cohete: {problem}",
+            ],
+            "graphs": [
+                "📊 Desde el cohete, Lumi vio ? {e1} más que {e2}.",
+                "📊 La gráfica espacial de Lumi: hay ? {e1} más que {e2}.",
+                "🔭 Por el telescopio: ? {e1} más que {e2}.",
+                "📊 Diario de la misión: {e1} le gana a {e2} por ?",
+            ],
         },
         "vi": {
-            "add": "⛽ Tên lửa có {a} lít nhiên liệu. Phi hành đoàn đổ thêm {b} lít.",
-            "sub": "⭐ Lumi đếm được {a} ngôi sao. {b} ngôi sao trốn sau Mặt Trăng.",
-            "mul": "🚀 Có {a} tên lửa. Mỗi tên lửa có {b} cửa sổ.",
-            "share": "🍱 {a} gói đồ ăn vũ trụ được chia đều cho {b} phi hành gia.",
-            "patterns": "📡 Tiếng bíp từ một hành tinh xa xôi theo một quy luật.",
-            "big_numbers": "🔭 Lumi đọc một số lớn trên bản đồ sao.",
-            "time": "🧑‍🚀 Lumi đi bộ ngoài không gian lúc {start} trong {m} phút.",
-            "measure": "🎒 Lumi xếp {obj} vào ba lô để bay vào vũ trụ.",
-            "shapes": "🛰️ Lumi lắp một bộ phận vệ tinh có dạng {shape}.",
-            "fractions": "🍕 Hai chiếc bánh pizza vũ trụ: một chiếc cắt thành {a} miếng bằng nhau, chiếc kia thành {b} miếng.",
-            "graphs": "📊 Trung tâm điều khiển đếm những gì Lumi thấy qua cửa sổ tên lửa.",
+            "add": [
+                "⛽ Tên lửa có {a} lít nhiên liệu, đổ thêm {b} lít. Giờ có ? lít.",
+                "🌑 Lumi nhặt {a} viên đá Mặt Trăng, rồi thêm {b} viên. Trong túi có ? viên.",
+                "👽 {a} bạn ngoài hành tinh vẫy chào. {b} bạn nữa bay tới. Có tất cả ? bạn!",
+                "🛰️ Trạm vũ trụ có {a} con ốc. Lumi lắp thêm {b} con. Tổng cộng: ?",
+            ],
+            "sub": [
+                "⭐ Lumi thấy {a} ngôi sao. {b} ngôi sao trốn sau Mặt Trăng. Còn ? ngôi sao sáng.",
+                "🍪 Lumi mang {a} bánh quy vũ trụ, ăn mất {b} cái. Còn lại: ?",
+                "☄️ {a} sao chổi bay qua. {b} sao chổi bay đi. Còn ? sao chổi.",
+                "🧑‍🚀 Đếm ngược đang ở số {a}. Lumi đếm lùi thêm {b}. Giờ là ?",
+            ],
+            "mul": [
+                "🚀 {a} tên lửa, mỗi chiếc có {b} cửa sổ. Tất cả có ? cửa sổ.",
+                "🪐 Lumi nhảy {b} lần trên mỗi hành tinh, có {a} hành tinh. Tất cả ? lần!",
+                "👩‍🚀 {a} phi hành gia, mỗi người mang {b} món ăn vặt: tất cả ? món.",
+                "🌟 {a} hàng, mỗi hàng {b} ngôi sao, thành bức tranh ? ngôi sao.",
+            ],
+            "share": [
+                "🍱 Chia {a} gói đồ ăn cho {b} phi hành gia: mỗi người ? gói.",
+                "🌑 Chia đều {a} viên đá Mặt Trăng vào {b} hộp: mỗi hộp ? viên.",
+                "🚀 {a} phi hành gia đi đều trên {b} tên lửa: mỗi tên lửa ? người.",
+                "🧃 {a} hộp nước dùng trong {b} ngày trên Mặt Trăng: mỗi ngày ? hộp.",
+            ],
+            "patterns": [
+                "📡 Tiếng bíp từ vũ trụ: {problem}",
+                "🛸 Đèn đĩa bay nhấp nháy theo quy luật: {problem}",
+                "🌠 Lumi đếm sao băng: {problem}",
+                "🔢 Mật mã bí mật của tên lửa: {problem}",
+            ],
+            "big_numbers": [
+                "🔭 Bản đồ sao: {problem}",
+                "🌌 Một hành tinh rất xa. {problem}",
+                "🚀 Số hiệu tên lửa. {problem}",
+                "🧮 Con số lớn của trung tâm điều khiển. {problem}",
+            ],
+            "time": [
+                "🧑‍🚀 Lumi đi bộ ngoài không gian {m} phút, bắt đầu lúc {start}. Kết thúc lúc ?",
+                "🚀 Tên lửa phóng lúc {start}, bay {m} phút lên quỹ đạo. Lumi tới nơi lúc ?",
+                "😴 Lumi ngủ trưa trên trạm vũ trụ lúc {start}, ngủ {m} phút. Thức dậy lúc ?",
+                "🍝 Bữa trưa vũ trụ bắt đầu lúc {start}, kéo dài {m} phút. Kết thúc lúc ?",
+            ],
+            "measure": [
+                "🎒 Lumi mang {obj} lên vũ trụ. Nó dài ? cm.",
+                "🧑‍🚀 {obj} của Lumi bay lơ lửng. Nó dài ? cm.",
+                "📦 Lumi cất {obj} vào tên lửa. Chiều dài: ? cm",
+                "🔧 Trên trạm vũ trụ, Lumi đo {obj}: ? cm.",
+            ],
+            "shapes": [
+                "🛰️ Bộ phận vệ tinh dạng {shape} có ? mặt phẳng.",
+                "🏠 Nhà trên Mặt Trăng của Lumi là {shape}. Số mặt phẳng: ?",
+                "📦 Hộp đồ tiếp tế là {shape}, có ? mặt phẳng.",
+                "🧱 Khối xây căn cứ Mặt Trăng là {shape}, có ? mặt phẳng.",
+            ],
+            "fractions": [
+                "🍕 Miếng pizza vũ trụ: {problem}",
+                "🥧 Miếng bánh Mặt Trăng: {problem}",
+                "🧀 Miếng phô mai vũ trụ: {problem}",
+                "🍫 Miếng sô-cô-la tên lửa: {problem}",
+            ],
+            "graphs": [
+                "📊 Từ tên lửa, Lumi thấy số {e1} nhiều hơn số {e2} là ?",
+                "📊 Biểu đồ vũ trụ của Lumi: {e1} nhiều hơn {e2} ? cái.",
+                "🔭 Qua kính thiên văn: {e1} nhiều hơn {e2} ? cái.",
+                "📊 Nhật ký nhiệm vụ: {e1} hơn {e2} ? cái.",
+            ],
         },
     },
 }
@@ -109,8 +278,13 @@ def dress_item(item: Item, dream: Optional[str]) -> Item:
     return item
 
 
-def story(dream: Optional[str], concept: str, problem: str, data: dict, lang: str) -> Optional[str]:
-    """The dream's one-line story for this problem, or None (no dream, or nothing fits)."""
+def story(dream: Optional[str], concept: str, problem: str, data: dict, lang: str,
+          used: Optional[set[str]] = None) -> Optional[str]:
+    """This problem as the dream's short question ("?" = the answer's place), or None (no dream).
+
+    `used` (shared across one worksheet) remembers which versions are taken, so two problems of the same kind on a
+    page get different stories. The first choice depends only on the problem, so the same problem always reads the same.
+    """
     d = valid_dream(dream)
     if not d:
         return None
@@ -119,11 +293,18 @@ def story(dream: Optional[str], concept: str, problem: str, data: dict, lang: st
     if m:  # the original four: "a op b"
         a, op, b = m.groups()
         key = {"+": "add", "-": "sub", "×": "mul"}[op]
-        return lines[key].format(a=a, b=b)
-    if concept == "time":
-        return lines["time"].format(start=f"{data['h']}:{data['mm']:02d}", m=data["m"])
-    if concept in ("share", "fractions"):
-        return lines[concept].format(a=data["a"], b=data["b"])
-    if concept in ("measure", "shapes"):
-        return lines[concept].format(obj=data.get("obj", ""), shape=data.get("shape", ""))
-    return lines.get(concept)
+        fields = {"a": a, "b": b}
+    elif concept in lines:
+        key = concept
+        fields = {**data, "problem": problem}
+        if concept == "time":
+            fields["start"] = f"{data['h']}:{data['mm']:02d}"
+    else:
+        return None
+    versions = lines[key]
+    first = zlib.crc32(problem.encode("utf-8")) % len(versions)
+    order = [(first + i) % len(versions) for i in range(len(versions))]
+    pick = next((i for i in order if used is None or f"story:{key}:{i}" not in used), first)
+    if used is not None:
+        used.add(f"story:{key}:{pick}")
+    return versions[pick].format(**fields)

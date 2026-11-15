@@ -214,8 +214,8 @@ export type MathVisualData =
   | { type: "bars"; bars: { label: string; value: number }[]; max: number };
 
 /** Newer concepts mark the answer's place with "?"; the original four are "a op b". */
-/** `story`: the dream's one-line story above the problem (wording only; docs/12-dreams.md). */
-export interface LumiProblem { id: number; problem: string; lumi_answer: string; kind: AnswerKind; visual: MathVisualData | null; story?: string | null }
+/** With a dream, `problem` is the dream's short story question, "?" marking the answer (docs/12-dreams.md). */
+export interface LumiProblem { id: number; problem: string; lumi_answer: string; kind: AnswerKind; visual: MathVisualData | null }
 export interface TeachUnlock { kind: "place" | "story"; key: string; title: string; emoji: string }
 export interface TeachChip { id: string; text: string }
 
@@ -226,7 +226,7 @@ export interface TeachTurn {
   focus_problem_id: number | null;
   highlight_ids: number[];
   chips: TeachChip[];
-  demo: { problem: string; steps: string[]; answer: string; visual: MathVisualData | null; story?: string | null } | null;
+  demo: { problem: string; steps: string[]; answer: string; visual: MathVisualData | null } | null;
   outcomes: { id: number; outcome: TeachOutcome }[];
   mastery: Record<string, number>;
   mastery_up: string | null;

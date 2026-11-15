@@ -14,7 +14,7 @@ export interface Dream {
 }
 
 export const DREAMS: Dream[] = [
-  { id: "astronaut", emoji: "🚀", image: "/assets/dreams/astronaut.webp" },
+  { id: "astronaut", emoji: "🚀", image: "/assets/dreams/astronaut.svg" },
 ];
 
 const KEY = "lumi_dream";

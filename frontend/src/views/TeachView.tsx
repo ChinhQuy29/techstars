@@ -419,7 +419,6 @@ export default function TeachView({
           {step === "demo" && turn?.demo && (
             <div className="w-full rounded-3xl bg-violet-50 p-5 ring-2 ring-violet-200">
               <p className="mb-1 text-sm font-bold uppercase tracking-wide text-violet-500">🤖 {s.newTry}</p>
-              {turn.demo.story && <p className="mb-1 text-base leading-snug text-indigo-900/80 sm:text-lg">{turn.demo.story}</p>}
               <p className={`font-hand mb-3 text-slate-800 ${turn.demo.problem.includes("?") ? "text-3xl sm:text-4xl" : "text-5xl"}`}>
                 <ProblemText
                   problem={turn.demo.problem}
@@ -677,12 +676,11 @@ export default function TeachView({
                 key={card.id}
                 initial={{ opacity: 0, x: 24 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="notebook flex flex-col gap-2 rounded-3xl py-4 pr-4 pl-[68px] shadow-inner ring-1 ring-amber-200"
+                className="notebook notebook-cells flex flex-col gap-2 rounded-3xl py-4 pr-4 pl-[68px] shadow-inner ring-1 ring-amber-200"
               >
                 <p className="text-sm font-extrabold text-rose-400">
                   {s.problemOf.replace("{n}", String(cursor + 1)).replace("{total}", String(problems.length))}
                 </p>
-                {card.story && <p className="text-lg leading-snug text-indigo-900/80">{card.story}</p>}
                 <p className={`font-hand text-slate-800 ${card.problem.includes("?") ? "text-2xl leading-snug" : "text-5xl"}`}>
                   <ProblemText
                     problem={card.problem}

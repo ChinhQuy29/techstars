@@ -405,7 +405,7 @@ def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: se
             lumi = cx.display(item, item.wrong if planted else item.answer, lang)
             return TeachProblem(id=pid, problem=item.problem, lumi_answer=lumi, correct_answer=item.answer,
                                 planted=planted, concept=concept, kind=item.kind, visual=item.visual, data=item.data,
-                                story=dreams.story(dream, concept, item.problem, item.data, lang))
+                                story=dreams.story(dream, concept, item.problem, item.data, lang, used))
         raise TeachGenerationError(f"could not generate a {concept} problem")
     for _ in range(50):
         expr, lumi = _make(concept, planted, rng)
@@ -422,7 +422,7 @@ def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: se
         used.add(expr)
         return TeachProblem(id=pid, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
                             planted=planted, concept=concept, error_step=error_step,
-                            story=dreams.story(dream, concept, expr, {}, lang))
+                            story=dreams.story(dream, concept, expr, {}, lang, used))
     raise TeachGenerationError(f"could not generate a {concept} problem")
 
 
@@ -436,7 +436,8 @@ def ready_concepts(session: Session) -> set[str]:
     return ready & set(ALL_CONCEPTS)
 
 
-def _demo_problems(dream: Optional[str] = None, lang: str = "en") -> list[TeachProblem]:
+def _demo_problems(dream: Optional[str] = None, lang: str = "en",
+                   used: Optional[set[str]] = None) -> list[TeachProblem]:
     problems = []
     for i, (expr, lumi, planted, concept) in enumerate(DEMO_SHEET, start=1):
         result = check(expr, lumi)
@@ -445,19 +446,22 @@ def _demo_problems(dream: Optional[str] = None, lang: str = "en") -> list[TeachP
             raise TeachGenerationError(f"demo sheet row {i} failed verification")
         problems.append(TeachProblem(id=i, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
                                      planted=planted, concept=concept, error_step=error_step,
-                                     story=dreams.story(dream, concept, expr, {}, lang)))
+                                     story=dreams.story(dream, concept, expr, {}, lang, used)))
     return problems
 
 
 def _problem_out(p: TeachProblem) -> LumiProblemOut:
-    return LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer, kind=p.kind, visual=p.visual,
-                          story=p.story)
+    # With a dream, the child sees only the short story question (same numbers, "?" = the answer's place).
+    return LumiProblemOut(id=p.id, problem=p.story or p.problem, lumi_answer=p.lumi_answer, kind=p.kind,
+                          visual=p.visual)
 
 
 def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random.Random] = None,
                   demo: bool = False, concept: Optional[str] = None) -> TeachWorksheetResponse:
     if demo:  # explicit adult demo action: fixed sheet, bypasses the gate on purpose
-        st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(session.dream, lang), demo=True)
+        stories: set[str] = set()
+        st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(session.dream, lang, stories),
+                        demo=True, used_stories=stories)
         session.teach = st
         session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=["borrow", "carry"],
                     planted=[p.id for p in st.problems if p.planted], demo=True)
@@ -507,7 +511,8 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
     used: set[str] = set()
     problems = [_problem(i + 1, c, p, rng, used, lang, session.dream) for i, (c, p) in enumerate(plan)]
 
-    st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=problems, review=review)
+    st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=problems, review=review,
+                    used_stories={u for u in used if u.startswith("story:")})
     session.teach = st
     session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=sorted(set(pool)),
                 planted=[p.id for p in problems if p.planted], demo=False)
@@ -733,10 +738,11 @@ def _start_demo(session: Session, p: TeachProblem, lang: str, reaction: str, gai
     p.demo = {"problem": expr, "answer": answer}
     quote = t["you_said"].format(quote=f"“{p.quote}”") if p.quote else ""
     say = " ".join(x for x in [reaction, quote, t["like_taught"], *steps, so, t["did_i"]] if x)
-    story = dreams.story(session.dream, p.concept, expr, item.data if p.concept in NEW_CONCEPTS else {}, lang)
+    story = dreams.story(session.dream, p.concept, expr, item.data if p.concept in NEW_CONCEPTS else {}, lang,
+                         st.used_stories)  # a version not already on the page
     return _turn(session, "happy", say, "demo", p,
-                 demo=TeachDemo(problem=expr, steps=[*steps, so] if so else steps, answer=answer, visual=visual,
-                                story=story))
+                 demo=TeachDemo(problem=story or expr, steps=[*steps, so] if so else steps, answer=answer,
+                                visual=visual))
 
 
 async def _rate(session: Session, p: TeachProblem, lang: str, text: str) -> tuple[str, Optional[str], Optional[str]]:

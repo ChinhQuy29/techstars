@@ -1,7 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useState } from "react";
 import {
-  EXPRESSIONS, LUMI_COLORS as C, RASTER_ASSETS, resolveExpression, type LumiExpression, type LumiPose,
+  ARTWORK_EXTRAS, ARTWORK_SIZE, EXPRESSIONS, LUMI_COLORS as C, RASTER_ASSETS, resolveExpression, type LumiExpression, type LumiPose,
 } from "./lumiAssets";
 
 const SIZES = { xs: "w-10", sm: "w-20", md: "w-32", lg: "w-44", hero: "w-60" } as const;
@@ -65,20 +65,46 @@ export default function LumiMascot({
   }, [talking, reduce, useArtwork]);
 
   if (useArtwork) {
+    const extras = ARTWORK_EXTRAS[expression] ?? [];
     return (
-      <motion.img
-        key={raster}
-        src={raster}
-        width={272}
-        height={327}
-        onError={() => setFailedRaster(raster)}
-        animate={moving && expression === "celebrate" ? { y: [0, -8, 0] } : undefined}
-        transition={{ duration: 0.3 }}
-        alt={ariaLabel ?? ""}
+      <span
+        className={`relative inline-block select-none align-bottom [container-type:inline-size] ${sizeClass} ${className}`}
+        role={ariaLabel ? "img" : undefined}
+        aria-label={ariaLabel}
         aria-hidden={ariaLabel ? undefined : true}
-        className={`h-auto select-none ${sizeClass} ${className}`}
-        draggable={false}
-      />
+      >
+        <motion.img
+          key={raster}
+          src={raster}
+          width={ARTWORK_SIZE.w}
+          height={ARTWORK_SIZE.h}
+          onError={() => setFailedRaster(raster)}
+          initial={moving ? { opacity: 0.6, scale: 0.97 } : false}
+          animate={moving && expression === "celebrate" ? { opacity: 1, scale: 1, y: [0, -8, 0] } : { opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          alt=""
+          className="block h-auto w-full"
+          draggable={false}
+        />
+        {/* The "?", "hmm" and "Z z" from the Figma page sit beside Lumi's head (sizes scale with Lumi). */}
+        {extras.map((text, i) => (
+          <motion.span
+            key={`${expression}-${i}`}
+            aria-hidden
+            className="pointer-events-none absolute font-display font-extrabold leading-none text-[#212A42]"
+            style={{ right: `${2 + i * 9}%`, top: `${-4 + i * 13}%`, fontSize: `${(text.length > 1 ? 11 : 20) - i * 5}cqw` }}
+            initial={{ opacity: 0, y: 4 }}
+            animate={
+              !moving ? { opacity: 1, y: 0 }
+                : expression === "sleeping" ? { opacity: [0, 1, 1, 0], y: [6, 0, -6, -12] }
+                  : { opacity: 1, y: [0, -3, 0], rotate: text === "?" ? [0, 8, 0] : 0 }
+            }
+            transition={moving ? { duration: expression === "sleeping" ? 2.6 : 1.6, repeat: Infinity, delay: i * 0.6, ease: "easeInOut" } : { duration: 0.2 }}
+          >
+            {text}
+          </motion.span>
+        ))}
+      </span>
     );
   }
 

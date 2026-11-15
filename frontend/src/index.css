@@ -40,6 +40,12 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px
     linear-gradient(90deg, transparent 54px, #f4d7d9 54px, #f4d7d9 56px, transparent 56px),
     repeating-linear-gradient(180deg, transparent 0, transparent 63px, #d8e1f6 63px, #d8e1f6 64px);
 }
+/* One cell per problem: keep the red margin, and let each row draw its own rule so rows grow with their text
+   (a fixed 64 px ruling ran through two-line story questions). */
+.notebook-cells {
+  background-image: linear-gradient(90deg, transparent 54px, #f4d7d9 54px, #f4d7d9 56px, transparent 56px);
+}
+.notebook-cells > ol > li + li { border-top: 2px solid #d8e1f6; }
 .font-hand { font-family: var(--font-hand); }
 
 @media print {

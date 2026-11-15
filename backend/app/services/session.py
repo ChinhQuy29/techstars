@@ -83,7 +83,7 @@ class TeachProblem:
     kind: str = "number"  # how the child types an answer: number | time | compare
     visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart, drawn by the frontend
     data: dict = field(default_factory=dict)  # the numbers behind the problem (newer concepts)
-    story: Optional[str] = None  # the dream's one-line story (services/dreams.py); wording only
+    story: Optional[str] = None  # the problem as the dream's short question (services/dreams.py); shown instead of `problem`
     # filled in after the child checks the page
     outcome: Optional[str] = None
     child_fix: Optional[str] = None
@@ -112,6 +112,7 @@ class TeachState:
     done: bool = False
     last_turn: Optional[dict] = None
     demo: bool = False  # fixed scripted worksheet (adult demo action), isolated in the report
+    used_stories: set[str] = field(default_factory=set)  # dream story versions on this page (services/dreams.py)
     started: float = field(default_factory=time.time)
 
     def get(self, problem_id: Optional[int]) -> Optional[TeachProblem]:

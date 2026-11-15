@@ -62,18 +62,30 @@ export const EXPRESSIONS: Record<LumiExpression, ExpressionSpec> = {
 };
 
 /**
- * Character poses exported from the final Figma page named "new".
- * Expressions with no matching Figma pose use the animated vector renderer.
+ * Lumi's poses, exported as SVG from the Figma file "Lumi", page "new" (frames Character, excited, confused,
+ * thinking, sleeping). Every file shares one 342×353 canvas with the foot shadow at the same spot, so switching
+ * moods never moves Lumi. "sad" is left out on purpose: Lumi never makes a child feel they upset it.
+ * Curious and listening have no pose of their own yet. The vector renderer is only a fallback if a file fails.
  */
-const waving = "/assets/figma-new/lumi-waving.webp";
-const puzzled = "/assets/figma-new/lumi-puzzled.webp";
+const pose = (name: string) => `/assets/mascot/lumi-${name}.svg`;
 export const RASTER_ASSETS: Partial<Record<LumiExpression, string>> = {
-  default: waving,
-  happy: waving,
-  curious: puzzled,
-  confused: puzzled,
-  encourage: waving,
-  celebrate: waving,
+  default: pose("waving"),
+  listening: pose("waving"),
+  happy: pose("excited"),
+  celebrate: pose("excited"),
+  encourage: pose("excited"),
+  curious: pose("thinking"),
+  thinking: pose("thinking"),
+  confused: pose("confused"),
+  sleeping: pose("sleeping"),
+};
+export const ARTWORK_SIZE = { w: 342, h: 353 } as const;
+
+/** The little extras drawn beside Lumi's head in Figma ("?", "hmm", "Z z"). */
+export const ARTWORK_EXTRAS: Partial<Record<LumiExpression, string[]>> = {
+  confused: ["?"],
+  thinking: ["hmm"],
+  sleeping: ["Z", "z"],
 };
 
 /** Unknown or missing expression → default (never a broken image). */

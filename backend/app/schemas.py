@@ -139,7 +139,6 @@ class LumiProblemOut(BaseModel):
     lumi_answer: str
     kind: AnswerKind = "number"  # which keypad the child gets
     visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart for the frontend to draw
-    story: Optional[str] = None  # the dream's one-line story above the problem (wording only)
 
 
 class TeachChip(BaseModel):
@@ -152,7 +151,6 @@ class TeachDemo(BaseModel):
     steps: list[str]
     answer: str
     visual: Optional[dict] = None
-    story: Optional[str] = None
 
 
 class TeachUnlock(BaseModel):

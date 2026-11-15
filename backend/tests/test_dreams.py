@@ -1,4 +1,4 @@
-"""Lumi's dream: stories change the wording of a problem, never its math (docs/12-dreams.md)."""
+"""Lumi's dream: problems are asked as short stories; the math never changes (docs/12-dreams.md)."""
 import os
 import random
 import re
@@ -19,6 +19,11 @@ LANGS = ("en", "es", "vi")
 NUM = re.compile(r"\d+")
 
 
+def lumi_answer_not_in_story(p) -> bool:
+    """The answer only appears where "?" is: never written into the sentence itself."""
+    return p.correct_answer not in NUM.findall(p.story) or p.correct_answer in NUM.findall(p.problem)
+
+
 def _ready_session(name: str):
     s = get_session(name)
     s.saved_ready = set(ALL_CONCEPTS)
@@ -33,9 +38,12 @@ def test_every_problem_gets_a_story_with_no_new_numbers(concept, lang):
         planted = seed % 2 == 0
         p = teach._problem(1, concept, planted, rng, set(), lang, "astronaut")
         assert p.story, (concept, lang)
-        # Every number in the story is already on the page, so the story can't add or reveal anything.
+        # Every number in the story comes from the math problem, so the story can't add or reveal anything.
         assert set(NUM.findall(p.story)) <= set(NUM.findall(p.problem)), (p.story, p.problem)
         assert "{" not in p.story and "}" not in p.story
+        assert p.story.count("?") == 1, p.story  # the one place Lumi's answer goes
+        assert len(p.story) <= 90, (len(p.story), p.story)  # short enough for a phone card
+        assert lumi_answer_not_in_story(p), (p.story, p.lumi_answer)
 
 
 @pytest.mark.parametrize("concept", ALL_CONCEPTS)
@@ -79,12 +87,16 @@ def test_worksheet_api_with_a_dream():
     sid = "dream-api"
     _ready_session(sid)
     w = client.post("/api/teach/worksheet", json={"session_id": sid, "language": "en", "dream": "astronaut"}).json()
-    assert w["ready"] and all(p["story"] for p in w["problems"])
-    assert "astronaut" in w["turn"]["say"]
+    assert w["ready"] and "astronaut" in w["turn"]["say"]
+    assert "story" not in w["problems"][0]
+    s = get_session(sid)
+    for out, st in zip(w["problems"], s.teach.problems):
+        assert out["problem"] == st.story and out["problem"].count("?") == 1  # only the story text is shown
     plain = client.post("/api/teach/worksheet", json={"session_id": sid, "language": "en"}).json()
-    assert all(p["story"] is None for p in plain["problems"]) and "astronaut" not in plain["turn"]["say"]
+    assert "astronaut" not in plain["turn"]["say"]
+    assert all(p["problem"] == st.problem for p, st in zip(plain["problems"], get_session(sid).teach.problems))
     bad = client.post("/api/teach/worksheet", json={"session_id": sid, "language": "en", "dream": "<b>x</b>"})
-    assert bad.status_code == 200 and all(p["story"] is None for p in bad.json()["problems"])
+    assert bad.status_code == 200 and all(st.story is None for st in get_session(sid).teach.problems)
 
 
 def test_demo_sheet_and_lumis_try_keep_the_dream():
@@ -92,8 +104,47 @@ def test_demo_sheet_and_lumis_try_keep_the_dream():
     _ready_session(sid)
     w = client.post("/api/teach/worksheet",
                     json={"session_id": sid, "language": "es", "demo": True, "dream": "astronaut"}).json()
-    assert all(p["story"] for p in w["problems"]) and "astronauta" in w["turn"]["say"]
+    assert all("?" in p["problem"] for p in w["problems"]) and "astronauta" in w["turn"]["say"]
     s = get_session(sid)
     p = next(p for p in s.teach.problems if p.planted)
     turn = teach._start_demo(s, p, "es", "", 0.0)
-    assert turn.demo and turn.demo.story
+    assert turn.demo and turn.demo.problem.count("?") == 1 and "+" not in turn.demo.problem
+
+
+def _key(p) -> str:
+    m = dreams._EXPR.match(p.problem)
+    return {"+": "add", "-": "sub", "×": "mul"}[m.group(2)] if m else p.concept
+
+
+@pytest.mark.parametrize("lang", LANGS)
+@pytest.mark.parametrize("concept", ALL_CONCEPTS)
+def test_every_version_is_short_and_safe(concept, lang):
+    for seed in range(12):
+        p = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), lang, "astronaut")
+        key = _key(p)
+        versions = dreams.STORIES["astronaut"][lang][key]
+        data = p.data if concept in NEW_CONCEPTS else {}
+        for i in range(len(versions)):
+            taken = {f"story:{key}:{j}" for j in range(len(versions)) if j != i}
+            text = dreams.story("astronaut", concept, p.problem, data, lang, taken)
+            assert text.count("?") == 1 and len(text) <= 90, (len(text), text)
+            assert set(NUM.findall(text)) <= set(NUM.findall(p.problem)), (text, p.problem)
+            assert "{" not in text
+
+
+def test_each_kind_has_several_versions_in_every_language():
+    for d in dreams.DREAMS:
+        counts = {k: len(v) for k, v in dreams.STORIES[d]["en"].items()}
+        assert min(counts.values()) >= 3
+        for lang in LANGS:
+            assert {k: len(v) for k, v in dreams.STORIES[d][lang].items()} == counts, lang
+
+
+def test_a_worksheet_never_repeats_a_story_version():
+    for seed in range(20):
+        s = _ready_session(f"dream-variety-{seed}")
+        s.dream = "astronaut"
+        w = teach.new_worksheet(s, "en", False, rng=random.Random(seed))
+        stories = [p.story for p in s.teach.problems]
+        assert len(set(stories)) == len(stories), stories
+        assert w.ready

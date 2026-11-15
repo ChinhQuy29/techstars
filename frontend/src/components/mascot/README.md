@@ -34,5 +34,24 @@ The expression follows state the backend already decided. It never decides anyth
 ## Provenance and license
 Original vector artwork written in code for this project (no third-party images, fonts or icon packs in the mascot). Drawn to match the reference sheet's stable features: rounded white head and compact body, navy face screen `#0F2D3D`, glowing cyan eyes and mouth, teal ear panels and chest light `#4FC3C7`, orange antenna tip `#FFB347`, short rounded limbs. The favicon `public/lumi.svg` is a simplified head of the same drawing.
 
-## Adding raster art later
-Put optimized transparent WebP files (200×250 aspect) in `public/assets/mascot/` and register them in `RASTER_ASSETS`, e.g. `happy: "/assets/mascot/lumi-happy.webp"`. That state then renders the image; the others keep the SVG. Generate all poses from one character sheet so the robot doesn't drift.
+## Figma poses (what the app shows)
+The app shows the blue robot from the Figma file **Lumi**, page **new**. Each pose is exported as an SVG into `public/assets/mascot/` and listed in `RASTER_ASSETS`. The drawn white robot above is only a fallback if a file fails to load.
+
+| Figma frame (node) | File | Used for |
+|---|---|---|
+| Character (`20:1903`) | `lumi-waving.svg` | default, listening |
+| excited (`20:2364`) | `lumi-excited.svg` | happy, celebrate, encourage |
+| thinking (`20:2516`) | `lumi-thinking.svg` + "hmm" | thinking; curious (no "hmm") |
+| confused (`20:2439`) | `lumi-confused.svg` + "?" | confused |
+| sleeping (`20:2310`) | `lumi-sleeping.svg` + "Z z" | sleeping |
+| sad (`18:1366`) | not used | Lumi never makes a child feel they upset it |
+
+**Exporting a new or changed pose:**
+1. Export the frame as SVG.
+2. Delete the background `<rect>` (the frames have a dark fill).
+3. Make the file ids unique (`paint0_linear_<file>`).
+4. Set the viewBox to the shared 342×353 canvas, with the foot shadow's centre at (171, 332), so Lumi never jumps when the mood changes (`ARTWORK_SIZE`).
+
+The "?", "hmm" and "Z z" are drawn by `LumiMascot` beside the head (`ARTWORK_EXTRAS`), not baked into the files. The Figma poses don't blink or move their mouths.
+
+Still needed from Figma: a **listening** pose and a **curious** pose. Also check whether the antenna colour changing per pose is intended.

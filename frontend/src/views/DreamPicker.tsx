@@ -58,8 +58,8 @@ export default function DreamPicker({ language, current, onSelect }: {
               <motion.img
                 src={dream.image}
                 alt=""
-                width={496}
-                height={592}
+                width={326}
+                height={428}
                 draggable={false}
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}

@@ -33,7 +33,7 @@ export default function LumiHomework(p: Props) {
   const marking = p.step === "mark";
   const finding = p.step === "find";
   return (
-    <div className="notebook lumi-workbook overflow-hidden rounded-2xl">
+    <div className="notebook notebook-cells lumi-workbook overflow-hidden rounded-2xl">
       <ol>
         {p.problems.map((pr) => {
           const m = p.marks[pr.id];
@@ -59,7 +59,7 @@ export default function LumiHomework(p: Props) {
               layout
               animate={glowing ? { backgroundColor: ["rgba(251,191,36,0.0)", "rgba(251,191,36,0.35)", "rgba(251,191,36,0.0)"] } : {}}
               transition={glowing ? { duration: 1.4, repeat: Infinity } : {}}
-              className={`relative flex items-center gap-3 pr-3 ${sentence ? "min-h-16 py-2" : "h-16"} ${focused ? "bg-yellow-100/80" : ""}`}
+              className={`relative flex items-center gap-3 pr-3 ${sentence ? "min-h-16 py-3" : "h-16"} ${focused ? "bg-yellow-100/80" : ""}`}
             >
               <span className="w-[54px] shrink-0 self-start pt-3 text-center text-xl font-bold text-rose-400">{pr.id}</span>
               <button
@@ -69,11 +69,10 @@ export default function LumiHomework(p: Props) {
                   finding ? "cursor-pointer hover:bg-amber-100" : "cursor-default"
                 }`}
               >
-                {pr.story && <span className="font-display text-base leading-snug text-indigo-900/80 sm:text-lg">{pr.story}</span>}
                 <span
                   className={
                     sentence
-                      ? "text-xl leading-snug sm:text-3xl"
+                      ? "text-xl leading-snug sm:text-2xl"
                       : "flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap text-[1.6rem] sm:gap-3 sm:text-4xl"
                   }
                 >
