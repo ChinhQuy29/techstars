@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="372" height="470" viewBox="-76.500 -128.500 372 470" fill="none"><g id="Character">
+<g clip-path="url(#outfit_body_doctor_waving)"><g id="outfit body" transform="matrix(0.83290 0.00001 -0.00001 0.83290 0.00330 -0.00683)"><path id="Vector 104" d="M25.3055 176.5C51.7055 167.7 64.9722 152.167 68.3055 145.5C74.7056 179.9 114.305 203.833 133.305 211.5C122.305 256 97.5054 344.9 86.3054 344.5C75.1054 344.1 50.9721 327.667 40.3054 319.5L72.5 229C71.1667 229.167 65.2055 225.5 46.8055 211.5C28.4055 197.5 24.8055 182.333 25.3055 176.5Z" fill="url(#paint7_linear_dream_doctor)" />
+<path id="Vector 105" d="M116.305 206C111.805 212.333 101.605 227 96.8054 235C92.0054 243 88.8054 248.667 87.8054 250.5H106.305L96.8054 269L101.305 315" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" />
+<path id="Vector 106" d="M169.305 348.5C169.705 337.3 179.472 261.167 184.305 224.5C214.305 229.7 230.305 224.5 249.305 221.5C260.105 235.9 275.972 268.333 282.305 282.5C267.905 292.5 242.305 297 231.305 298L223.305 270L217.805 346.5C215.472 350 207.505 357.4 194.305 359C177.805 361 168.805 362.5 169.305 348.5Z" fill="url(#paint8_linear_dream_doctor)" />
+<path id="Vector 107" d="M201.135 226C202.776 233.594 206.375 251.093 207.635 260.337C208.896 269.581 209.605 276.05 209.802 278.129L192.798 270.841L194.242 291.588L172.305 332.5" stroke="#D8D8D8" stroke-width="3" stroke-linecap="round" />
+</g></g><g id="outfit chest" transform="matrix(0.83290 0.00001 -0.00001 0.83290 0.00330 -0.00683)"><g id="Group 28">
+<path id="Vector 101" d="M95.8055 194C92.8055 202.833 86.9055 224.2 87.3055 239" stroke="black" stroke-width="6" stroke-linecap="round" />
+<path id="Vector 102" d="M84.781 292C76.4696 280.297 62.6004 250.106 84.7807 240.878C108.468 231.023 118.442 262.23 122.805 281.529" stroke="black" stroke-width="6" stroke-linecap="round" />
+<ellipse id="Ellipse 41" cx="89.3" cy="296.452" rx="8.01376" ry="5.54799" transform="rotate(26.5825 89.3 296.452)" fill="#414141" />
+<ellipse id="Ellipse 42" cx="8.01376" cy="5.54799" rx="8.01376" ry="5.54799" transform="matrix(-0.0902104 0.995923 0.995923 0.0902104 117.253 278.576)" fill="#414141" />
+<path id="Vector 103" d="M219.805 227C219.305 239.167 214.005 267.9 196.805 285.5" stroke="black" stroke-width="5" stroke-linecap="round" />
+<circle id="Ellipse 43" cx="191.305" cy="292.5" r="14.5" fill="#414141" />
+<circle id="Ellipse 44" cx="191.805" cy="292" r="10" fill="black" />
+<circle id="Ellipse 45" cx="191.805" cy="292" r="7" fill="#252525" />
+</g>
+</g></g>
+<defs><clipPath id="outfit_body_doctor_waving"><path d="M55.5618 252.701C40.2823 223.531 65.4009 179.197 79.8701 160.677C111.124 163.882 175.714 173.926 184.049 188.457C186.364 211.029 186.48 260.688 168.422 278.746C145.85 301.318 74.6612 289.163 55.5618 252.701Z" /></clipPath><linearGradient id="paint7_linear_dream_doctor" x1="79.2837" y1="145.5" x2="79.2837" y2="344.501" gradientUnits="userSpaceOnUse">
+<stop stop-color="white" />
+<stop offset="1" stop-color="#DEDDDD" />
+</linearGradient>
+<linearGradient id="paint8_linear_dream_doctor" x1="225.796" y1="221.5" x2="225.796" y2="360.278" gradientUnits="userSpaceOnUse">
+<stop stop-color="white" />
+<stop offset="1" stop-color="#DEDDDD" />
+</linearGradient>
+</defs></svg>

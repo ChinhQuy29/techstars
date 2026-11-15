@@ -19,10 +19,26 @@ main:has(.study-town) {
 main > div:has(> .study-town) { height: 100%; }
 
 .study-town {
+  position: relative;
   height: 100%;
   min-width: 0;
   color: #27344a;
 }
+
+.study-town__welcome {
+  position: absolute;
+  z-index: 1;
+  inset: 3px;
+  display: grid;
+  align-items: center;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 19px;
+  background: rgb(239 244 255 / 68%);
+  backdrop-filter: blur(8px);
+}
+
+.study-town__view[inert] :is(.study-town__travel, .study-town__actions, .study-town__footer) { visibility: hidden; }
 
 .study-town__view {
   position: relative;
@@ -45,7 +61,7 @@ main > div:has(> .study-town) { height: 100%; }
   position: absolute;
   inset: 0 auto auto 0;
   width: 2460px;
-  height: 640px;
+  height: 810px;
   transform-origin: top left;
   overflow: hidden;
   background: #a8d58d;
@@ -53,9 +69,10 @@ main > div:has(> .study-town) { height: 100%; }
 
 .study-town__terrain {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: 0 auto auto 0;
   width: 1920px;
-  background: url("/assets/map_asset/walking-terrain.png") 0 0 / 1920px 640px no-repeat;
+  height: 810px;
+  background: url("/assets/map_asset/walking-terrain-draft.png") 0 0 / 1920px 810px no-repeat;
   pointer-events: none;
 }
 
@@ -109,7 +126,7 @@ main > div:has(> .study-town) { height: 100%; }
 .study-town__sprite {
   position: absolute;
   top: 539px;
-  left: 505px;
+  left: 650px;
   width: 50px;
   height: 50px;
   translate: -50% -85.625%;
@@ -134,45 +151,58 @@ main > div:has(> .study-town) { height: 100%; }
   inset: 0;
   background: url("/assets/map_asset/character_asset/lumi-walk.png") var(--frame, 50%) 0 / 300% 300% no-repeat;
 }
+.study-town__sprite[data-dream="astronaut"]::after { background-image: url("/assets/map_asset/character_asset/lumi-walk-astronaut.svg"); }
+.study-town__sprite[data-dream="baker"]::after { background-image: url("/assets/map_asset/character_asset/lumi-walk-baker.svg"); }
+.study-town__sprite[data-dream="doctor"]::after { background-image: url("/assets/map_asset/character_asset/lumi-walk-doctor.svg"); }
 .study-town__sprite[data-facing="right"]::after,
 .study-town__sprite[data-facing="left"]::after { background-position-y: 50%; }
 .study-town__sprite[data-facing="up"]::after { background-position-y: 100%; }
 .study-town__sprite[data-facing="left"]::after { scale: -1 1; }
 
-.study-town__hud {
-  position: absolute;
-  inset: 14px 14px auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 8px;
-  pointer-events: none;
-}
-
 .study-town__travel {
-  max-width: 100%;
-  display: grid;
-  gap: 5px;
-  padding: 8px;
-  border: 1px solid #ffffffd9;
-  border-radius: 16px;
-  background: #f8fbffeF;
-  box-shadow: 0 4px 14px #143c3852;
-  pointer-events: auto;
+  position: absolute;
+  z-index: 1;
+  inset: auto auto 0 50%;
+  translate: -50% 0;
+  width: min(33rem, calc(100% - 2 * clamp(12rem, 23vw, 19rem)));
 }
 
-.study-town__travel p {
-  padding-inline: 4px;
-  font-size: .85rem;
-  font-weight: 700;
+.study-town__travel > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  min-height: 44px;
+  margin-inline: auto;
+  border: 1px solid #d3e0ef;
+  border-radius: 14px 14px 0 0;
+  background: #f8fbff;
+  list-style: none;
+  cursor: pointer;
 }
+
+.study-town__travel > summary::-webkit-details-marker { display: none; }
+.study-town__chevron { width: 8px; height: 8px; border: solid currentColor; border-width: 2px 2px 0 0; rotate: -45deg; }
+.study-town__travel[open] .study-town__chevron { rotate: 135deg; }
 
 .study-town__shortcuts, .study-town__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
 }
+
+.study-town__shortcuts {
+  justify-content: center;
+  padding: 8px;
+  border: 1px solid #d3e0ef;
+  border-radius: 14px 14px 0 0;
+  background: #f8fbff;
+  box-shadow: 0 4px 14px #143c3852;
+}
+
+.study-town__shortcuts > p { flex-basis: 100%; padding-inline: 4px; font-size: .85rem; font-weight: 800; }
+
+.study-town__actions { position: absolute; top: 14px; right: 14px; }
 
 .study-town__shortcuts button, .study-town__actions button {
   min-height: 44px;
@@ -288,9 +318,25 @@ main > div:has(> .study-town) { height: 100%; }
 
 @media (max-width: 767px) {
   .study-town__view { border-radius: 16px; }
-  .study-town__hud { inset: 8px 8px auto; }
+  .study-town__travel { inset: 0 auto auto 50%; width: calc(100% - 16px); }
+  .study-town__travel[open] { display: flex; flex-direction: column-reverse; }
+  .study-town__travel > summary, .study-town__shortcuts { border-radius: 0 0 14px 14px; }
+  .study-town__travel .study-town__chevron { rotate: 135deg; }
+  .study-town__travel[open] .study-town__chevron { rotate: -45deg; }
+  .study-town__actions { top: 48px; right: 8px; }
   .study-town__footer { inset: auto 8px 9px; gap: 8px; }
   .study-town__xp { padding: 7px 8px 9px; }
   .study-town__xp-label { gap: 5px; font-size: .78rem; }
+  .study-town__controls { grid-template-columns: repeat(3, clamp(44px, 13vw, 56px)); }
+  .study-town__dialog {
+    inset: auto 0 0;
+    width: 100%;
+    max-width: none;
+    max-height: min(85dvh, calc(100% - env(safe-area-inset-top)));
+    margin: 0;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+  }
+  .study-town__chooser > header { position: sticky; top: 0; z-index: 1; background: #f8faff; padding-block: 6px; }
   .study-town__shortcuts button, .study-town__actions button { padding-inline: 7px; }
 }

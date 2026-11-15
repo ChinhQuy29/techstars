@@ -63,27 +63,111 @@ html:has(.lumi-desktop) { scrollbar-gutter: stable; }
 .lumi-primary:hover:not(:disabled) { background: #37415e; }
 
 .lumi-topbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "brand links" "modes modes";
+  align-items: center;
+  gap: .5rem 1.5rem;
   border-bottom: 1px solid #dce4f6;
-  padding-bottom: 1rem;
+  padding-bottom: .5rem;
 }
-.lumi-navbar .btn-kid[aria-pressed="true"] {
+.lumi-topbar > :first-child { grid-area: brand; }
+.lumi-topbar > :last-child { grid-area: links; }
+.lumi-header-modes { grid-area: modes; }
+.lumi-header-modes, .lumi-header-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .25rem;
+}
+.lumi-header-action {
+  padding: .45rem .75rem;
+  min-height: 48px;
+  border-radius: .75rem;
+  border: 1px solid #c8d4e9;
+  background: #f9fbff;
+  color: #2b3953;
+  font-weight: 750;
+  line-height: 1.15;
+  cursor: pointer;
+}
+.lumi-header-action:hover { background: #e8eefb; border-color: #9cafd2; }
+.lumi-header-action:active { transform: translateY(1px); }
+.lumi-header-action[aria-pressed="true"] {
   background: #24242b;
+  border-color: #24242b;
   color: #fff;
 }
+.lumi-header-career {
+  color: #52617d;
+  font-size: .9rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (min-width: 1120px) {
+  .lumi-topbar {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "brand modes links";
+  }
+}
+
+.lumi-phone-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .25rem .75rem;
+}
+.lumi-phone-header .lumi-header-links {
+  grid-column: 1 / -1;
+  gap: .75rem;
+  border-top: 1px solid #dce4f6;
+}
+.lumi-phone-header .lumi-header-links .lumi-header-action { min-height: 44px; font-size: .9rem; }
+
+.lumi-header-menu { position: relative; z-index: 20; }
+.lumi-header-menu > summary {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid #c8d4e9;
+  border-radius: .75rem;
+  background: #f9fbff;
+  color: #27344a;
+  font-size: 1.5rem;
+  list-style: none;
+  cursor: pointer;
+}
+.lumi-header-menu > summary:hover, .lumi-header-menu[open] > summary { background: #e8eefb; }
+.lumi-header-menu > summary::-webkit-details-marker { display: none; }
+.lumi-header-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: max-content;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #dce4f6;
+  border-radius: 14px;
+  background: #f8fbff;
+  box-shadow: 0 6px 16px #27395330;
+}
+.lumi-header-menu-panel button { width: 100%; text-align: left; }
 
 .lumi-welcome {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
-  width: min(100%, 67rem);
-  min-height: min(66vh, 42rem);
+  width: min(100%, 78rem);
   margin: auto;
-  padding: clamp(1.25rem, 4vw, 4rem);
+  padding: clamp(1rem, 3vw, 3rem);
   gap: clamp(1.5rem, 5vw, 5rem);
 }
 .lumi-welcome-brand {
   display: block;
-  width: min(92%, 22rem);
+  width: min(100%, 30rem);
   height: auto;
   margin-inline: auto;
 }
@@ -99,6 +183,17 @@ html:has(.lumi-desktop) { scrollbar-gutter: stable; }
   line-height: 1;
   font-weight: 800;
   color: #202740;
+}
+
+@media (max-width: 767px) {
+  .lumi-welcome { grid-template-columns: minmax(0, 1fr); gap: .75rem; padding: 1rem; }
+  .lumi-welcome-brand { width: clamp(6.75rem, 33vw, 9rem); }
+  .lumi-welcome-mascot { width: clamp(3.5rem, 10dvh, 5rem); }
+  .lumi-welcome-content { gap: .65rem; }
+  .lumi-welcome-content > p { font-size: 1rem; }
+  .lumi-welcome-content > div:last-child { width: min(100%, 19rem); display: grid; gap: .65rem; }
+  .lumi-welcome-content .btn-kid { padding-inline: .75rem; font-size: 1.05rem; }
+  .lumi-phone-problem { background-image: linear-gradient(90deg, transparent 26px, #f4d7d9 26px, #f4d7d9 28px, transparent 28px), repeating-linear-gradient(180deg, transparent 0, transparent 63px, #dce3f6 63px, #dce3f6 64px); }
 }
 
 .lumi-teach { width: min(100%, 72rem); margin-inline: auto; }

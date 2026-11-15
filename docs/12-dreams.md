@@ -14,9 +14,9 @@ Lumi's first line on each page is in the dream's words too ("I want to be an ast
 Design: [`assets/new_lumi_screen.png`](assets/new_lumi_screen.png).
 
 ## The screen
-- **Choose Lumi's dream:** title, Lumi in the dream's outfit, the dream's name and Lumi's line ("I want to fly a rocket to the Moon!"), ‹ › arrows (and swipe) to browse, and **Select**. The three pictures have different shapes, so each sits in a fixed-height box and Lumi stays the same size while browsing.
-- **When it shows:** on the first visit, before Home (phone) or before the welcome screen and Teach (desktop). Help, Town and Journey don't need a dream.
-- **Changing it:** on the phone, tap Lumi or the dream chip (e.g. "🧁 Baker") on Home. On desktop, use the chip in the header. Lumi goes back Home; the next page of homework uses the new dream.
+- **Choose Lumi's dream:** title, Lumi in the dream's outfit, the dream's name and Lumi's line ("I want to fly a rocket to the Moon!"), ‹ › arrows (and swipe) to browse, and **Select**. Lumi holds one waving pose while the picker swaps the outfit overlay.
+- **When it shows:** the first time a child opens Teach, or when they choose to change careers. The landing page, Home, Help, Town and Journey can all open before a career is picked.
+- **Changing it:** open the header menu and choose **Change Lumi's dream**. On phone Home, tapping Lumi or the dream chip also opens the picker. Lumi goes back Home; the next page of homework uses the new dream.
 - **Saved** on the device (`localStorage` key `lumi_dream`). It is just the dream id, no personal data.
 - **Lumi wears the dream:** once a dream is chosen, every Lumi in the app (header, Home, lessons, Help, Town) is that dream's Lumi, and it changes the moment the child picks another dream (`useDreamArt()` in `frontend/src/dream.ts`, read by `LumiMascot`). Dream Lumi has the same five mood poses as plain Lumi (waving, excited, thinking, confused, sleeping), each dressed in the outfit, plus the "?", "hmm" and "Z z" extras. Before a dream is chosen, Lumi uses the plain poses.
 
@@ -57,7 +57,7 @@ All from Figma (file "Lumi", page "new"), exported as SVG with the page, section
 
 If Minh changes a pose or a dream drawing, export it again (background removed, see above), re-measure the anchors in the browser and rerun `python scripts/dream_outfits.py`. To measure, load each SVG into a page and read `getBBox()` for the ear bolts (`Union`, `Union_2`), the body (`Vector 2`) and the left hand (`Vector 7`). The numbers live in `ANCHORS` at the top of the script.
 
-The picker and the small Lumi on Home still show the original Figma dream drawings.
+The picker layers the waving pose and the three outfit-only SVGs from `frontend/public/assets/dreams/picker/`. The same script exports those layers on a shared canvas. Home uses the original Figma dream drawings, and the other mascot views use the pre-rendered poses.
 
 ## Log
 - 2026-11-14 (outfit moods): every dream Lumi now has the five mood poses, dressed by `scripts/dream_outfits.py`; checked on the emulator (baker on Home, in a lesson and asleep in Help; switch to astronaut).

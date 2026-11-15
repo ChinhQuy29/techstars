@@ -5,6 +5,7 @@ Inputs (all exported from the Figma file "Lumi", page "new", backgrounds removed
   frontend/public/assets/dreams/<dream>.svg       one drawing per dream (astronaut, baker, doctor)
 Output:
   frontend/public/assets/mascot/<dream>/lumi-<pose>.svg
+  frontend/public/assets/dreams/picker/<layer>.svg   shared waving pose and outfit-only layers
 
 How each outfit piece is placed:
   head  (helmet, chef's hat)  pinned to Lumi's two ear bolts, so it follows the head's position, size and tilt
@@ -152,10 +153,37 @@ def dress(dream: str, pose: str) -> str:
     figure.extend(on_top)
 
     ax, ay = SHADOW[pose]
-    pose_tree.set("width", str(OUT_W))
-    pose_tree.set("height", str(OUT_H))
-    pose_tree.set("viewBox", f"{ax - ANCHOR[0]:.3f} {ay - ANCHOR[1]:.3f} {OUT_W} {OUT_H}")
+    set_canvas(pose_tree, ax, ay)
     return ET.tostring(pose_tree, encoding="unicode")
+
+
+def set_canvas(tree: ET.Element, ax: float, ay: float) -> None:
+    tree.set("width", str(OUT_W))
+    tree.set("height", str(OUT_H))
+    tree.set("viewBox", f"{ax - ANCHOR[0]:.3f} {ay - ANCHOR[1]:.3f} {OUT_W} {OUT_H}")
+
+
+def write_picker() -> None:
+    """Export the waving mascot and each registered outfit on the same transparent canvas."""
+    output = ROOT / "dreams" / "picker"
+    output.mkdir(exist_ok=True)
+    base = ET.parse(ROOT / "mascot" / "lumi-waving.svg").getroot()
+    set_canvas(base, *SHADOW["waving"])
+    ET.ElementTree(base).write(output / "lumi.svg", encoding="unicode")
+
+    for dream in OUTFITS:
+        dressed = ET.fromstring(dress(dream, "waving"))
+        figure = parent_of(dressed, find(dressed, "Vector 2"))
+        for child in list(figure):
+            if not any(node.get("id", "").startswith("outfit ") for node in child.iter()):
+                figure.remove(child)
+        # Keep only the outfit subtree and the definitions for outfit fills and the body clip.
+        overlay = ET.Element(Q("svg"), dressed.attrib)
+        overlay.append(figure)
+        defs = dressed.find(Q("defs"))
+        overlay_defs = ET.SubElement(overlay, Q("defs"))
+        overlay_defs.extend(referenced_defs([figure], defs))
+        ET.ElementTree(overlay).write(output / f"{dream}.svg", encoding="unicode")
 
 
 def main() -> None:
@@ -165,6 +193,7 @@ def main() -> None:
         for pose in POSES:
             (out / f"lumi-{pose}.svg").write_text(dress(dream, pose), encoding="utf-8")
             print(f"{dream}/lumi-{pose}.svg")
+    write_picker()
 
 
 if __name__ == "__main__":

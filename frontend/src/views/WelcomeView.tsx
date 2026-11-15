@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
 import type { Language } from "../api";
-import { publicAsset } from "../assets";
+import { lumiLogo } from "../assets";
 import LumiMascot from "../components/mascot/LumiMascot";
 import { t } from "../i18n";
 
-/** First screen: who Lumi is and what the child can do. Teach Lumi is the main path. */
-export default function WelcomeView({ language, onTeach, onHelp, remembered = 0 }: {
+/** Welcome shown over the Town map. */
+export default function WelcomeView({ language, onTown, onHelp, remembered = 0 }: {
   language: Language;
-  onTeach: () => void;
+  onTown: () => void;
   onHelp: () => void;
   /** Skills taught on earlier days (saved progress). */
   remembered?: number;
@@ -17,10 +17,8 @@ export default function WelcomeView({ language, onTeach, onHelp, remembered = 0 
     <section className="lumi-welcome">
       <img
         className="lumi-welcome-brand"
-        src={publicAsset("assets/figma-new/wordmark.webp")}
-        alt=""
-        width={555}
-        height={800}
+        {...lumiLogo}
+        alt="Lumi"
       />
       <div className="lumi-welcome-content">
         <LumiMascot expression="default" pose="threeQuarter" wave label={s.welcomeHi} className="lumi-welcome-mascot" />
@@ -35,8 +33,8 @@ export default function WelcomeView({ language, onTeach, onHelp, remembered = 0 
           <p className="text-xl leading-snug text-slate-600">{s.welcomePremise}</p>
         )}
         <div className="flex flex-wrap justify-center gap-3">
-          <button className="btn-kid lumi-primary px-8 text-xl" onClick={onTeach}>
-            🧑‍🏫 {s.welcomeTeach}
+          <button className="btn-kid lumi-primary px-8 text-xl" onClick={onTown}>
+            🏘️ {s.town}
           </button>
           <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={onHelp}>
             🙋 {s.welcomeHelp}

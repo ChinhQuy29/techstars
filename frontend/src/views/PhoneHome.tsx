@@ -16,7 +16,7 @@ function glow(stars: number): string {
 /**
  * Phone home (docs/10-mobile-ui.md): Lumi's Brain. Lumi sits on top of its brain screen; every skill is a light the
  * child can tap, in any order. A light glows brighter as Lumi earns stars. No track and no suggested next skill: the
- * child chooses. The usual gates (quick warm-up, Help practice) still apply once a skill is picked.
+ * child chooses. A picked skill offers Teach and Help before the worksheet opens.
  */
 export default function PhoneHome({ sessionId, language, remembered, onStart, dream, onChangeDream }: {
   sessionId: string;
@@ -108,9 +108,6 @@ export default function PhoneHome({ sessionId, language, remembered, onStart, dr
                         />
                       ))}
                     </span>
-                    {!c.ready && (
-                      <span aria-hidden className="absolute top-1 right-1 text-xs">{c.gate === "warmup" ? "🏃" : "🙋"}</span>
-                    )}
                   </button>
                 </motion.li>
               );

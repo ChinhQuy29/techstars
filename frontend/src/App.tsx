@@ -3,11 +3,13 @@ import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api";
 import type { ChatTurn, Concept, Emotion, GradeResponse, Language } from "./api";
+import { lumiLogo } from "./assets";
 import { useCaptureTrigger } from "./camera/useCaptureTrigger";
 import { useHandDetector } from "./camera/useHandDetector";
 import { useRemoteCamera } from "./camera/useRemoteCamera";
 import { useWebcam } from "./camera/useWebcam";
 import ServerSetting from "./components/ServerSetting";
+import IdleDisclosure from "./components/IdleDisclosure";
 import { App as NativeApp } from "@capacitor/app";
 import { isNativeApp, useIsPhone } from "./platform";
 import BottomSheet from "./components/phone/BottomSheet";
@@ -23,7 +25,7 @@ import { celebrate, sounds } from "./robot/sounds";
 import { useSpeech } from "./robot/useSpeech";
 import ParentReport from "./views/ParentReport";
 import TeachView from "./views/TeachView";
-import TownPage, { JOURNEY_TAB } from "./views/TownPage";
+import TownPage, { JOURNEY_TAB, SCRAPBOOK_TAB } from "./views/TownPage";
 import TutorView from "./views/TutorView";
 import WelcomeView from "./views/WelcomeView";
 import SavedProgress from "./components/SavedProgress";
@@ -40,7 +42,7 @@ import LumiMascot from "./components/mascot/LumiMascot";
  */
 type Phase = "SLEEPING" | "WATCHING" | "CAPTURING" | "THINKING" | "RESULT";
 type Source = "webcam" | "remote";
-type Mode = "welcome" | "teach" | "help" | "town";
+type Mode = "landing" | "welcome" | "teach" | "help" | "town";
 
 const SLEEP_AFTER_MS = 60_000;
 
@@ -140,7 +142,7 @@ function saveSessionId(id: string) {
 export default function App() {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [language, setLanguage] = useState<Language>("en");
-  const [appMode, setAppMode] = useState<Mode>("town");
+  const [appMode, setAppMode] = useState<Mode>("landing");
   const [source, setSource] = useState<Source>("webcam");
   const [cameraOn, setCameraOn] = useState(false);
   const [phase, setPhase] = useState<Phase>("WATCHING");
@@ -170,14 +172,8 @@ export default function App() {
   const [lessonStart, setLessonStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
   const [lessonFromTown, setLessonFromTown] = useState(false);
   const [grownupsOpen, setGrownupsOpen] = useState(false);
-  // Desktop: a running lesson takes the whole page (TeachView reports it), and the mode buttons can be hidden.
+  // Desktop: a running lesson takes the whole page (TeachView reports it).
   const [lessonFocus, setLessonFocus] = useState(false);
-  const [navOpen, setNavOpen] = useState(() => localStorage.getItem("lumi_nav_open") !== "0");
-  const toggleNav = () =>
-    setNavOpen((o) => {
-      localStorage.setItem("lumi_nav_open", o ? "0" : "1");
-      return !o;
-    });
   // Lumi's dream (docs/12-dreams.md): chosen before the first lesson; the child can change it from home.
   const [dream, chooseDream] = useDream();
   const [pickingDream, setPickingDream] = useState(false);
@@ -370,11 +366,14 @@ export default function App() {
     runGrade(() => fetch(`${api.BACKEND}${url}`).then((r) => r.blob()));
   };
 
+  const showDreamPicker = pickingDream || (!dream && appMode === "teach");
+  const townWelcome = !showDreamPicker && (appMode === "landing" || (!isPhone && appMode === "welcome"));
+
   const switchMode = (m: Mode) => {
     if (m === appMode) return;
     speech.stopSpeaking();
     if (m === "town") {
-      setTownStart((t0) => ({ concept: null, story: null, key: t0.key + 1 }));
+      if (!townWelcome) setTownStart((t0) => ({ concept: null, story: null, key: t0.key + 1 }));
     } else if (m === "help") {
       setEmotion("idle");
       setBubble(L.hello);
@@ -386,11 +385,10 @@ export default function App() {
     }
     if (m === "teach") setTeachAlive(true);
     if (m === "help" || m === "welcome") setTeachAlive(false); // Teach unmounts there, so don't revive it hidden later
+    if (m === "welcome" && !isPhone) setTownStart((t0) => ({ concept: null, story: null, key: t0.key + 1 }));
     setAppMode(m);
   };
 
-  /** Phone: start a lesson on the skill tapped on the Home path (null = Lumi picks). */
-  const showDreamPicker = pickingDream || (!dream && (appMode === "welcome" || appMode === "teach"));
   const onDream = (d: DreamId) => {
     chooseDream(d);
     if (pickingDream) {
@@ -402,7 +400,8 @@ export default function App() {
     speech.stopSpeaking();
     setPickingDream(true);
   };
-  const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream} />;
+  const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream}
+    onBack={isPhone ? () => pickingDream ? setPickingDream(false) : exitLesson() : undefined} />;
   const dreamNow = dreamInfo(dream);
 
   const startLesson = (c: api.TeachConceptInfo | null, fromTown = false) => {
@@ -428,8 +427,7 @@ export default function App() {
   const selectTab = (tb: PhoneTab) => {
     if (tb === "home") switchMode("welcome");
     else if (tb === "help") switchMode("help");
-    else if (tb === "town") openTown(null);
-    else openTown(null, JOURNEY_TAB);
+    else showTown();
   };
 
   const openTown = (concept: Concept | null, story: string | null = null) => {
@@ -438,13 +436,19 @@ export default function App() {
     setAppMode("town");
   };
 
+  const showingMap = appMode === "town" && !townStart.story && !townStart.concept;
+  const showTown = () => {
+    if (appMode === "town" && !showingMap) openTown(null);
+    else switchMode("town");
+  };
+
   // Android back button (app only): step back a screen; never throw away a lesson. From Teach or the welcome
   // screen it sends the app to the background (state kept) instead of closing it. docs/09-android-app.md.
   const backRef = useRef<() => void>(() => {});
   backRef.current = () => {
     if (grownupsOpen) setGrownupsOpen(false);
     else if (showReport) setShowReport(false);
-    else if (pickingDream && dream) setPickingDream(false);
+    else if (pickingDream) setPickingDream(false);
     else if (appMode === "town") {
       if (teachAlive) switchMode("teach");
       else switchMode("welcome");
@@ -499,8 +503,6 @@ export default function App() {
 
   const phoneUrl = `${location.origin}${import.meta.env.BASE_URL}?phone=${sessionId}`;
   const isLocalhost = /localhost|127\.0\.0\.1/.test(location.hostname);
-  const tab = (m: Mode) =>
-    `btn-kid px-6 text-xl ${appMode === m ? (m === "teach" ? "bg-violet-500 text-white" : m === "town" ? "bg-teal-500 text-white" : "bg-sky-500 text-white") : "bg-white text-slate-600 ring-2 ring-slate-200"}`;
 
   const deleteSessionData = async () => {
     await api.resetSession(sessionId).catch(() => {});
@@ -558,7 +560,7 @@ export default function App() {
   // Screen pieces shared by the desktop page and the phone frame (docs/10-mobile-ui.md).
   const teachTownEl = (
         <>
-        {appMode === "town" && (
+        {(appMode === "town" || townWelcome) && (
           <TownPage
             key={`${sessionId}-${language}-${townStart.key}`}
             sessionId={sessionId}
@@ -571,6 +573,9 @@ export default function App() {
             restoredSkills={remembered}
             phone={isPhone}
             showBack={teachAlive}
+            welcome={townWelcome && (
+              <WelcomeView language={language} remembered={remembered} onTown={() => switchMode("town")} onHelp={() => switchMode("help")} />
+            )}
           />
         )}
         {(appMode === "teach" || teachAlive) && (
@@ -726,27 +731,29 @@ export default function App() {
             )}
           </>
         ) : cameraOn ? (
-          <div className="relative overflow-hidden rounded-3xl bg-slate-900">
-            <video ref={webcam.videoRef} playsInline muted className="aspect-[3/4] w-full object-cover" />
+          <div className="relative shrink-0 overflow-hidden rounded-3xl bg-slate-900">
+            <video ref={webcam.videoRef} playsInline muted className="h-[min(50dvh,28rem)] w-full object-contain" />
             {cam.error && <div className="absolute inset-0 grid place-items-center p-4 text-center text-red-300">{cam.error}</div>}
           </div>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <div className="text-6xl" aria-hidden>📷✏️</div>
-            <button className="btn-kid w-full bg-sun py-4 text-2xl text-slate-900" onClick={() => { touch(); setCameraOn(true); }}>
-              📷 {s.cameraOn}
-            </button>
-            <p className="text-slate-500">{s.trySampleHint}</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {samples.map((x) => (
-                <button key={x.name} className="btn-kid bg-amber-100 text-amber-900" onClick={() => gradeSample(x.url)}>
-                  📄 {x.name}
-                </button>
-              ))}
-              <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={() => fileInput.current?.click()}>
+          <div className="card my-auto grid gap-5 p-4 text-center">
+            <h2 className="text-2xl font-extrabold">🙋 {s.helpTab}</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <button className="btn-kid lumi-primary !px-2 text-base" onClick={() => { touch(); setCameraOn(true); }}>
+                📷 {s.cameraOn}
+              </button>
+              <button className="btn-kid bg-white !px-2 text-base text-slate-700 ring-1 ring-slate-300" onClick={() => fileInput.current?.click()}>
                 ⬆️ {s.upload}
               </button>
             </div>
+            {samples.length > 0 && <div className="grid gap-2 border-t border-slate-200 pt-3">
+              <p className="font-semibold text-slate-600">{s.trySampleHint}</p>
+              {samples.map((x) => (
+                <button key={x.name} className="btn-kid bg-sky-50 text-base text-slate-800 ring-1 ring-sky-200" onClick={() => gradeSample(x.url)}>
+                  📄 {x.name}
+                </button>
+              ))}
+            </div>}
           </div>
         )}
         <input
@@ -903,11 +910,38 @@ export default function App() {
     </BottomSheet>
   );
   const desktopFocus = !isPhone && appMode === "teach" && lessonFocus && !showDreamPicker;
+  const careerBadge = dreamNow && !showDreamPicker && (
+    <span className="lumi-header-career">
+      {dreamNow.emoji} {s.dreams[dreamNow.id].name}
+    </span>
+  );
+  const townLinks = (
+    <>
+      <button type="button" className="lumi-header-action" aria-label={s.scrapbook} aria-pressed={appMode === "town" && townStart.story === SCRAPBOOK_TAB}
+        onClick={() => openTown(null, SCRAPBOOK_TAB)}>📔 {s.scrapbookShort}</button>
+      <button type="button" className="lumi-header-action" aria-label={s.journey} aria-pressed={appMode === "town" && Boolean(townStart.story && townStart.story !== SCRAPBOOK_TAB)}
+        onClick={() => openTown(null, JOURNEY_TAB)}>🌙 {s.journeyShort}</button>
+    </>
+  );
+  const headerMenu = (
+    <IdleDisclosure label={s.menu} className="lumi-header-menu" trigger={<span aria-hidden="true">☰</span>}>
+      {(close) => (
+        <div className="lumi-header-menu-panel">
+          {!showDreamPicker && (
+            <button type="button" className="lumi-header-action" onClick={() => { close(); changeDream(); }}>
+              ✨ {dreamNow ? s.changeDream : s.chooseDream}
+            </button>
+          )}
+          <button type="button" className="lumi-header-action" onClick={() => { close(); setGrownupsOpen(true); }}>👪 {s.grownups}</button>
+        </div>
+      )}
+    </IdleDisclosure>
+  );
 
   if (isPhone) {
     const inLesson = appMode === "teach";
     const activeTab: PhoneTab | null =
-      appMode === "welcome" ? "home" : appMode === "help" ? "help" : appMode === "town" ? (townStart?.story === JOURNEY_TAB ? "journey" : "town") : null;
+      appMode === "welcome" ? "home" : appMode === "help" ? "help" : showingMap ? "town" : null;
     return (
       <MotionConfig reducedMotion="user">
         <div className="flex h-[100dvh] flex-col">
@@ -916,17 +950,16 @@ export default function App() {
           ) : (
           <>
           {!inLesson && (
-            <header className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
-              <button className="flex items-center gap-2 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
-                <LumiMascot expression="default" animated={false} className="w-9" />
-                <span className="text-2xl font-extrabold tracking-tight text-slate-800">Lumi</span>
-              </button>
-              <button
-                className="btn-kid !min-h-12 bg-white !px-3 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
-                onClick={() => setGrownupsOpen(true)}
-              >
-                👪 {s.grownups}
-              </button>
+            <header className="lumi-phone-header shrink-0 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <button className="flex items-center gap-2 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+                  <LumiMascot expression="default" animated={false} className="w-9 shrink-0" />
+                  <img {...lumiLogo} alt="" className="h-auto w-[4.25rem] -translate-y-1" />
+                </button>
+                {careerBadge}
+              </div>
+              {headerMenu}
+              {appMode === "town" && <nav className="lumi-header-links" aria-label={s.town}>{townLinks}</nav>}
             </header>
           )}
           <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
@@ -940,7 +973,7 @@ export default function App() {
                 dream={dreamNow}
                 onChangeDream={changeDream}
               />
-            ) : appMode === "teach" || appMode === "town" ? (
+            ) : appMode === "teach" || appMode === "town" || townWelcome ? (
               <div className={inLesson ? "h-full" : "p-3"}>{teachTownEl}</div>
             ) : (
               phoneHelpEl
@@ -963,61 +996,39 @@ export default function App() {
     <div className="lumi-desktop mx-auto flex min-h-full w-full flex-col gap-5 p-4 sm:p-6">
       {/* While a lesson runs, the lesson is the whole page: no header, no mode buttons (its own back button stays). */}
       {!desktopFocus && (
-      <header className="lumi-topbar flex flex-wrap items-center justify-between gap-3">
+      <header className="lumi-topbar">
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
-            <LumiMascot expression="default" animated={false} className="w-11" />
-            <h1 className="text-left text-4xl font-extrabold tracking-tight text-slate-800">
-              Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
+          <button className="flex items-center gap-2.5 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+            <LumiMascot expression="default" animated={false} className="w-11 shrink-0" />
+            <img {...lumiLogo} alt="" className="h-auto w-20 shrink-0 -translate-y-1" />
+            <h1 className="sr-only">
+              <span className="sr-only">Lumi · </span>{s.tagline}
             </h1>
           </button>
-          {dreamNow && (
-            <button
-              className={`btn-kid !min-h-11 bg-white !px-3 !py-1.5 text-base text-slate-700 ring-1 ring-indigo-200 ${showDreamPicker ? "invisible" : ""}`}
-              onClick={changeDream}
-              aria-label={s.changeDream}
-              title={s.changeDream}
-            >
-              {dreamNow.emoji} {s.dreams[dreamNow.id].name}
-            </button>
-          )}
+          {careerBadge}
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <button
-            className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
-            onClick={toggleNav}
-            aria-expanded={navOpen}
-            aria-controls="lumi-modes"
-          >
-            {navOpen ? `▲ ${s.hideMenu}` : `☰ ${s.menu}`}
-          </button>
-          <button className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200" onClick={() => setGrownupsOpen(true)}>
-            👪 {s.grownups}
-          </button>
-        </div>
-      </header>
-      )}
-      {/* The mode buttons live in their own nav bar under the header; the child can hide it (remembered on this device). */}
-      {!desktopFocus && navOpen && (
-        <nav id="lumi-modes" className="lumi-navbar flex flex-wrap justify-center gap-3" aria-label="Mode">
-          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"} data-town-tab>
+        <nav id="lumi-modes" className="lumi-header-modes" aria-label="Mode">
+          <button className="lumi-header-action" onClick={showTown} aria-pressed={showingMap} data-town-tab>
             🏘️ {s.town}
           </button>
-          <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
+          <button className="lumi-header-action" onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
             🧑‍🏫 {s.teachTab}
           </button>
-          <button className={tab("help")} onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
+          <button className="lumi-header-action" onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
             🙋 {s.helpTab}
           </button>
         </nav>
+        <div className="flex items-center justify-end gap-3">
+          <nav className="lumi-header-links" aria-label={s.town}>{townLinks}</nav>
+          {headerMenu}
+        </div>
+      </header>
       )}
 
-      <main className={`mx-auto flex w-full flex-col gap-5 ${appMode === "town" ? "" : "max-w-7xl"}`}>
+      <main className={`mx-auto flex w-full flex-col gap-5 ${appMode === "town" || townWelcome ? "" : "max-w-7xl"}`}>
       {showDreamPicker ? (
         dreamPickerEl
-      ) : appMode === "welcome" ? (
-        <WelcomeView language={language} remembered={remembered} onTeach={() => switchMode("teach")} onHelp={() => switchMode("help")} />
-      ) : appMode === "teach" || appMode === "town" ? (
+      ) : appMode === "teach" || appMode === "town" || townWelcome ? (
         teachTownEl
       ) : (
         helpEl

@@ -1,9 +1,12 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, ReactNode } from "react";
 import { teachConcepts, type Language, type TeachConceptInfo } from "../../api";
 import { publicAsset } from "../../assets";
+import { useDreamArt } from "../../dream";
 import { t } from "../../i18n";
 import ConceptPicker from "../ConceptPicker";
+import IdleDisclosure from "../IdleDisclosure";
 import "./study-town.css";
 
 const HOUSES = [
@@ -40,7 +43,8 @@ const COPY = {
   },
 };
 
-const WORLD = { width: 2460, height: 640 };
+const CAMERA_REFERENCE_HEIGHT = 640;
+const WORLD = { width: 2460, height: 810 };
 const GATE_X = 2210;
 const ROAD = { left: 22, top: 501, bottom: 549, center: 539 };
 const DOOR_Y = 511;
@@ -72,11 +76,14 @@ interface Props {
   actions: ReactNode;
   notice?: string | null;
   restoredSkills: number;
+  welcome?: ReactNode;
 }
 
-export default function StudyTown({ sessionId, language, onLearn, actions, notice, restoredSkills }: Props) {
+export default function StudyTown({ sessionId, language, onLearn, actions, notice, restoredSkills, welcome }: Props) {
   const copy = COPY[language];
   const strings = t(language);
+  const dream = useDreamArt();
+  const preview = Boolean(welcome);
   const [selected, setSelected] = useState<House | null>(null);
   const [menu, setMenu] = useState<TeachConceptInfo[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -87,7 +94,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   const dialog = useRef<HTMLDialogElement>(null);
   const camera = useRef({ scale: 1, x: 0, y: 0 });
   const walker = useRef({
-    x: 505, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
+    x: 650, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
   });
   const inputs = useRef(new Map<string | number, Direction>());
   const taught = menu === null ? null : Math.min(XP_GOAL, menu.filter((concept) => concept.stars > 0).length);
@@ -113,7 +120,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
     const avatar = sprite.current!;
     const actor = walker.current;
     const held = inputs.current;
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     let width = 0;
     let height = 0;
     let last = 0;
@@ -121,7 +128,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
     const measure = () => {
       width = view.clientWidth;
       height = view.clientHeight;
-      camera.current.scale = Math.max(width / WORLD.width, height / WORLD.height, .8);
+      camera.current.scale = Math.max(width / WORLD.width, height / CAMERA_REFERENCE_HEIGHT, .8) * 1.12;
     };
     const observer = new ResizeObserver(measure);
     observer.observe(view);
@@ -167,10 +174,10 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       } else if (!door) actor.door = null;
 
       actor.walkTime = walking ? actor.walkTime + dt : 0;
-      const frame = walking && !motion.matches ? FRAME_ORDER[Math.floor(actor.walkTime * 8) % FRAME_ORDER.length] : 1;
+      const frame = walking && !reducedMotion.matches ? FRAME_ORDER[Math.floor(actor.walkTime * 8) % FRAME_ORDER.length] : 1;
       const { scale } = camera.current;
-      const cameraX = clamp(width * .48 - actor.x * scale, Math.min(0, width - WORLD.width * scale), 0);
-      const cameraY = clamp(height * .72 - ROAD.center * scale, Math.min(0, height - WORLD.height * scale), 0);
+      const cameraX = clamp(width * .5 - actor.x * scale, Math.min(0, width - WORLD.width * scale), 0);
+      const cameraY = clamp(height * .55 - ROAD.center * scale, Math.min(0, height - WORLD.height * scale), 0);
       camera.current.x = cameraX;
       camera.current.y = cameraY;
       map.style.transform = `translate(${cameraX}px, ${cameraY}px) scale(${scale})`;
@@ -181,11 +188,13 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       raf = requestAnimationFrame(draw);
     };
     const keyDown = (event: KeyboardEvent) => {
+      if (preview) return;
       const key = event.key.toLowerCase();
       const direction = WALK_KEYS[key];
       if (!direction || event.altKey || event.ctrlKey || event.metaKey || dialog.current?.open) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
+      if (target.closest("details")) return;
       if (target !== document.body && !view.contains(target) && !target.closest("[data-town-tab]")) return;
       event.preventDefault();
       actor.route = [];
@@ -204,7 +213,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       window.removeEventListener("keyup", keyUp);
       window.removeEventListener("blur", stop);
     };
-  }, []);
+  }, [preview]);
 
   const go = (point: Point) => {
     inputs.current.clear();
@@ -226,7 +235,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   };
 
   const pointOnRoad = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog")) return;
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog, details")) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const { scale, x, y } = camera.current;
     const point = {
@@ -240,7 +249,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
 
   return (
     <section className="study-town" aria-label={strings.town}>
-      <div className="study-town__view" ref={viewport} tabIndex={0} aria-label={strings.town} aria-describedby="study-town-guide"
+      <div className="study-town__view" ref={viewport} tabIndex={0} inert={preview} aria-label={strings.town} aria-describedby="study-town-guide"
         onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) inputs.current.clear(); }}
         onPointerDown={pointOnRoad}
       >
@@ -257,21 +266,24 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
               <span className="study-town__sign"><span aria-hidden>{house.icon}</span> {copy[house.id]}</span>
             </button>
           ))}
-          <div className="study-town__sprite" ref={sprite} aria-hidden />
+          <div className="study-town__sprite" ref={sprite} data-dream={dream?.id} aria-hidden />
         </div>
-        <div className="study-town__hud">
-          <div className="study-town__travel">
-            <p id="study-town-guide">{copy.guide}</p>
+        <p id="study-town-guide" className="sr-only">{copy.guide}</p>
+        <IdleDisclosure className="study-town__travel" label={copy.shortcuts} trigger={
+          <span className="study-town__chevron" aria-hidden="true" />
+        }>
+          {(closeDrawer) => (
             <nav className="study-town__shortcuts" aria-label={copy.shortcuts}>
+              <p>{copy.shortcuts}</p>
               {HOUSES.map((house) => (
-                <button key={house.id} type="button" aria-haspopup="dialog" onClick={() => approach(house)}>
+                <button key={house.id} type="button" aria-haspopup="dialog" onClick={() => { closeDrawer(); approach(house); }}>
                   <span aria-hidden>{house.icon}</span> {copy[house.id]}
                 </button>
               ))}
             </nav>
-          </div>
-          <div className="study-town__actions">{actions}</div>
-        </div>
+          )}
+        </IdleDisclosure>
+        {actions && <div className="study-town__actions">{actions}</div>}
         <div className="study-town__footer">
           <div className="study-town__feedback">
             {notice && <p className="study-town__notice" role="status">{notice}</p>}
@@ -305,6 +317,20 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
           </div>
         </div>
       </div>
+
+      <AnimatePresence onExitComplete={() => viewport.current?.focus({ preventScroll: true })}>
+        {welcome && (
+          <motion.div
+            className="study-town__welcome"
+            initial={false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: "none" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            {welcome}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <dialog className="study-town__dialog" ref={dialog} aria-labelledby="study-town-chooser-title"
         onCancel={(event) => { event.preventDefault(); close(); }}

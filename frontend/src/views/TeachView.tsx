@@ -3,17 +3,15 @@ import { isNativeApp } from "../platform";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "../api";
 import type {
-  Concept, Emotion, Language, TeachConceptInfo, TeachOutcome, TeachTurn, TeachUnlock, TeachWorksheet, Warmup as WarmupData, WarmupResult,
+  Concept, Emotion, Language, TeachConceptInfo, TeachOutcome, TeachTurn, TeachUnlock, TeachWorksheet,
 } from "../api";
 import ConceptPicker from "../components/ConceptPicker";
 import ExplainChips from "../components/ExplainChips";
-import HoldButton from "../components/HoldButton";
 import KidKeypad from "../components/KidKeypad";
 import LumiBrain from "../components/LumiBrain";
 import LumiHomework, { type RowMark } from "../components/LumiHomework";
 import MathVisual from "../components/MathVisual";
 import ProblemText from "../components/ProblemText";
-import Warmup from "../components/Warmup";
 import BottomSheet from "../components/phone/BottomSheet";
 import { PointHand, useIdle } from "../components/phone/PointHand";
 import { CONCEPT_EMOJI, t, type TeachConcept } from "../i18n";
@@ -66,14 +64,13 @@ export default function TeachView({
   const wsRef = useRef<TeachWorksheet | null>(null);
   const loadedFor = useRef<string | null>(null);
   const applyRef = useRef<(tn: TeachTurn) => Promise<void>>(async () => {});
-  const loadRef = useRef<(force?: boolean, demoSheet?: boolean) => Promise<void>>(async () => {});
+  const loadRef = useRef<() => Promise<void>>(async () => {});
   const lastAction = useRef<(() => Promise<unknown>) | null>(null);
-  // The child chooses what to teach (any order); newer skills unlock with a quick warm-up.
-  const [phase, setPhase] = useState<"pick" | "warmup" | "teach">(demo ? "teach" : "pick");
+  // The child chooses a skill, then chooses to teach it or open Help.
+  const [phase, setPhase] = useState<"pick" | "choice" | "teach">(demo ? "teach" : "pick");
   const [menu, setMenu] = useState<TeachConceptInfo[]>([]);
   const chosen = useRef<string | null>(null);
-  const [warmup, setWarmup] = useState<WarmupData | null>(null);
-  const [warmResult, setWarmResult] = useState<WarmupResult | null>(null);
+  const [selection, setSelection] = useState<TeachConceptInfo | null>(null);
   // Something the child's teaching just opened (a Town place now, story scenes later): the backend says so.
   const [newUnlock, setNewUnlock] = useState<TeachUnlock | null>(null);
   const { speak, listen, stopSpeaking, canListen, listening } = speech;
@@ -147,12 +144,18 @@ export default function TeachView({
   applyRef.current = apply;
 
   const load = useCallback(
-    async (force = false, demoSheet = false) => {
-      lastAction.current = () => load(force, demoSheet);
+    async (demoSheet = false) => {
+      lastAction.current = () => load(demoSheet);
       setBusy(true);
       setError(null);
       try {
-        const w = await api.teachWorksheet(sessionId, language, force, demoSheet, demoSheet ? null : chosen.current);
+        const w = await api.teachWorksheet(sessionId, language, true, demoSheet, demoSheet ? null : chosen.current);
+        if (!w.ready) {
+          wsRef.current = null;
+          setWs(null);
+          setTurn(null);
+          throw new Error("Teach did not return a worksheet for a direct start");
+        }
         wsRef.current = w;
         setWs(w);
         setMarks({});
@@ -182,7 +185,6 @@ export default function TeachView({
     setWs(null);
     wsRef.current = null;
     setTurn(null);
-    setWarmup(null);
     setError(null);
     setEmotion("curious");
     setBubble(s.chooseTitle);
@@ -202,60 +204,34 @@ export default function TeachView({
     void load();
   };
 
-  const startWarmup = async (concept: string) => {
-    lastAction.current = () => startWarmup(concept);
-    chosen.current = concept;
-    setBusy(true);
-    setError(null);
+  const pick = (concept: TeachConceptInfo) => {
     stopSpeaking();
-    try {
-      const w = await api.startWarmup(sessionId, language, concept);
-      setWarmup(w);
-      setWarmResult(null);
-      setPhase("warmup");
-      setEmotion("curious");
-      setBubble(w.say);
-      void speak(w.say);
-    } catch (e) {
-      console.error(e);
-      setError(s.oopsError);
-    } finally {
-      setBusy(false);
-    }
+    setSelection(concept);
+    setPhase("choice");
   };
 
-  const checkWarmup = async (answers: string[]) => {
-    if (!warmup) return;
-    lastAction.current = () => checkWarmup(answers);
-    setBusy(true);
-    setEmotion("thinking");
-    try {
-      const r = await api.checkWarmup(sessionId, language, warmup.warmup_id, answers);
-      setWarmResult(r);
-      setEmotion(r.emotion);
-      setBubble(r.say);
-      if (r.passed) celebrate();
-      else sounds.hint();
-      void speak(r.say);
-    } catch (e) {
-      console.error(e);
-      if (e instanceof api.ApiError && e.status === 409) void startWarmup(warmup.concept);
-      else setError(s.oopsError);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const pick = (c: TeachConceptInfo) => {
-    // Ready, or an original skill (the backend explains Help-mode practice): straight to Lumi's homework.
-    if (c.ready || c.gate === "help") teachConcept(c.concept);
-    else void startWarmup(c.concept);
-  };
+  const lessonChoice = selection && (
+    <section className="card mx-auto flex w-full max-w-lg flex-col gap-4 p-5 text-center">
+      <h2 className="text-2xl font-extrabold text-slate-800">
+        {s.concepts[selection.concept as keyof typeof s.concepts] ?? selection.label}
+      </h2>
+      <button type="button" className="btn-kid !min-h-20 bg-[#5574c8] text-2xl text-white hover:bg-[#4764b4]" disabled={busy}
+        onClick={() => teachConcept(selection.concept)}>
+        🧑‍🏫 {s.teachTab}
+      </button>
+      <button type="button" className="btn-kid bg-white text-slate-700 ring-1 ring-slate-200" onClick={onPracticeFirst}>
+        🙋 {s.notConfident}
+      </button>
+      <button type="button" className="btn-small self-center text-slate-700" onClick={openPicker}>
+        🔀 {s.teachSomethingElse}
+      </button>
+    </section>
+  );
 
   useEffect(() => {
     if (loadedFor.current === sessionId) return; // StrictMode runs effects twice; start once per session
     loadedFor.current = sessionId;
-    if (demo) load(false, true);
+    if (demo) load(true);
     else if (startWith === null) teachConcept(null);
     else if (startWith) pick(startWith);
     else void openPicker();
@@ -526,23 +502,6 @@ export default function TeachView({
             </motion.div>
           )}
 
-          {step === "practice_first" && (
-            <div className="flex flex-col items-center gap-3">
-              {/* Same words as Lumi's line ("Tap Help me"), so the child can find it; on phones the tab bar is hidden here. */}
-              <button className="btn-kid bg-sky-500 px-8 text-2xl text-white" onClick={onPracticeFirst}>
-                🙋 {s.helpTab}
-              </button>
-              <HoldButton
-                label={s.tryAnyway}
-                holdLabel={s.holdForGrownups}
-                disabled={busy}
-                onConfirm={() => { chosen.current = null; void load(true); }}
-              />
-              <button className="btn-small bg-white text-slate-600 ring-1 ring-slate-200" onClick={phone && onExit ? onExit : openPicker}>
-                🔀 {s.teachSomethingElse}
-              </button>
-            </div>
-          )}
         </div>
   );
 
@@ -665,7 +624,7 @@ export default function TeachView({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               aria-live="polite"
-              className="max-h-32 flex-1 overflow-y-auto rounded-2xl bg-sky-50 px-3 py-2 text-base leading-snug text-slate-900 ring-2 ring-sky-200"
+              className="max-h-[min(8rem,18dvh)] min-w-0 flex-1 overflow-y-auto rounded-2xl bg-sky-50 px-3 py-2 text-base leading-snug text-slate-900 ring-2 ring-sky-200"
             >
               {phoneBubble}
             </motion.div>
@@ -675,23 +634,8 @@ export default function TeachView({
         <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3 ${card && editing === null ? "justify-center" : ""}`}>
           {phase === "pick" ? (
             <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
-          ) : phase === "warmup" && warmup ? (
-            <Warmup
-              key={warmup.warmup_id}
-              warmup={warmup}
-              result={warmResult}
-              busy={busy}
-              onCheck={checkWarmup}
-              onRetry={() => startWarmup(warmup.concept)}
-              onTeach={() => teachConcept(warmup.concept)}
-              s={s}
-            />
-          ) : step === "practice_first" ? (
-            // No worksheet yet: this skill needs Help-mode practice first. Show the Help me button right under Lumi's line.
-            <div className="relative">
-              {actionArea}
-              <PointHand show={idle && !busy} className="top-16 inset-x-0 flex justify-center" />
-            </div>
+          ) : phase === "choice" ? (
+            lessonChoice
           ) : !ws?.ready ? (
             !error && <p className="animate-pulse self-center py-10 text-4xl tracking-widest text-slate-300" aria-label="loading">• • •</p>
           ) : card ? (
@@ -701,12 +645,12 @@ export default function TeachView({
                 key={card.id}
                 initial={{ opacity: 0, x: 24 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="notebook notebook-cells flex flex-col gap-2 rounded-3xl py-4 pr-4 pl-[68px] shadow-inner ring-1 ring-amber-200"
+                className="notebook notebook-cells lumi-phone-problem flex flex-col gap-2 rounded-3xl py-4 pr-4 pl-10 shadow-inner ring-1 ring-amber-200"
               >
                 <p className="text-sm font-extrabold text-rose-400">
                   {s.problemOf.replace("{n}", String(cursor + 1)).replace("{total}", String(problems.length))}
                 </p>
-                <p className={`font-hand text-slate-800 ${card.problem.includes("?") ? "text-2xl leading-snug" : "text-5xl"}`}>
+                <p className={`font-hand break-words text-slate-800 ${card.problem.includes("?") ? "text-2xl leading-snug" : "text-[clamp(2rem,10vw,3rem)]"}`}>
                   <ProblemText
                     problem={card.problem}
                     answer={
@@ -723,17 +667,18 @@ export default function TeachView({
                 {card.visual && <MathVisual visual={card.visual} />}
               </motion.div>
 
-              {/* Dots: one per problem; tap to go back to one. */}
-              <div className="flex justify-center gap-2" aria-hidden>
+              <div className="flex flex-wrap justify-center gap-1" aria-label={s.lumisHomework}>
                 {problems.map((p, i) => (
                   <button
                     key={p.id}
-                    tabIndex={-1}
+                    type="button"
+                    aria-label={s.problemOf.replace("{n}", String(i + 1)).replace("{total}", String(problems.length))}
+                    aria-current={i === cursor ? "step" : undefined}
                     onClick={() => { setEditing(null); setCursor(i); }}
-                    className={`h-3.5 w-3.5 rounded-full ${i === cursor ? "ring-2 ring-violet-500 ring-offset-2" : ""} ${
-                      marks[p.id] ? "bg-violet-400" : "bg-slate-300"
-                    }`}
-                  />
+                    className={`grid size-11 place-items-center rounded-xl border text-base font-bold ${i === cursor ? "border-violet-600 bg-violet-100 text-violet-900" : "border-slate-300 bg-white text-slate-700"}`}
+                  >
+                    {marks[p.id] ? "✓" : i + 1}
+                  </button>
                 ))}
               </div>
 
@@ -887,17 +832,8 @@ export default function TeachView({
 
         {phase === "pick" ? (
           <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
-        ) : phase === "warmup" && warmup ? (
-          <Warmup
-            key={warmup.warmup_id}
-            warmup={warmup}
-            result={warmResult}
-            busy={busy}
-            onCheck={checkWarmup}
-            onRetry={() => startWarmup(warmup.concept)}
-            onTeach={() => teachConcept(warmup.concept)}
-            s={s}
-          />
+        ) : phase === "choice" ? (
+            lessonChoice
         ) : ws?.ready ? (
           <LumiHomework
             problems={problems}
