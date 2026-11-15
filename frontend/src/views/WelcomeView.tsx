@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { Language } from "../api";
+import { publicAsset } from "../assets";
 import LumiMascot from "../components/mascot/LumiMascot";
 import { t } from "../i18n";
 
@@ -16,7 +17,7 @@ export default function WelcomeView({ language, onTeach, onHelp, remembered = 0 
     <section className="lumi-welcome">
       <img
         className="lumi-welcome-brand"
-        src="/assets/figma-new/wordmark.webp"
+        src={publicAsset("assets/figma-new/wordmark.webp")}
         alt=""
         width={555}
         height={800}

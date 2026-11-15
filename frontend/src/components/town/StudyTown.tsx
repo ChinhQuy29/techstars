@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, ReactNode } from "react";
 import { teachConcepts, type Language, type TeachConceptInfo } from "../../api";
+import { publicAsset } from "../../assets";
 import { t } from "../../i18n";
 import ConceptPicker from "../ConceptPicker";
 import "./study-town.css";
@@ -246,13 +247,13 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
         <div className="study-town__world" ref={world}>
           <div className="study-town__terrain" aria-hidden />
           <div className="study-town__terrain study-town__terrain--extension" aria-hidden />
-          <img className="study-town__gate" style={{ left: GATE_X }} src="/assets/map_asset/roadblock.png"
+          <img className="study-town__gate" style={{ left: GATE_X }} src={publicAsset("assets/map_asset/roadblock.png")}
             width={128} height={112} alt="" draggable={false} />
           {HOUSES.map((house) => (
             <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button" tabIndex={-1}
               aria-haspopup="dialog" onClick={() => approach(house)}
             >
-              <img className="study-town__house-art" src={`/assets/map_asset/${house.asset}.png`} alt="" draggable={false} />
+              <img className="study-town__house-art" src={publicAsset(`assets/map_asset/${house.asset}.png`)} alt="" draggable={false} />
               <span className="study-town__sign"><span aria-hidden>{house.icon}</span> {copy[house.id]}</span>
             </button>
           ))}

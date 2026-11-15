@@ -1,4 +1,5 @@
 import type { Emotion } from "../../api";
+import { publicAsset } from "../../assets";
 
 /**
  * Lumi mascot: the single place that decides how each expression looks.
@@ -67,7 +68,7 @@ export const EXPRESSIONS: Record<LumiExpression, ExpressionSpec> = {
  * moods never moves Lumi. "sad" is left out on purpose: Lumi never makes a child feel they upset it.
  * Curious and listening have no pose of their own yet. The vector renderer is only a fallback if a file fails.
  */
-const pose = (name: string) => `/assets/mascot/lumi-${name}.svg`;
+const pose = (name: string) => publicAsset(`assets/mascot/lumi-${name}.svg`);
 export const RASTER_ASSETS: Partial<Record<LumiExpression, string>> = {
   default: pose("waving"),
   listening: pose("waving"),

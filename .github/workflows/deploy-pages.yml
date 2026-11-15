@@ -1,0 +1,46 @@
+name: Deploy Lumi to GitHub Pages
+
+on:
+  push:
+    branches: [pages/lumi]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: lumi-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'MinhHoag/techstars'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+        env:
+          LUMI_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          VITE_BACKEND_URL: ${{ vars.LUMI_BACKEND_URL || 'https://techstars-lumi.onrender.com' }}
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend/dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

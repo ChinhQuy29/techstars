@@ -497,7 +497,7 @@ export default function App() {
     setTeachKey((k) => k + 1);
   };
 
-  const phoneUrl = `${location.origin}/?phone=${sessionId}`;
+  const phoneUrl = `${location.origin}${import.meta.env.BASE_URL}?phone=${sessionId}`;
   const isLocalhost = /localhost|127\.0\.0\.1/.test(location.hostname);
   const tab = (m: Mode) =>
     `btn-kid px-6 text-xl ${appMode === m ? (m === "teach" ? "bg-violet-500 text-white" : m === "town" ? "bg-teal-500 text-white" : "bg-sky-500 text-white") : "bg-white text-slate-600 ring-2 ring-slate-200"}`;
