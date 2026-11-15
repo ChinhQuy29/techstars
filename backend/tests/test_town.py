@@ -89,7 +89,7 @@ def test_town_is_read_only():
     t = get_town(sid)
     get_scene(sid, "mul")
     assert (dict(s.lumi_mastery), dict(s.teach_quotes)) == before
-    assert t["scrapbook"] == [{"concept": "mul", "label": "times tables", "quote": "you counted one group too many", "stars": 1.5}]
+    assert t["scrapbook"] == [{"concept": "mul", "label": "multiplication", "quote": "you counted one group too many", "stars": 1.5}]
 
 
 def test_unknown_concept_rejected():
