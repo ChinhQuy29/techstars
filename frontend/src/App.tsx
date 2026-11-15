@@ -170,6 +170,14 @@ export default function App() {
   const [lessonStart, setLessonStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
   const [lessonFromTown, setLessonFromTown] = useState(false);
   const [grownupsOpen, setGrownupsOpen] = useState(false);
+  // Desktop: a running lesson takes the whole page (TeachView reports it), and the mode buttons can be hidden.
+  const [lessonFocus, setLessonFocus] = useState(false);
+  const [navOpen, setNavOpen] = useState(() => localStorage.getItem("lumi_nav_open") !== "0");
+  const toggleNav = () =>
+    setNavOpen((o) => {
+      localStorage.setItem("lumi_nav_open", o ? "0" : "1");
+      return !o;
+    });
   // Lumi's dream (docs/12-dreams.md): chosen before the first lesson; the child can change it from home.
   const [dream, chooseDream] = useDream();
   const [pickingDream, setPickingDream] = useState(false);
@@ -579,6 +587,7 @@ export default function App() {
           phone={isPhone}
           startWith={lessonStart}
           onExit={exitLesson}
+          onFocusChange={setLessonFocus}
         />
         </div>
         )}
@@ -857,6 +866,44 @@ export default function App() {
         </div>
   );
 
+  // Grown-ups: language, the report and every grown-up setting in one panel (a sheet on phones, a dialog on desktop).
+  const grownupsEl = (
+    <BottomSheet
+      open={grownupsOpen}
+      onClose={() => setGrownupsOpen(false)}
+      title={`👪 ${s.grownups}`}
+      closeLabel={s.close}
+      variant={isPhone ? "sheet" : "dialog"}
+    >
+      <div className="flex flex-col gap-4 text-sm text-slate-600">
+        <label className="flex items-center justify-between gap-3 text-base font-bold text-slate-700">
+          {s.language}
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value as Language)}
+            className="rounded-2xl bg-slate-50 px-3 py-3 text-base font-semibold ring-1 ring-slate-200"
+          >
+            {/* plain names: Windows renders flag emoji as letters */}
+            {LANGS.map((l) => (
+              <option key={l.id} value={l.id}>{l.label}</option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="btn-kid bg-sky-500 text-white"
+          onClick={() => { setGrownupsOpen(false); setShowReport(true); }}
+        >
+          📊 {s.report}
+        </button>
+        <div className="rounded-2xl bg-slate-50 p-3">
+          <h3 className="font-bold text-slate-700">🔧 {s.settings}</h3>
+          {settingsBody}
+        </div>
+      </div>
+    </BottomSheet>
+  );
+  const desktopFocus = !isPhone && appMode === "teach" && lessonFocus && !showDreamPicker;
+
   if (isPhone) {
     const inLesson = appMode === "teach";
     const activeTab: PhoneTab | null =
@@ -904,32 +951,7 @@ export default function App() {
           )}
         </div>
 
-        <BottomSheet open={grownupsOpen} onClose={() => setGrownupsOpen(false)} title={`👪 ${s.grownups}`} closeLabel={s.close}>
-          <div className="flex flex-col gap-4 text-sm text-slate-600">
-            <label className="flex items-center justify-between gap-3 text-base font-bold text-slate-700">
-              {s.language}
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as Language)}
-                className="rounded-2xl bg-slate-50 px-3 py-3 text-base font-semibold ring-1 ring-slate-200"
-              >
-                {LANGS.map((l) => (
-                  <option key={l.id} value={l.id}>{l.label}</option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="btn-kid bg-sky-500 text-white"
-              onClick={() => { setGrownupsOpen(false); setShowReport(true); }}
-            >
-              📊 {s.report}
-            </button>
-            <div className="rounded-2xl bg-slate-50 p-3">
-              <h3 className="font-bold text-slate-700">🔧 {s.settings}</h3>
-              {settingsBody}
-            </div>
-          </div>
-        </BottomSheet>
+        {grownupsEl}
 
         {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}
       </MotionConfig>
@@ -939,6 +961,8 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="lumi-desktop mx-auto flex min-h-full w-full flex-col gap-5 p-4 sm:p-6">
+      {/* While a lesson runs, the lesson is the whole page: no header, no mode buttons (its own back button stays). */}
+      {!desktopFocus && (
       <header className="lumi-topbar flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
@@ -958,7 +982,24 @@ export default function App() {
             </button>
           )}
         </div>
-        <nav className="flex flex-wrap gap-3" aria-label="Mode">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <button
+            className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
+            onClick={toggleNav}
+            aria-expanded={navOpen}
+            aria-controls="lumi-modes"
+          >
+            {navOpen ? `▲ ${s.hideMenu}` : `☰ ${s.menu}`}
+          </button>
+          <button className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200" onClick={() => setGrownupsOpen(true)}>
+            👪 {s.grownups}
+          </button>
+        </div>
+      </header>
+      )}
+      {/* The mode buttons live in their own nav bar under the header; the child can hide it (remembered on this device). */}
+      {!desktopFocus && navOpen && (
+        <nav id="lumi-modes" className="lumi-navbar flex flex-wrap justify-center gap-3" aria-label="Mode">
           <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"} data-town-tab>
             🏘️ {s.town}
           </button>
@@ -969,23 +1010,7 @@ export default function App() {
             🙋 {s.helpTab}
           </button>
         </nav>
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className="rounded-2xl bg-white px-3 py-3 text-base font-semibold shadow ring-1 ring-sky-100"
-            aria-label="Language"
-          >
-            {/* plain names: Windows renders flag emoji as letters */}
-            {LANGS.map((l) => (
-              <option key={l.id} value={l.id}>{l.label}</option>
-            ))}
-          </select>
-          <button className="btn-kid bg-white !min-h-12 !py-2 text-base text-slate-700 ring-1 ring-slate-200" onClick={() => setShowReport(true)}>
-            👪 {s.grownups}
-          </button>
-        </div>
-      </header>
+      )}
 
       <main className={`mx-auto flex w-full flex-col gap-5 ${appMode === "town" ? "" : "max-w-7xl"}`}>
       {showDreamPicker ? (
@@ -998,14 +1023,9 @@ export default function App() {
         helpEl
       )}
 
-      {appMode !== "town" && (
-        <details className="card p-4 text-sm text-slate-600">
-          <summary className="cursor-pointer font-bold text-slate-700">🔧 {s.settings}</summary>
-          {settingsBody}
-        </details>
-      )}
       </main>
 
+      {grownupsEl}
       {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}
     </div>
     </MotionConfig>

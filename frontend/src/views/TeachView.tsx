@@ -38,6 +38,8 @@ interface Props {
   startWith?: TeachConceptInfo | null;
   /** Phone: leave the lesson for Home. */
   onExit?: () => void;
+  /** Desktop: true while a lesson runs (a skill is picked), so the app hides everything else (docs/10-mobile-ui.md). */
+  onFocusChange?: (on: boolean) => void;
 }
 
 /**
@@ -45,7 +47,7 @@ interface Props {
  * whatever `turn.step` comes back and sends the child's action. It never decides correctness.
  */
 export default function TeachView({
-  sessionId, language, speech, onPracticeFirst, onShowReport, onOpenTown, demo = false, phone = false, startWith, onExit,
+  sessionId, language, speech, onPracticeFirst, onShowReport, onOpenTown, demo = false, phone = false, startWith, onExit, onFocusChange,
 }: Props) {
   const s = t(language);
   const [ws, setWs] = useState<TeachWorksheet | null>(null);
@@ -78,6 +80,10 @@ export default function TeachView({
   // Phone lesson (docs/10-mobile-ui.md): which problem card is showing while marking, and the "stop?" question.
   const [cursor, setCursor] = useState(0);
   const [confirmStop, setConfirmStop] = useState(false);
+  useEffect(() => {
+    if (!phone) onFocusChange?.(phase !== "pick");
+  }, [phase, phone]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => onFocusChange?.(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const send = useCallback(
     async (
@@ -594,6 +600,25 @@ export default function TeachView({
     phoneBubble = `${bubble.slice(0, a).trim()} ${bubble.slice(b).trim()}`.trim();
   }
 
+  // The "stop teaching?" check, shared by the phone's Home button and the desktop back button.
+  const stopSheet = (variant: "sheet" | "dialog") => (
+    <BottomSheet open={confirmStop} onClose={() => setConfirmStop(false)} title={s.stopTitle} closeLabel={s.close} variant={variant}>
+      <div className="flex flex-col gap-3 pb-2">
+        <p className="text-base text-slate-600">{s.stopBody}</p>
+        <button className="btn-kid bg-violet-500 py-4 text-xl text-white" onClick={() => setConfirmStop(false)}>
+          🧑‍🏫 {s.keepTeaching}
+        </button>
+        <button
+          className="btn-kid bg-white text-rose-700 ring-2 ring-rose-200"
+          onClick={() => { setConfirmStop(false); stopSpeaking(); onExit?.(); }}
+        >
+          🚪 {s.stopLesson}
+        </button>
+      </div>
+    </BottomSheet>
+  );
+  const leaveLesson = () => (phase !== "teach" || !ws || step === "done" ? onExit?.() : setConfirmStop(true));
+
   if (phone) {
     return (
       <div className="flex h-full flex-col">
@@ -601,7 +626,7 @@ export default function TeachView({
         <div className="flex shrink-0 items-center gap-2 px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
           <button
             className="btn-kid !min-h-12 shrink-0 bg-white !px-3 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
-            onClick={() => (phase !== "teach" || !ws || step === "done" ? onExit?.() : setConfirmStop(true))}
+            onClick={leaveLesson}
           >
             🏠 {s.home}
           </button>
@@ -787,25 +812,22 @@ export default function TeachView({
           </div>
         )}
 
-        <BottomSheet open={confirmStop} onClose={() => setConfirmStop(false)} title={s.stopTitle} closeLabel={s.close}>
-          <div className="flex flex-col gap-3 pb-2">
-            <p className="text-base text-slate-600">{s.stopBody}</p>
-            <button className="btn-kid bg-violet-500 py-4 text-xl text-white" onClick={() => setConfirmStop(false)}>
-              🧑‍🏫 {s.keepTeaching}
-            </button>
-            <button
-              className="btn-kid bg-white text-rose-700 ring-2 ring-rose-200"
-              onClick={() => { setConfirmStop(false); stopSpeaking(); onExit?.(); }}
-            >
-              🚪 {s.stopLesson}
-            </button>
-          </div>
-        </BottomSheet>
+        {stopSheet("sheet")}
       </div>
     );
   }
 
+  // Desktop: once a skill is picked the lesson takes the whole page; only the back button stays (top left).
+  const focus = phase !== "pick";
   return (
+    <>
+    {focus && (
+      <div className="lumi-teach flex items-center gap-3">
+        <button className="btn-kid !min-h-12 bg-white !px-4 !py-2 text-lg text-slate-700 ring-1 ring-slate-200" onClick={leaveLesson}>
+          ← 🏠 {s.home}
+        </button>
+      </div>
+    )}
     <div className="lumi-teach grid gap-5 lg:grid-cols-12">
       <section className="lumi-teach-side flex flex-col items-center gap-4 p-4 sm:p-5 lg:col-span-4">
         {/* On narrow screens Lumi shrinks and sits beside the bubble, so the math stays near the top. */}
@@ -853,12 +875,14 @@ export default function TeachView({
               </span>
             )}
           </h2>
-          <button
-            className="btn-kid bg-white !py-2 text-base text-slate-800 ring-1 ring-indigo-200"
-            onClick={() => { stopSpeaking(); onOpenTown(null); }}
-          >
-            🏘️ {s.town}
-          </button>
+          {(!focus || step === "done") && (
+            <button
+              className="btn-kid bg-white !py-2 text-base text-slate-800 ring-1 ring-indigo-200"
+              onClick={() => { stopSpeaking(); onOpenTown(null); }}
+            >
+              🏘️ {s.town}
+            </button>
+          )}
         </div>
 
         {phase === "pick" ? (
@@ -902,5 +926,7 @@ export default function TeachView({
         <LumiBrain mastery={turn?.mastery ?? {}} popConcept={turn?.mastery_up ?? null} s={s} />
       </div>
     </div>
+    {stopSheet("dialog")}
+    </>
   );
 }

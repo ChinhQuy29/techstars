@@ -8,7 +8,7 @@ html:has(.study-town) {
   min-height: 0;
 }
 
-.lumi-desktop:has(.study-town) > header { flex-shrink: 0; }
+.lumi-desktop:has(.study-town) > :is(header, nav) { flex-shrink: 0; }
 
 main:has(.study-town) {
   min-height: 0;
