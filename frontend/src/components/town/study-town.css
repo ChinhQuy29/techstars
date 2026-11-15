@@ -141,17 +141,15 @@
 .study-town__hud {
   position: absolute;
   inset: 14px 14px auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(235px, 310px) minmax(0, 1fr);
-  grid-template-areas: "travel xp actions";
-  align-items: start;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 8px;
   pointer-events: none;
 }
 
 .study-town__travel {
-  grid-area: travel;
-  justify-self: start;
   max-width: 100%;
   display: grid;
   gap: 5px;
@@ -174,7 +172,6 @@
   flex-wrap: wrap;
   gap: 5px;
 }
-.study-town__actions { grid-area: actions; justify-content: flex-end; }
 
 .study-town__shortcuts button, .study-town__actions button {
   min-height: 44px;
@@ -193,27 +190,40 @@
 .study-town__actions button { box-shadow: 0 3px 9px #263b3150; }
 .study-town__shortcuts button:hover, .study-town__actions button:hover { background: #dce8ff; }
 
+.study-town__footer {
+  position: absolute;
+  inset: auto 14px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.study-town__feedback {
+  display: grid;
+  flex: 0 1 290px;
+  min-width: 0;
+  gap: 8px;
+}
+
 .study-town__xp {
-  grid-area: xp;
   display: grid;
   gap: 7px;
   padding: 9px 13px 11px;
-  border: 1px solid #ffffffb8;
+  border: 1px solid #ffffffd9;
   border-radius: 15px;
-  background: #243650;
-  color: #fff;
-  box-shadow: 0 4px 12px #22344750;
+  background: #f8fbfff5;
+  color: #27344a;
+  box-shadow: 0 3px 10px #22344738;
 }
 .study-town__xp-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: .9rem; }
-.study-town__xp-label strong { color: #f9dd86; font-size: 1.14rem; }
+.study-town__xp-label strong { color: #375f58; font-size: 1.05rem; }
 .study-town__xp-marks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.study-town__xp-marks span { height: 12px; border-radius: 6px; background: #60738f; }
-.study-town__xp-marks span[data-earned="true"] { background: #f9d668; }
+.study-town__xp-marks span { height: 10px; border-radius: 6px; background: #d8e3e8; }
+.study-town__xp-marks span[data-earned="true"] { background: #60a68d; }
 
 .study-town__notice {
-  position: absolute;
-  inset: auto auto 16px 16px;
-  max-width: min(480px, calc(100% - 205px));
   padding: 10px 14px;
   border-radius: 12px;
   background: #fff9e9;
@@ -221,9 +231,7 @@
 }
 
 .study-town__controls {
-  position: absolute;
-  right: 14px;
-  bottom: 14px;
+  flex: none;
   display: grid;
   grid-template-columns: repeat(3, min(56px, 14vw));
   gap: 4px;
@@ -238,6 +246,7 @@
   font-size: 25px;
   cursor: pointer;
   touch-action: none;
+  pointer-events: auto;
 }
 
 .study-town__controls button:active { translate: 0 2px; background: #e5edff; }
@@ -275,15 +284,11 @@
 .study-town__planned { display: grid; gap: 8px; margin-top: 8px; }
 .study-town__planned li { padding: 12px; border-radius: 10px; background: #edf3ff; }
 
-@media (max-width: 900px) {
-  .study-town__hud { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "xp xp" "travel actions"; }
-  .study-town__xp { justify-self: center; width: min(310px, 100%); }
-}
-
 @media (max-width: 767px) {
   .study-town__view { height: max(390px, calc(100dvh - 8.5rem)); border-radius: 16px; }
-  .study-town__hud { inset: 8px 8px auto; grid-template-columns: minmax(0, 1fr); grid-template-areas: "xp" "travel" "actions"; }
-  .study-town__actions { justify-content: flex-start; }
-  .study-town__controls { right: 8px; bottom: 9px; }
+  .study-town__hud { inset: 8px 8px auto; }
+  .study-town__footer { inset: auto 8px 9px; gap: 8px; }
+  .study-town__xp { padding: 7px 8px 9px; }
+  .study-town__xp-label { gap: 5px; font-size: .78rem; }
   .study-town__shortcuts button, .study-town__actions button { padding-inline: 7px; }
 }

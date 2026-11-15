@@ -265,35 +265,39 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
               ))}
             </nav>
           </div>
-          <div className="study-town__xp" role="progressbar" aria-label={copy.xp}
-            aria-valuemin={0} aria-valuemax={XP_GOAL} aria-valuenow={taught ?? undefined}
-            aria-valuetext={taught === null ? undefined : `${taught}/${XP_GOAL} ${copy.taught}`}
-          >
-            <div className="study-town__xp-label"><strong>{copy.xp}</strong><span>{taught ?? "–"}/{XP_GOAL} {copy.taught}</span></div>
-            <div className="study-town__xp-marks" aria-hidden>
-              {Array.from({ length: XP_GOAL }, (_, index) => <span key={index} data-earned={index < (taught ?? 0)} />)}
-            </div>
-          </div>
           <div className="study-town__actions">{actions}</div>
         </div>
-        {notice && <p className="study-town__notice" role="status">{notice}</p>}
-        <div className="study-town__controls">
-          {WALK.map((direction, index) => (
-            <button key={direction.name} type="button" data-direction={direction.name} aria-label={copy.directions[index]}
-              onPointerDown={(event) => {
-                if (event.button !== 0) return;
-                event.currentTarget.setPointerCapture(event.pointerId);
-                walker.current.route = [];
-                inputs.current.set(event.pointerId, direction);
-              }}
-              onLostPointerCapture={(event) => inputs.current.delete(event.pointerId)}
-              onClick={() => {
-                if (dialog.current?.open) return;
-                const actor = walker.current;
-                go({ x: actor.x + direction.x * 30, y: actor.y + direction.y * 30 });
-              }}
-            >{direction.icon}</button>
-          ))}
+        <div className="study-town__footer">
+          <div className="study-town__feedback">
+            {notice && <p className="study-town__notice" role="status">{notice}</p>}
+            <div className="study-town__xp" role="progressbar" aria-label={copy.xp}
+              aria-valuemin={0} aria-valuemax={XP_GOAL} aria-valuenow={taught ?? undefined}
+              aria-valuetext={taught === null ? undefined : `${taught}/${XP_GOAL} ${copy.taught}`}
+            >
+              <div className="study-town__xp-label"><strong>{copy.xp}</strong><span>{taught ?? "–"}/{XP_GOAL} {copy.taught}</span></div>
+              <div className="study-town__xp-marks" aria-hidden>
+                {Array.from({ length: XP_GOAL }, (_, index) => <span key={index} data-earned={index < (taught ?? 0)} />)}
+              </div>
+            </div>
+          </div>
+          <div className="study-town__controls">
+            {WALK.map((direction, index) => (
+              <button key={direction.name} type="button" data-direction={direction.name} aria-label={copy.directions[index]}
+                onPointerDown={(event) => {
+                  if (event.button !== 0) return;
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  walker.current.route = [];
+                  inputs.current.set(event.pointerId, direction);
+                }}
+                onLostPointerCapture={(event) => inputs.current.delete(event.pointerId)}
+                onClick={() => {
+                  if (dialog.current?.open) return;
+                  const actor = walker.current;
+                  go({ x: actor.x + direction.x * 30, y: actor.y + direction.y * 30 });
+                }}
+              >{direction.icon}</button>
+            ))}
+          </div>
         </div>
       </div>
 
