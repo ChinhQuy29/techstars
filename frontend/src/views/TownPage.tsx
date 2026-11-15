@@ -1,36 +1,16 @@
-import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import * as api from "../api";
-import type { Concept, Language, TownInfo, TownScene } from "../api";
-import LumiMascot from "../components/mascot/LumiMascot";
+import type { Concept, Language, TeachConceptInfo, TownInfo, TownScene } from "../api";
 import { BuildingArt } from "../components/town/Buildings";
 import Journey from "../components/town/Journey";
 import SkillScene from "../components/town/SkillScene";
-import { art, artUrl, TownArt } from "../components/town/townArt";
+import StudyTown, { townCopy } from "../components/town/StudyTown";
 import { t } from "../i18n";
 import type { useSpeech } from "../robot/useSpeech";
 
 const STEP_MS = 1800;
 /** `startStory` value that opens the Journey tab without playing a scene. */
 export const JOURNEY_TAB = "*";
-
-type Spot = { left: number; bottom: number; width: number };
-
-/** Where each place stands on the map (percent of the map box): on the four plots of the illustrated
- * background, or on the code-drawn hills when that image is missing. */
-const SPOT_ART: Record<Concept, Spot> = {
-  carry: { left: 4, bottom: 36, width: 21 },
-  borrow: { left: 28, bottom: 36, width: 20 },
-  off_by_one: { left: 52, bottom: 36, width: 19 },
-  mul: { left: 75, bottom: 36, width: 21 },
-};
-const SPOT_DRAWN: Record<Concept, Spot> = {
-  carry: { left: 3, bottom: 14, width: 23 },
-  borrow: { left: 27, bottom: 24, width: 19 },
-  off_by_one: { left: 55, bottom: 24, width: 17 },
-  mul: { left: 74, bottom: 14, width: 23 },
-};
-const SPOT = artUrl(art.townBackground) ? SPOT_ART : SPOT_DRAWN;
 
 interface Props {
   sessionId: string;
@@ -41,6 +21,7 @@ interface Props {
   /** Go straight into this story scene (from a "new story scene" notification). */
   startStory?: string | null;
   onBackToHomework: () => void;
+  onLearn: (concept: TeachConceptInfo) => void;
   /** Phone layout (docs/10-mobile-ui.md): Town and Journey are bottom tabs, so the header only switches Town/Scrapbook. */
   phone?: boolean;
   /** Show "Back to homework" (phone: only while a lesson is paused). Default true. */
@@ -48,11 +29,11 @@ interface Props {
 }
 
 /**
- * Lumi's Town page (docs/03-lumis-town.md): an illustrated map, and one illustrated scene per skill
+ * Lumi's Town page (docs/03-lumis-town.md): a walkable map, and one illustrated scene per skill
  * the child has taught. Read-only: places open from Lumi's stars; every number comes from the backend.
  */
 export default function TownPage({
-  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, phone = false, showBack = true,
+  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, onLearn, phone = false, showBack = true,
 }: Props) {
   const s = t(language);
   const [info, setInfo] = useState<TownInfo | null>(null);
@@ -190,106 +171,13 @@ export default function TownPage({
         </div>
       )}
 
-      {/* the map */}
+      {!scene && tab === "town" && <StudyTown sessionId={sessionId} language={language} onLearn={onLearn} />}
       {!scene && tab === "town" && info && (
-        <>
-          <div className="card overflow-hidden p-2 sm:p-3">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-              <TownArt
-                name={art.townBackground}
-                className="absolute inset-0 h-full w-full object-cover"
-                fallback={
-                  <svg viewBox="0 0 800 450" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden>
-                    <defs>
-                      <linearGradient id="town-sky" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0" stopColor="#93C5FD" />
-                        <stop offset="1" stopColor="#E0F2FE" />
-                      </linearGradient>
-                    </defs>
-                    <rect width="800" height="450" fill="url(#town-sky)" />
-                    <circle cx="700" cy="70" r="40" fill="#FDE68A" />
-                    {[[110, 70], [300, 45], [520, 90]].map(([x, y], i) => (
-                      <g key={i} fill="#FFFFFF" opacity="0.9">
-                        <ellipse cx={x} cy={y} rx="50" ry="17" />
-                        <ellipse cx={x + 28} cy={y - 11} rx="28" ry="15" />
-                      </g>
-                    ))}
-                    <path d="M0 250 Q150 200 300 240 T600 230 T800 245 V450 H0 Z" fill="#86EFAC" />
-                    <path d="M0 300 Q200 270 400 295 T800 285 V450 H0 Z" fill="#4ADE80" />
-                    {/* the road */}
-                    <path d="M0 400 Q400 360 800 400 V450 H0 Z" fill="#CBD5E1" />
-                    {[60, 200, 340, 480, 620, 760].map((x) => (
-                      <rect key={x} x={x} y="410" width="50" height="6" rx="3" fill="#FFFFFF" />
-                    ))}
-                    {/* trees */}
-                    {[[250, 300], [520, 300], [790, 290]].map(([x, y], i) => (
-                      <g key={i}>
-                        <rect x={x - 5} y={y} width="10" height="40" fill="#92400E" />
-                        <circle cx={x} cy={y - 10} r="26" fill="#22C55E" />
-                      </g>
-                    ))}
-                  </svg>
-                }
-              />
-
-              {info.places.map((pl) => {
-                const spot = SPOT[pl.concept];
-                return (
-                  <motion.button
-                    key={pl.concept}
-                    whileHover={{ y: -4 }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => visit(pl.concept)}
-                    className="absolute flex flex-col items-center rounded-2xl focus-visible:outline-4"
-                    style={{ left: `${spot.left}%`, bottom: `${spot.bottom}%`, width: `${spot.width}%` }}
-                    aria-label={`${pl.name}: ${pl.unlocked ? s.visit : pl.need}`}
-                  >
-                    <BuildingArt concept={pl.concept} open={pl.unlocked} />
-                    <span
-                      className={`-mt-2 rounded-full px-2 py-0.5 text-[10px] font-extrabold shadow sm:text-sm ${
-                        pl.unlocked ? "bg-amber-300 text-amber-900" : "bg-slate-200 text-slate-600"
-                      }`}
-                    >
-                      {pl.unlocked ? pl.emoji : "🔒"}
-                      {/* names only from sm up: on phones they'd cover the shops (the button row below names them) */}
-                      <span className="hidden sm:inline"> {pl.name}</span>
-                    </span>
-                  </motion.button>
-                );
-              })}
-
-              {/* Lumi in town, with what it's thinking about */}
-              <div className="absolute bottom-[6%] left-1/2 w-[11%] -translate-x-1/2">
-                <TownArt
-                  name={art.lumi(bubble && info && bubble !== info.dream ? "confused" : "waving")}
-                  className="h-auto w-full drop-shadow-lg"
-                  fallback={
-                    <LumiMascot
-                      expression={bubble && info && bubble !== info.dream ? "confused" : "happy"}
-                      pose="front"
-                      talking={speech.speaking}
-                      label="auto"
-                      className="w-full"
-                    />
-                  }
-                />
-              </div>
-              <AnimatePresence mode="popLayout">
-                {bubble && (
-                  <motion.div
-                    key={bubble}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="absolute left-1/2 top-[2%] w-[72%] -translate-x-1/2 rounded-xl bg-white/95 px-2 py-1 text-center text-[11px] font-semibold leading-snug text-slate-700 shadow-lg ring-1 ring-sky-100 sm:top-[3%] sm:w-[64%] sm:rounded-2xl sm:px-3 sm:py-2 sm:text-lg"
-                  >
-                    {bubble}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* the same places as big buttons: easy on small screens and for screen readers */}
+        <section className="flex flex-col gap-3" aria-label={townCopy(language).activities}>
+          <h3 className="text-lg font-extrabold text-slate-800">{townCopy(language).activities}</h3>
+          {bubble && bubble !== info.dream && (
+            <p role="status" className="card p-3 text-slate-700">{bubble}</p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {info.places.map((pl) => (
               <button
@@ -307,7 +195,7 @@ export default function TownPage({
               </button>
             ))}
           </div>
-        </>
+        </section>
       )}
 
       {/* Lumi's Journey to the moon */}

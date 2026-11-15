@@ -140,7 +140,7 @@ function saveSessionId(id: string) {
 export default function App() {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [language, setLanguage] = useState<Language>("en");
-  const [appMode, setAppMode] = useState<Mode>("welcome");
+  const [appMode, setAppMode] = useState<Mode>("town");
   const [source, setSource] = useState<Source>("webcam");
   const [cameraOn, setCameraOn] = useState(false);
   const [phase, setPhase] = useState<Phase>("WATCHING");
@@ -159,7 +159,7 @@ export default function App() {
   const [showDebug, setShowDebug] = useState(false);
   const [teachKey, setTeachKey] = useState(0);
   const [teachDemo, setTeachDemo] = useState(false);
-  const [townStart, setTownStart] = useState<{ concept: Concept | null; story: string | null; key: number } | null>(null);
+  const [townStart, setTownStart] = useState<{ concept: Concept | null; story: string | null; key: number }>({ concept: null, story: null, key: 0 });
   const [teachAlive, setTeachAlive] = useState(false); // keep the worksheet while visiting the town
   const [profileId, setProfileId] = useState<string | null>(readProfileId);
   const [remembered, setRemembered] = useState(0);
@@ -167,7 +167,8 @@ export default function App() {
   const [profileError, setProfileError] = useState<string | null>(null);
   // Phone layout (docs/10-mobile-ui.md)
   const isPhone = useIsPhone();
-  const [phoneStart, setPhoneStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
+  const [lessonStart, setLessonStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
+  const [lessonFromTown, setLessonFromTown] = useState(false);
   const [grownupsOpen, setGrownupsOpen] = useState(false);
   // Lumi's dream (docs/12-dreams.md): chosen before the first lesson; the child can change it from home.
   const [dream, chooseDream] = useDream();
@@ -365,12 +366,14 @@ export default function App() {
     if (m === appMode) return;
     speech.stopSpeaking();
     if (m === "town") {
-      setTownStart((t0) => ({ concept: null, story: null, key: (t0?.key ?? 0) + 1 }));
+      setTownStart((t0) => ({ concept: null, story: null, key: t0.key + 1 }));
     } else if (m === "help") {
       setEmotion("idle");
       setBubble(L.hello);
     } else if (!(m === "teach" && appMode === "town" && teachAlive)) {
       setTeachDemo(false);
+      setLessonStart(undefined);
+      setLessonFromTown(false);
       setTeachKey((k) => k + 1); // fresh Teach view (and worksheet) each time the tab is opened
     }
     if (m === "teach") setTeachAlive(true);
@@ -394,9 +397,10 @@ export default function App() {
   const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream} />;
   const dreamNow = dreamInfo(dream);
 
-  const startFromHome = (c: api.TeachConceptInfo | null) => {
+  const startLesson = (c: api.TeachConceptInfo | null, fromTown = false) => {
     speech.stopSpeaking();
-    setPhoneStart(c);
+    setLessonStart(c);
+    setLessonFromTown(fromTown);
     setTeachDemo(false);
     setTeachKey((k) => k + 1);
     setTeachAlive(true);
@@ -405,8 +409,12 @@ export default function App() {
 
   /** Phone: leave the lesson for Home (after "Stop this homework?"). */
   const exitLesson = () => {
-    setPhoneStart(undefined);
-    switchMode("welcome");
+    setLessonStart(undefined);
+    if (lessonFromTown) {
+      setTeachAlive(false);
+      setLessonFromTown(false);
+      openTown(null);
+    } else switchMode("welcome");
   };
 
   const selectTab = (tb: PhoneTab) => {
@@ -418,7 +426,7 @@ export default function App() {
 
   const openTown = (concept: Concept | null, story: string | null = null) => {
     speech.stopSpeaking();
-    setTownStart((t0) => ({ concept, story, key: (t0?.key ?? 0) + 1 }));
+    setTownStart((t0) => ({ concept, story, key: t0.key + 1 }));
     setAppMode("town");
   };
 
@@ -462,6 +470,7 @@ export default function App() {
     speech.stopSpeaking();
     setGrownupsOpen(false);
     setTeachDemo(true);
+    setLessonFromTown(false);
     setTeachKey((k) => k + 1);
     setAppMode("teach");
   };
@@ -541,7 +550,7 @@ export default function App() {
   // Screen pieces shared by the desktop page and the phone frame (docs/10-mobile-ui.md).
   const teachTownEl = (
         <>
-        {appMode === "town" && townStart && (
+        {appMode === "town" && (
           <TownPage
             key={`${sessionId}-${language}-${townStart.key}`}
             sessionId={sessionId}
@@ -550,8 +559,9 @@ export default function App() {
             startConcept={townStart.concept}
             startStory={townStart.story}
             onBackToHomework={() => switchMode("teach")}
+            onLearn={(concept) => startLesson(concept, true)}
             phone={isPhone}
-            showBack={!isPhone || teachAlive}
+            showBack={teachAlive}
           />
         )}
         {(appMode === "teach" || teachAlive) && (
@@ -566,7 +576,7 @@ export default function App() {
           onOpenTown={openTown}
           demo={teachDemo}
           phone={isPhone}
-          startWith={phoneStart}
+          startWith={lessonStart}
           onExit={exitLesson}
         />
         </div>
@@ -878,7 +888,7 @@ export default function App() {
                 sessionId={sessionId}
                 language={language}
                 remembered={remembered}
-                onStart={startFromHome}
+                onStart={startLesson}
                 dream={dreamNow}
                 onChangeDream={changeDream}
               />
@@ -948,14 +958,14 @@ export default function App() {
           )}
         </div>
         <nav className="flex flex-wrap gap-3" aria-label="Mode">
+          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
+            🏘️ {s.town}
+          </button>
           <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
             🧑‍🏫 {s.teachTab}
           </button>
           <button className={tab("help")} onClick={() => switchMode("help")} aria-pressed={appMode === "help"}>
             🙋 {s.helpTab}
-          </button>
-          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
-            🏘️ {s.town}
           </button>
         </nav>
         <div className="flex flex-wrap items-center gap-2">

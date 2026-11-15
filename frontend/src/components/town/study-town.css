@@ -1,0 +1,173 @@
+.study-town {
+  display: grid;
+  min-width: 0;
+  gap: .8rem;
+  color: #27364e;
+}
+
+.study-town__guide {
+  font-weight: 700;
+}
+
+.study-town__view {
+  position: relative;
+  contain: paint;
+  height: clamp(310px, 49vh, 490px);
+  overflow: clip;
+  border: 3px solid white;
+  border-radius: 24px;
+  background: #a8d58d;
+  box-shadow: 0 12px 28px #314a6230;
+}
+
+.study-town__view:focus-visible {
+  outline: 3px solid #344980;
+  outline-offset: 2px;
+}
+
+.study-town__world {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 1140px;
+  height: 388px;
+  transform-origin: top left;
+  background: #a8d58d url("/assets/map_asset/spring-grove.png") -400px -210px / 1920px 640px no-repeat;
+}
+
+.study-town__fence {
+  position: absolute;
+  top: 271px;
+  height: 19px;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, #855b42 0 4px, #c29262 4px 8px, transparent 8px 32px),
+    linear-gradient(transparent 4px, #b5845c 4px 8px, transparent 8px 12px, #a67954 12px 16px, transparent 16px);
+  filter: drop-shadow(0 2px 1px #6c563c50);
+}
+
+.study-town__fence--front {
+  inset: 346px 0 auto;
+}
+
+.study-town__house {
+  position: absolute;
+  top: 139px;
+  width: 172px;
+  height: 160px;
+  translate: -50% 0;
+  border-radius: 18px;
+  display: grid;
+  align-items: start;
+  justify-items: center;
+  cursor: pointer;
+}
+
+.study-town__sign {
+  padding: 5px 10px;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  background: #fff8e6;
+  color: #303652;
+  box-shadow: 0 3px 0 #6f563451;
+  white-space: nowrap;
+  font-weight: 850;
+}
+
+.study-town__house:hover .study-town__sign,
+.study-town__house:focus-visible .study-town__sign,
+.study-town__house[aria-expanded="true"] .study-town__sign {
+  background: #dce8ff;
+  color: #23396a;
+}
+
+.study-town__sprite {
+  position: absolute;
+  top: 320px;
+  left: 116px;
+  width: 49.6px;
+  height: 49.6px;
+  translate: -50% -85.625%;
+  background: url("/assets/map_asset/character_asset/lumi-walk.png") var(--frame, 50%) 0 / 300% 300% no-repeat;
+  pointer-events: none;
+}
+
+.study-town__sprite[data-facing="right"],
+.study-town__sprite[data-facing="left"] {
+  background-position-y: 50%;
+}
+
+.study-town__sprite[data-facing="left"] {
+  scale: -1 1;
+}
+
+.study-town__controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.study-town__controls button {
+  width: 56px;
+  height: 56px;
+  border: 2px solid white;
+  border-radius: 16px;
+  background: #fffbec;
+  color: #293850;
+  box-shadow: 0 3px 0 #34435243;
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.study-town__controls button:hover {
+  background: #e5edff;
+}
+
+.study-town__doors, .study-town__skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 144px), 1fr));
+  gap: 8px;
+}
+
+.study-town__door {
+  background: #f3f6ff;
+  color: #263856;
+  border: 1px solid #dce6fa;
+  font-size: 1rem;
+}
+
+.study-town__door[aria-expanded="true"] {
+  background: #dce8ff;
+}
+
+.study-town__chooser {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.study-town__chooser-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.study-town__chooser h3 {
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.study-town__planned {
+  border-radius: 12px;
+  background: #f1f5f9;
+  padding: 12px;
+}
+
+@media (max-width: 560px) {
+  .study-town__view { border-radius: 16px; }
+  .study-town__doors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .study-town__doors .study-town__door { padding-inline: 4px; font-size: .88rem; }
+}

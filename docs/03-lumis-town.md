@@ -22,12 +22,16 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 5. **No new data** beyond a visit count per place (seeds fresh problems).
 
 ## Where it appears
-- Header tab **🏘️ Lumi's Town** and a 🏘️ button on the Teach screen. TeachView stays mounted (hidden) in the town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
+- Study Town is the opening view and the first mode tab. The 🏘️ button on the Teach screen still opens Town. TeachView stays mounted (hidden) in Town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
 - On Teach `next`, when a concept just reached 1 star: "🎉 New place in Lumi's Town: 🍋 Lemonade Stand!" → Visit opens that scene.
 - Welcome: "Welcome back! Lumi remembers…" with saved progress.
 
 ## As built
-- **Map** (`views/TownPage.tsx`): background, four buildings, Lumi with the dream line; a button row repeats the places for small screens and screen readers.
+- **Map** (`components/town/StudyTown.tsx`): a fenced, scrollable road with Math, English, and Biology houses from left to right. Use Left/Right or A/D with the map focused, the on-screen arrows, or tap the road. Visit a house through its sign or the row of subject buttons.
+- **House menus:** Math lists the existing backend skills in their supplied order and opens the existing Teach flow, including the chosen dream and readiness gates. English and Biology display planned topics. Town movement and house selection stay in memory.
+- **Town activities** (`views/TownPage.tsx`): the four existing skill scenes, unlocks, Scrapbook, and Journey remain accessible. The subject houses are lesson entrances separate from those earned activities.
+- **Map assets:** `frontend/public/assets/map_asset/spring-grove.png` is the map art at 3840 × 1280. It is displayed at 1920 × 640 with a 400 × 210 crop offset. The scene uses the team's Study Town demo art assembled with Kenney CC0 pieces.
+- **Character assets:** Edit `map_asset/character_asset/lumi-walk.svg` and export over `lumi-walk.png` to replace the sprite. Keep the transparent 480 × 480 sheet, 160 × 160 cells, rows for down/right/up in that order, and foot anchor at (80, 137) in each cell. Columns are step A, standing, and step B, and the right row mirrors for left. The stylesheet holds the map crop and sprite display size.
 - **Scene** (`components/town/SkillScene.tsx`): a 16:9 picture, then the math board and captions. One caption every 1.8 s; picture, board and captions share one `stage`.
   - Lemonade: price tags 🍋 a¢ / 🍪 b¢; register board fills ones, pops the carried 1, then tens and total; coins slide to Lumi.
   - Change Counter: "💰 Paid a¢ / 🍬 Costs b¢"; the board crosses out the tens digit and writes the borrowed digits (e.g. 4→3, 6→16), then the change; coins slide back.
