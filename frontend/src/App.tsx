@@ -973,7 +973,7 @@ export default function App() {
           {!inLesson && (
             <header className="lumi-phone-header shrink-0 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
               <div className="flex min-w-0 items-center gap-2.5">
-                <button className="flex items-center gap-2 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+                <button className="flex items-center gap-2 rounded-2xl" onClick={showTown} aria-label={s.town}>
                   <LumiMascot expression="default" animated={false} className="w-9 shrink-0" />
                   <img {...lumiLogo} alt="" className="h-auto w-[4.25rem] -translate-y-1" />
                 </button>
@@ -1016,7 +1016,7 @@ export default function App() {
       {!desktopFocus && (
       <header className="lumi-topbar">
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2.5 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
+          <button className="flex items-center gap-2.5 rounded-2xl" onClick={showTown} aria-label={s.town}>
             <LumiMascot expression="default" animated={false} className="w-11 shrink-0" />
             <img {...lumiLogo} alt="" className="h-auto w-20 shrink-0 -translate-y-1" />
             <h1 className="sr-only">
