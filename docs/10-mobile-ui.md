@@ -33,6 +33,13 @@ On a phone the current app is one long scrolling page: the header (logo, three t
 - **Lesson top bar:** 🏠 Home (asks "Stop this homework?" before leaving), skill chip, notebook tabs for Check / Explain / Lumi tries. Android back during a lesson still sends the app to the background (lesson kept).
 - Lumi's Brain is not shown during a phone lesson; the stars are on the Home path.
 
+## Desktop website (agreed with the owner, 2026-11-15)
+The website (768 px and wider) follows the same idea of fewer things to click:
+- **Header:** the Lumi logo, the dream chip, **☰ Menu / ▲ Hide menu** and one **👪 Grown-ups** button.
+- **Nav bar:** Teach Lumi, Help me and Lumi's Town sit in their own bar under the header. The child can hide it with the menu button, and the choice is remembered on the device (`localStorage` key `lumi_nav_open`).
+- **Grown-ups:** one centred dialog with the language, the grown-up report and every grown-up setting (the same panel as the phone's Grown-ups sheet, `BottomSheet variant="dialog"`). The settings box at the bottom of the page is gone.
+- **Lessons take the whole page:** once a skill is picked (warm-up or Lumi's homework), the header, nav bar and Town button hide (`TeachView` `onFocusChange`). Only **← 🏠 Home** stays at the top left; it asks "Stop this homework?" (Keep teaching / Stop) unless the page is finished, then goes Home. The skill picker itself keeps the header and nav bar.
+
 ## Must-keep rules this changes (approved by the owner)
 - "The worksheet stays near the top on phones; rows never wrap" becomes: on phones, the lesson shows one problem at a time and the whole sheet before "Done checking". Desktop keeps the full sheet.
 - Header content moves: tabs go to the bottom bar; language and the report go into the Grown-ups sheet.
@@ -66,6 +73,7 @@ Everything else in [04](04-character-ui-and-art.md) "Must keep" still applies: c
 | Desktop unchanged | ✅ | — | — | Console clean. |
 
 ## Log
+- 2026-11-15: desktop website: hideable nav bar, one Grown-ups dialog (language, report, settings), and full-page lessons with a top-left Home button and a stop check. Checked in headless Edge at 1256 px.
 - 2026-11-14 · Decisions agreed with the owner; plan written.
 - 2026-11-14 · Stages A–D built and checked in the browser at phone size and on the emulator; desktop unchanged. Owner's phone not connected yet.
 - 2026-11-14 · Owner feedback: "looks like a Duolingo clone" and kids should choose any skill. Replaced the path with Lumi's Brain (free choice, no suggested skill) and the progress bar + ✕ with a 🏠 Home button and notebook step tabs. Checked in the browser and on the emulator.
