@@ -1,4 +1,25 @@
+html:has(.study-town) {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.lumi-desktop:has(.study-town) {
+  height: 100dvh;
+  min-height: 0;
+}
+
+.lumi-desktop:has(.study-town) > header { flex-shrink: 0; }
+
+main:has(.study-town) {
+  min-height: 0;
+  flex: 1;
+  overflow: clip;
+}
+
+main > div:has(> .study-town) { height: 100%; }
+
 .study-town {
+  height: 100%;
   min-width: 0;
   color: #27344a;
 }
@@ -6,7 +27,7 @@
 .study-town__view {
   position: relative;
   isolation: isolate;
-  height: max(430px, calc(100dvh - 9rem));
+  height: 100%;
   overflow: clip;
   border: 3px solid #fff;
   border-radius: 22px;
@@ -245,6 +266,7 @@
   border: 2px solid #fff;
   border-radius: 22px;
   overflow: auto;
+  overscroll-behavior: contain;
   background: #f8faff;
   color: #25344b;
   box-shadow: 0 16px 55px #172e525c;
@@ -265,7 +287,7 @@
 .study-town__planned li { padding: 12px; border-radius: 10px; background: #edf3ff; }
 
 @media (max-width: 767px) {
-  .study-town__view { height: max(390px, calc(100dvh - 8.5rem)); border-radius: 16px; }
+  .study-town__view { border-radius: 16px; }
   .study-town__hud { inset: 8px 8px auto; }
   .study-town__footer { inset: auto 8px 9px; gap: 8px; }
   .study-town__xp { padding: 7px 8px 9px; }
