@@ -57,7 +57,7 @@ TT: dict[str, dict] = {
     "en": {
         "intro": "I did my homework! Can you be my teacher? Tap ✓ if I got it right, or ✗ if I made a mistake, and write the right answer.",
         "review_intro": "I think I forgot a little. Can you check my homework again, teacher?",
-        "practice_first": "Let's practice together first, then you can teach me! Tap Help me.",
+        "practice_first": "Let's practice together first, then you can teach me! Open Practice.",
         "checked_all": "You checked my whole page!",
         "explain_ask": "Oh no, you're right! Why is {lumi} wrong? What did I mess up?",
         "found_ask": "You found my mistake on number {id}! What should my answer be?",
@@ -100,7 +100,7 @@ TT: dict[str, dict] = {
         },
         "concepts": {
             "carry": {
-                "label": "carrying",
+                "label": "addition",
                 "ask_why": "Ooh! But why does the 1 move over to the tens?",
                 "point": "Hmm, was my mistake in the ones column or the tens column?",
                 "rule": "When the ones add up to 10 or more, we carry the 1 to the tens.",
@@ -108,7 +108,7 @@ TT: dict[str, dict] = {
                 "chips": ["You forgot to carry the 1 to the tens", "You have to add the tens first", "The answer should be smaller"],
             },
             "borrow": {
-                "label": "borrowing",
+                "label": "subtraction",
                 "ask_why": "Ooh! But why do I need to borrow from the tens?",
                 "point": "Hmm, was my mistake in the ones column or the tens column?",
                 "rule": "When the top ones number is too small, we borrow one ten.",
@@ -116,7 +116,7 @@ TT: dict[str, dict] = {
                 "chips": ["You needed to borrow a ten first", "Always take the small number from the big one", "You should add instead"],
             },
             "off_by_one": {
-                "label": "careful counting",
+                "label": "counting",
                 "ask_why": "Ooh! How can I check so I don't count wrong?",
                 "point": "Hmm, did I count too many or too few?",
                 "rule": "We have to count carefully and check our answer.",
@@ -124,7 +124,7 @@ TT: dict[str, dict] = {
                 "chips": ["You counted one too many or one too few", "You forgot to carry the 1", "You should take away instead"],
             },
             "mul": {
-                "label": "times tables",
+                "label": "multiplication",
                 "ask_why": "Ooh! How many groups should I count?",
                 "point": "Hmm, did I count too many groups or too few?",
                 "rule": "We count exactly the right number of groups.",
@@ -136,7 +136,7 @@ TT: dict[str, dict] = {
     "es": {
         "intro": "¡Hice mi tarea! ¿Puedes ser mi profe? Toca ✓ si está bien, o ✗ si me equivoqué, y escribe la respuesta correcta.",
         "review_intro": "Creo que se me olvidó un poco. ¿Puedes revisar mi tarea otra vez, profe?",
-        "practice_first": "¡Practiquemos juntos primero y luego me enseñas! Toca Ayúdame.",
+        "practice_first": "¡Practiquemos juntos primero y luego me enseñas! Toca Practicar.",
         "checked_all": "¡Revisaste toda mi página!",
         "explain_ask": "¡Ay, tienes razón! ¿Por qué {lumi} está mal? ¿En qué me equivoqué?",
         "found_ask": "¡Encontraste mi error en el número {id}! ¿Cuál debería ser mi respuesta?",
@@ -179,7 +179,7 @@ TT: dict[str, dict] = {
         },
         "concepts": {
             "carry": {
-                "label": "a llevar",
+                "label": "la suma",
                 "ask_why": "¡Oh! ¿Pero por qué el 1 se pasa a las decenas?",
                 "point": "Mmm, ¿mi error fue en las unidades o en las decenas?",
                 "rule": "Cuando las unidades suman 10 o más, llevamos 1 a las decenas.",
@@ -187,7 +187,7 @@ TT: dict[str, dict] = {
                 "chips": ["Se te olvidó llevar el 1 a las decenas", "Hay que sumar las decenas primero", "La respuesta debe ser más pequeña"],
             },
             "borrow": {
-                "label": "a pedir prestado",
+                "label": "la resta",
                 "ask_why": "¡Oh! ¿Pero por qué tengo que pedir prestado a las decenas?",
                 "point": "Mmm, ¿mi error fue en las unidades o en las decenas?",
                 "rule": "Cuando el número de arriba en las unidades es muy pequeño, pedimos prestada una decena.",
@@ -195,7 +195,7 @@ TT: dict[str, dict] = {
                 "chips": ["Tenías que pedir prestada una decena primero", "Siempre se resta el pequeño del grande", "Había que sumar"],
             },
             "off_by_one": {
-                "label": "a contar con cuidado",
+                "label": "a contar",
                 "ask_why": "¡Oh! ¿Cómo reviso para no contar mal?",
                 "point": "Mmm, ¿conté de más o de menos?",
                 "rule": "Tenemos que contar con cuidado y revisar la respuesta.",
@@ -203,7 +203,7 @@ TT: dict[str, dict] = {
                 "chips": ["Contaste uno de más o uno de menos", "Se te olvidó llevar el 1", "Había que restar"],
             },
             "mul": {
-                "label": "las tablas",
+                "label": "la multiplicación",
                 "ask_why": "¡Oh! ¿Cuántos grupos tengo que contar?",
                 "point": "Mmm, ¿conté grupos de más o de menos?",
                 "rule": "Contamos exactamente el número correcto de grupos.",
@@ -215,7 +215,7 @@ TT: dict[str, dict] = {
     "vi": {
         "intro": "Mình làm bài tập rồi! Bạn làm cô giáo của mình nhé? Chạm ✓ nếu mình làm đúng, hoặc ✗ nếu mình sai, rồi viết đáp án đúng.",
         "review_intro": "Hình như mình quên một chút rồi. Bạn kiểm tra bài của mình lần nữa nhé?",
-        "practice_first": "Mình cùng luyện tập trước đã, rồi bạn dạy mình nhé! Chạm Giúp mình.",
+        "practice_first": "Mình cùng luyện tập trước đã, rồi bạn dạy mình nhé! Mở mục Luyện tập.",
         "checked_all": "Bạn đã kiểm tra cả trang của mình!",
         "explain_ask": "Ôi, bạn nói đúng! Sao {lumi} lại sai? Mình sai ở đâu vậy?",
         "found_ask": "Bạn tìm ra lỗi của mình ở bài {id}! Đáp án của mình phải là bao nhiêu?",
@@ -258,7 +258,7 @@ TT: dict[str, dict] = {
         },
         "concepts": {
             "carry": {
-                "label": "cách nhớ sang hàng chục",
+                "label": "phép cộng",
                 "ask_why": "Ồ! Nhưng sao số 1 lại sang hàng chục?",
                 "point": "Ừm, mình sai ở hàng đơn vị hay hàng chục?",
                 "rule": "Khi hàng đơn vị cộng lại được 10 trở lên, mình nhớ 1 sang hàng chục.",
@@ -266,7 +266,7 @@ TT: dict[str, dict] = {
                 "chips": ["Bạn quên nhớ 1 sang hàng chục", "Phải cộng hàng chục trước", "Đáp án phải nhỏ hơn"],
             },
             "borrow": {
-                "label": "cách mượn ở hàng chục",
+                "label": "phép trừ",
                 "ask_why": "Ồ! Nhưng sao mình phải mượn ở hàng chục?",
                 "point": "Ừm, mình sai ở hàng đơn vị hay hàng chục?",
                 "rule": "Khi số ở trên hàng đơn vị nhỏ quá, mình mượn một chục.",
@@ -274,7 +274,7 @@ TT: dict[str, dict] = {
                 "chips": ["Bạn phải mượn một chục trước", "Luôn lấy số lớn trừ số nhỏ", "Phải cộng mới đúng"],
             },
             "off_by_one": {
-                "label": "cách đếm cẩn thận",
+                "label": "cách đếm",
                 "ask_why": "Ồ! Làm sao để mình kiểm tra cho khỏi đếm sai?",
                 "point": "Ừm, mình đếm thừa hay đếm thiếu?",
                 "rule": "Mình phải đếm cẩn thận và kiểm tra lại đáp án.",
@@ -282,7 +282,7 @@ TT: dict[str, dict] = {
                 "chips": ["Bạn đếm thừa một hoặc thiếu một", "Bạn quên nhớ 1", "Phải trừ mới đúng"],
             },
             "mul": {
-                "label": "bảng cửu chương",
+                "label": "phép nhân",
                 "ask_why": "Ồ! Mình phải đếm bao nhiêu nhóm?",
                 "point": "Ừm, mình đếm thừa nhóm hay thiếu nhóm?",
                 "rule": "Mình đếm đúng số nhóm cần có.",

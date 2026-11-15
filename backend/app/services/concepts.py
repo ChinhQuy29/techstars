@@ -109,7 +109,7 @@ FRUITS = ["🍎", "🍐", "🍌", "🍇", "🍓"]
 TEXT: dict[str, dict] = {
     "en": {
         "share": {
-            "label": "sharing", "q": "{a} ÷ {b} = ?",
+            "label": "division", "q": "{a} ÷ {b} = ?",
             "ask_why": "Ooh! But what does sharing mean?",
             "point": "Hmm, did I make equal groups?",
             "rule": "Sharing means making equal groups and counting how many are in each.",
@@ -129,7 +129,7 @@ TEXT: dict[str, dict] = {
             "hints": ["Look at how much the numbers grow each time.", "Find the jump between two numbers next to each other.", "{x} to {y} is a jump of {d}. What comes after {last}?"],
         },
         "big_numbers": {
-            "label": "big numbers", "q": "In {n}, the {d} is worth ?",
+            "label": "place value", "q": "In {n}, the {d} is worth ?",
             "ask_why": "Ooh! But how do you know how much the {d} is worth?",
             "point": "Hmm, which place is the {d} in?",
             "rule": "A digit is worth more in each place to the left: ones, tens, hundreds, thousands.",
@@ -149,7 +149,7 @@ TEXT: dict[str, dict] = {
             "hints": ["How many minutes are in one hour?", "When the minutes reach 60, that makes a new hour.", "{mm} + {m} = {sum} minutes. Take away 60 for one hour."],
         },
         "measure": {
-            "label": "measuring", "q": "📏 The {obj} is ? cm long.",
+            "label": "measurement", "q": "📏 The {obj} is ? cm long.",
             "ask_why": "Ooh! But why can't I just read the number at the end?",
             "point": "Hmm, where does the {obj} start on the ruler?",
             "rule": "If something doesn't start at 0, we count from where it starts.",
@@ -191,7 +191,7 @@ TEXT: dict[str, dict] = {
     },
     "es": {
         "share": {
-            "label": "repartir", "q": "{a} ÷ {b} = ?",
+            "label": "división", "q": "{a} ÷ {b} = ?",
             "ask_why": "¡Oh! ¿Pero qué significa repartir?",
             "point": "Mmm, ¿hice grupos iguales?",
             "rule": "Repartir es hacer grupos iguales y contar cuántos hay en cada uno.",
@@ -211,7 +211,7 @@ TEXT: dict[str, dict] = {
             "hints": ["Mira cuánto crecen los números cada vez.", "Busca el salto entre dos números seguidos.", "De {x} a {y} hay un salto de {d}. ¿Qué viene después de {last}?"],
         },
         "big_numbers": {
-            "label": "números grandes", "q": "En {n}, el {d} vale ?",
+            "label": "valor posicional", "q": "En {n}, el {d} vale ?",
             "ask_why": "¡Oh! ¿Pero cómo sabes cuánto vale el {d}?",
             "point": "Mmm, ¿en qué lugar está el {d}?",
             "rule": "Un dígito vale más en cada lugar hacia la izquierda: unidades, decenas, centenas, millares.",
@@ -231,7 +231,7 @@ TEXT: dict[str, dict] = {
             "hints": ["¿Cuántos minutos tiene una hora?", "Cuando los minutos llegan a 60, se forma una hora nueva.", "{mm} + {m} = {sum} minutos. Quita 60 para una hora."],
         },
         "measure": {
-            "label": "medir", "q": "📏 El/la {obj} mide ? cm.",
+            "label": "medición", "q": "📏 El/la {obj} mide ? cm.",
             "ask_why": "¡Oh! ¿Pero por qué no puedo leer solo el número del final?",
             "point": "Mmm, ¿dónde empieza el/la {obj} en la regla?",
             "rule": "Si algo no empieza en 0, contamos desde donde empieza.",
@@ -273,7 +273,7 @@ TEXT: dict[str, dict] = {
     },
     "vi": {
         "share": {
-            "label": "chia đều", "q": "{a} : {b} = ?",
+            "label": "phép chia", "q": "{a} : {b} = ?",
             "ask_why": "Ồ! Nhưng chia đều nghĩa là gì?",
             "point": "Ừm, mình có chia thành các nhóm bằng nhau không?",
             "rule": "Chia đều là chia thành các nhóm bằng nhau rồi đếm mỗi nhóm có bao nhiêu.",
@@ -293,7 +293,7 @@ TEXT: dict[str, dict] = {
             "hints": ["Xem các số tăng bao nhiêu mỗi lần.", "Tìm bước nhảy giữa hai số đứng cạnh nhau.", "Từ {x} đến {y} là nhảy {d}. Sau {last} là số mấy?"],
         },
         "big_numbers": {
-            "label": "số lớn", "q": "Trong số {n}, chữ số {d} có giá trị ?",
+            "label": "giá trị hàng", "q": "Trong số {n}, chữ số {d} có giá trị ?",
             "ask_why": "Ồ! Nhưng làm sao bạn biết chữ số {d} có giá trị bao nhiêu?",
             "point": "Ừm, chữ số {d} ở hàng nào?",
             "rule": "Mỗi hàng sang trái thì chữ số có giá trị lớn hơn: đơn vị, chục, trăm, nghìn.",
@@ -313,7 +313,7 @@ TEXT: dict[str, dict] = {
             "hints": ["Một giờ có bao nhiêu phút?", "Khi đủ 60 phút thì thành một giờ mới.", "{mm} + {m} = {sum} phút. Bớt 60 phút để thành một giờ."],
         },
         "measure": {
-            "label": "đo độ dài", "q": "📏 {obj} dài ? cm.",
+            "label": "đo lường", "q": "📏 {obj} dài ? cm.",
             "ask_why": "Ồ! Nhưng tại sao mình không đọc số ở cuối được?",
             "point": "Ừm, {obj} bắt đầu ở đâu trên thước?",
             "rule": "Nếu vật không bắt đầu ở số 0, mình đếm từ chỗ nó bắt đầu.",

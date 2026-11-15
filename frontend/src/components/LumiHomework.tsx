@@ -18,6 +18,7 @@ interface Props {
   onEdit: (id: number) => void;
   onPick: (id: number) => void;
   s: Strings;
+  className?: string;
 }
 
 const BADGE: Partial<Record<TeachOutcome, [string, string]>> = {
@@ -33,7 +34,7 @@ export default function LumiHomework(p: Props) {
   const marking = p.step === "mark";
   const finding = p.step === "find";
   return (
-    <div className="notebook notebook-cells lumi-workbook overflow-hidden rounded-2xl">
+    <div className={`notebook notebook-cells lumi-workbook overflow-hidden rounded-2xl ${p.className ?? ""}`}>
       <ol>
         {p.problems.map((pr) => {
           const m = p.marks[pr.id];

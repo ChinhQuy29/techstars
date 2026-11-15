@@ -58,6 +58,22 @@ def test_samples_listed():
     assert "worksheet-1" in names
 
 
+def test_assigned_worksheet_practice_stays_on_the_selected_problem():
+    sid = "assigned-worksheet-practice"
+    grade("worksheet-1.png", sid)
+    for level in range(1, 5):
+        response = client.post("/api/tutor", json={
+            "session_id": sid, "action": "hint", "problem_id": 2, "worksheet_only": True,
+        })
+        assert response.status_code == 200
+        turn = response.json()
+        assert turn["focus_problem_id"] == 2
+        assert turn["hint_level"] == level
+        assert turn["practice_problem"] is None
+        assert turn["revealed"] == (level == 4)
+        assert ("85" in turn["say"]) == (level == 4)
+
+
 def test_quota_error_keeps_previous_grade(monkeypatch):
     from app.services import llm, vision
 

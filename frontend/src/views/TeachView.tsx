@@ -66,7 +66,7 @@ export default function TeachView({
   const applyRef = useRef<(tn: TeachTurn) => Promise<void>>(async () => {});
   const loadRef = useRef<() => Promise<void>>(async () => {});
   const lastAction = useRef<(() => Promise<unknown>) | null>(null);
-  // The child chooses a skill, then chooses to teach it or open Help.
+  // The child chooses a skill, then chooses to practice or teach it.
   const [phase, setPhase] = useState<"pick" | "choice" | "teach">(demo ? "teach" : "pick");
   const [menu, setMenu] = useState<TeachConceptInfo[]>([]);
   const chosen = useRef<string | null>(null);
@@ -217,10 +217,10 @@ export default function TeachView({
       </h2>
       <button type="button" className="btn-kid !min-h-20 bg-[#5574c8] text-2xl text-white hover:bg-[#4764b4]" disabled={busy}
         onClick={() => teachConcept(selection.concept)}>
-        🧑‍🏫 {s.teachTab}
+        🧑‍🏫 {s.readyToTeach}
       </button>
-      <button type="button" className="btn-kid bg-white text-slate-700 ring-1 ring-slate-200" onClick={onPracticeFirst}>
-        🙋 {s.notConfident}
+      <button type="button" className="btn-kid !min-h-12 self-center bg-white !px-4 !py-2 !text-base text-slate-700 ring-1 ring-slate-200" onClick={onPracticeFirst}>
+        🙋 {s.practiceMore}
       </button>
       <button type="button" className="btn-small self-center text-slate-700" onClick={openPicker}>
         🔀 {s.teachSomethingElse}
@@ -338,16 +338,6 @@ export default function TeachView({
                 ✅ {s.tellLumi}
               </button>
             </div>
-          )}
-
-          {step === "find" && (
-            <motion.p
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
-              className="rounded-2xl bg-amber-100 px-5 py-3 text-xl font-bold text-amber-900"
-            >
-              👆 {s.tapMistake}
-            </motion.p>
           )}
 
           {step === "explain" && (
@@ -516,6 +506,19 @@ export default function TeachView({
   const stageIdx =
     step === "mark" ? 0 : ["find", "fix", "help", "explain"].includes(step ?? "") ? 1 : ["demo", "sure"].includes(step ?? "") ? 2 : 3;
   const idle = useIdle(5000, `${step}-${cursor}-${editing}-${busy}-${markedCount}`);
+  const cues: Partial<Record<NonNullable<typeof step>, string>> = {
+    mark: editing !== null ? "" : allMarked ? s.allChecked : s.checkCue,
+    find: s.tapMistake,
+    explain: s.explainCue,
+    demo: s.demoCue,
+  };
+  const cueText = step && cues[step];
+  const lessonCue = phase === "teach" && ws?.ready && cueText && (
+    <p className="rounded-xl bg-sky-50 px-3 py-2 text-base font-bold leading-snug text-sky-950" role="status">
+      {cueText}
+    </p>
+  );
+  const worksheetClass = idle && !busy && step === "find" ? "ring-2 ring-sky-400" : undefined;
 
   /** Lumi says what to do next: shown in the bubble and spoken. */
   const lumiSays = (line: string) => {
@@ -632,6 +635,7 @@ export default function TeachView({
         </div>
 
         <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3 ${card && editing === null ? "justify-center" : ""}`}>
+          {lessonCue}
           {phase === "pick" ? (
             <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
           ) : phase === "choice" ? (
@@ -709,6 +713,7 @@ export default function TeachView({
                   onEdit={setEditing}
                   onPick={(id) => send("find", { problem_id: id })}
                   s={s}
+                  className={worksheetClass}
                 />
               )}
               {step === "mark" && editing !== null && (
@@ -830,6 +835,7 @@ export default function TeachView({
           )}
         </div>
 
+        {lessonCue}
         {phase === "pick" ? (
           <ConceptPicker concepts={menu} busy={busy} onPick={pick} onLumiPicks={() => teachConcept(null)} s={s} />
         ) : phase === "choice" ? (
@@ -847,6 +853,7 @@ export default function TeachView({
             onEdit={setEditing}
             onPick={(id) => send("find", { problem_id: id })}
             s={s}
+            className={worksheetClass}
           />
         ) : (
           <div className="grid h-72 place-items-center rounded-3xl border-4 border-dashed border-amber-200 bg-amber-50 text-7xl">📚</div>

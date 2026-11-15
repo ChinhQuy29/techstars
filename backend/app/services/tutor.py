@@ -25,6 +25,7 @@ T = {
         2: "Here's a trick for {problem}: work one column at a time, starting with the ones.",
         3: "Let's do one step together. {step} What do you get when you keep going?",
         4: "The answer to {problem} is {answer}. {explain} Want to try a new one? What is {practice}?",
+        "worksheet_answer": "The answer to {problem} is {answer}. {step}",
         "explain": "We go column by column, starting with the ones.",
         "step_add": "First add the ones: {a1} plus {b1} is {s1}.",
         "step_sub": "Look at the ones: {a1} take away {b1}. Do we need to borrow from the tens?",
@@ -43,6 +44,7 @@ T = {
         2: "Un truco para {problem}: trabaja una columna a la vez, empezando por las unidades.",
         3: "Hagamos un paso juntos. {step} ¿Qué obtienes si sigues?",
         4: "La respuesta de {problem} es {answer}. {explain} ¿Probamos otro? ¿Cuánto es {practice}?",
+        "worksheet_answer": "La respuesta de {problem} es {answer}. {step}",
         "explain": "Vamos columna por columna, empezando por las unidades.",
         "step_add": "Primero suma las unidades: {a1} más {b1} es {s1}.",
         "step_sub": "Mira las unidades: {a1} menos {b1}. ¿Necesitamos pedir prestado a las decenas?",
@@ -61,6 +63,7 @@ T = {
         2: "Mẹo cho bài {problem}: làm từng cột một, bắt đầu từ hàng đơn vị.",
         3: "Cùng làm một bước nhé. {step} Làm tiếp thì con được bao nhiêu?",
         4: "Đáp án của {problem} là {answer}. {explain} Con thử bài mới nhé? {practice} bằng bao nhiêu?",
+        "worksheet_answer": "Đáp án của {problem} là {answer}. {step}",
         "explain": "Mình làm từng cột, bắt đầu từ hàng đơn vị.",
         "step_add": "Đầu tiên cộng hàng đơn vị: {a1} cộng {b1} bằng {s1}.",
         "step_sub": "Nhìn hàng đơn vị: {a1} trừ {b1}. Mình có cần mượn ở hàng chục không?",
@@ -114,9 +117,13 @@ async def _llm_say(
         return None
     lang_name = LANGUAGE_NAMES[req.language]
     reveal_rule = (
-        "You MAY now reveal the correct answer with a short explanation, then offer the practice problem."
+        "You MAY now reveal the correct answer with a short explanation."
         if revealed else "You must NOT say or hint the final correct answer or any number that equals it."
     )
+    if req.worksheet_only:
+        reveal_rule += " Explain only the selected worksheet problem. Do not offer a new problem."
+    elif revealed and practice:
+        reveal_rule += " Then offer the practice problem."
     system = llm.prompt(
         "tutor_system", robot_name=ROBOT_NAME, language_name=lang_name,
         hint_level=hint_level, reveal_rule=reveal_rule,
@@ -187,7 +194,12 @@ async def respond(session: Session, req: TutorRequest) -> TutorResponse:
         )
 
     if p.is_correct:
-        return TutorResponse(emotion="happy", say=_template(lang, "all_correct", n=1), focus_problem_id=p.id)
+        say = _template(lang, "all_correct", n=1)
+        if req.worksheet_only:
+            step = _worked_step(p, lang)
+            if step:
+                say += " " + step
+        return TutorResponse(emotion="happy", say=say, focus_problem_id=p.id)
 
     # Advance the hint ladder (server-side, monotonic, capped).
     if req.action == "hint":
@@ -198,7 +210,7 @@ async def respond(session: Session, req: TutorRequest) -> TutorResponse:
         st.hint_level = max(st.hint_level, 1)
     level = st.hint_level
     revealed = level >= MAX_HINT_LEVEL
-    practice = similar_problem(p.problem, random.Random(hash(p.problem) + st.attempts))[0] if revealed else None
+    practice = similar_problem(p.problem, random.Random(hash(p.problem) + st.attempts))[0] if revealed and not req.worksheet_only else None
     session.log("hint", problem=p.problem, level=level, action=req.action)
 
     if req.action == "chat":
@@ -210,8 +222,9 @@ async def respond(session: Session, req: TutorRequest) -> TutorResponse:
         say, emotion = out.say, out.emotion
     else:
         emotion = "curious" if level <= 1 else "encouraging"
+        key = "worksheet_answer" if revealed and req.worksheet_only else level
         say = _template(
-            lang, level, id=p.id, problem=_pretty(p.problem), answer=p.correct_answer,
+            lang, key, id=p.id, problem=_pretty(p.problem), answer=p.correct_answer,
             step=_worked_step(p, lang), explain=T[lang]["explain"], practice=practice,
         )
     return TutorResponse(
