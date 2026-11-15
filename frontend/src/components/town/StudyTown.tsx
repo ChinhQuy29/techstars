@@ -6,9 +6,11 @@ import ConceptPicker from "../ConceptPicker";
 import "./study-town.css";
 
 const HOUSES = [
-  { id: "math", x: 322, icon: "🧮" },
-  { id: "english", x: 702, icon: "📚" },
-  { id: "biology", x: 1082, icon: "🌱" },
+  { id: "art", x: 200, icon: "🎨", asset: "stand" },
+  { id: "math", x: 580, icon: "🧮", asset: "counter" },
+  { id: "english", x: 960, icon: "📚", asset: "jar" },
+  { id: "biology", x: 1340, icon: "🌱", asset: "bakery" },
+  { id: "astronomy", x: 1720, icon: "🔭", asset: "shrine" },
 ] as const;
 type House = (typeof HOUSES)[number];
 type Point = { x: number; y: number };
@@ -17,23 +19,31 @@ const COPY = {
   en: {
     guide: "Walk to a door to go inside.", shortcuts: "Quick access",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
-    math: "Math", english: "English", biology: "Biology", topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"] },
+    math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
+    xp: "Math XP", taught: "skills taught", gate: "Coming soon",
+    topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"], art: ["Colors", "Drawing"], astronomy: ["The Moon", "Planets"] },
   },
   es: {
     guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
-    math: "Matemáticas", english: "Inglés", biology: "Biología", topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"] },
+    math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
+    xp: "XP de matemáticas", taught: "habilidades enseñadas", gate: "Próximamente",
+    topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"], art: ["Colores", "Dibujo"], astronomy: ["La Luna", "Planetas"] },
   },
   vi: {
     guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
-    math: "Toán", english: "Tiếng Anh", biology: "Sinh học", topics: { english: ["Đọc", "Từ vựng"], biology: ["Cây cối", "Động vật"] },
+    math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
+    xp: "XP Toán", taught: "kỹ năng đã dạy", gate: "Sắp ra mắt",
+    topics: { english: ["Đọc", "Từ vựng"], biology: ["Cây cối", "Động vật"], art: ["Màu sắc", "Vẽ"], astronomy: ["Mặt Trăng", "Các hành tinh"] },
   },
 };
 
-const WORLD = { width: 1380, height: 720 };
-const ROAD = { left: 22, right: WORLD.width - 22, top: 508, bottom: 624, center: 572 };
+const WORLD = { width: 2460, height: 640 };
+const GATE_X = 2210;
+const ROAD = { left: 22, right: GATE_X - 18, top: 501, bottom: 549, center: 539 };
 const DOOR_Y = 511;
+const XP_GOAL = 5;
 const FRAME_ORDER = [0, 1, 2, 1];
 const WALK = [
   { x: 0, y: -1, icon: "↑", name: "up" },
@@ -46,7 +56,6 @@ const WALK_KEYS: Record<string, Direction | undefined> = {
   arrowup: WALK[0], w: WALK[0], arrowleft: WALK[1], a: WALK[1],
   arrowdown: WALK[2], s: WALK[2], arrowright: WALK[3], d: WALK[3],
 };
-const FENCES = [[0, 242], [402, 220], [782, 220], [1162, 218]] as const;
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 const insideRoad = ({ x, y }: Point) => ({ x: clamp(x, ROAD.left, ROAD.right), y: clamp(y, ROAD.top, ROAD.bottom) });
 
@@ -56,9 +65,10 @@ interface Props {
   onLearn: (concept: TeachConceptInfo | null) => void;
   actions: ReactNode;
   notice?: string | null;
+  restoredSkills: number;
 }
 
-export default function StudyTown({ sessionId, language, onLearn, actions, notice }: Props) {
+export default function StudyTown({ sessionId, language, onLearn, actions, notice, restoredSkills }: Props) {
   const copy = COPY[language];
   const strings = t(language);
   const [selected, setSelected] = useState<House | null>(null);
@@ -71,13 +81,12 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   const dialog = useRef<HTMLDialogElement>(null);
   const camera = useRef({ scale: 1, x: 0, y: 0 });
   const walker = useRef({
-    x: 250, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
+    x: 505, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
   });
   const inputs = useRef(new Map<string | number, Direction>());
-  const mathOpen = selected?.id === "math";
+  const taught = menu === null ? null : Math.min(XP_GOAL, menu.filter((concept) => concept.stars > 0).length);
 
   useEffect(() => {
-    if (!mathOpen) return;
     let active = true;
     setFailed(false);
     teachConcepts(sessionId, language).then(
@@ -85,7 +94,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       () => { if (active) setFailed(true); },
     );
     return () => { active = false; };
-  }, [mathOpen, sessionId, language, retry]);
+  }, [sessionId, language, restoredSkills, retry]);
 
   useEffect(() => {
     const box = dialog.current;
@@ -169,7 +178,9 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       const key = event.key.toLowerCase();
       const direction = WALK_KEYS[key];
       if (!direction || event.altKey || event.ctrlKey || event.metaKey || dialog.current?.open) return;
-      if (event.target !== document.body && (!(event.target instanceof Node) || !view.contains(event.target))) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target !== document.body && !view.contains(target) && !target.closest("[data-town-tab]")) return;
       event.preventDefault();
       actor.route = [];
       held.set(key, direction);
@@ -229,14 +240,15 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       >
         <div className="study-town__world" ref={world}>
           <div className="study-town__terrain" aria-hidden />
-          <div className="study-town__road" aria-hidden />
-          <div className="study-town__foreground" aria-hidden />
-          {FENCES.map(([left, width]) => <div key={left} className="study-town__fence" style={{ left, width }} aria-hidden />)}
-          <div className="study-town__fence study-town__fence--front" aria-hidden />
+          <div className="study-town__terrain study-town__terrain--extension" aria-hidden />
+          <div className="study-town__gate" style={{ left: GATE_X }}>
+            <span>{copy.gate}</span>
+          </div>
           {HOUSES.map((house) => (
             <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button" tabIndex={-1}
               aria-haspopup="dialog" onClick={() => approach(house)}
             >
+              <img className="study-town__house-art" src={`/assets/map_asset/${house.asset}.png`} alt="" draggable={false} />
               <span className="study-town__sign"><span aria-hidden>{house.icon}</span> {copy[house.id]}</span>
             </button>
           ))}
@@ -252,6 +264,15 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
                 </button>
               ))}
             </nav>
+            <div className="study-town__xp" role="progressbar" aria-label={copy.xp}
+              aria-valuemin={0} aria-valuemax={XP_GOAL} aria-valuenow={taught ?? undefined}
+              aria-valuetext={taught === null ? undefined : `${taught}/${XP_GOAL} ${copy.taught}`}
+            >
+              <div className="study-town__xp-label"><strong>{copy.xp}</strong><span>{taught ?? "–"}/{XP_GOAL} {copy.taught}</span></div>
+              <div className="study-town__xp-marks" aria-hidden>
+                {Array.from({ length: XP_GOAL }, (_, index) => <span key={index} data-earned={index < (taught ?? 0)} />)}
+              </div>
+            </div>
           </div>
           <div className="study-town__actions">{actions}</div>
         </div>

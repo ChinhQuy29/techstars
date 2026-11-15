@@ -560,6 +560,7 @@ export default function App() {
             startStory={townStart.story}
             onBackToHomework={() => switchMode("teach")}
             onLearn={(concept) => startLesson(concept, true)}
+            restoredSkills={remembered}
             phone={isPhone}
             showBack={teachAlive}
           />
@@ -937,7 +938,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className={`lumi-desktop mx-auto flex min-h-full flex-col gap-5 p-4 sm:p-6 ${appMode === "town" ? "w-full" : "max-w-7xl"}`}>
+    <div className="lumi-desktop mx-auto flex min-h-full w-full flex-col gap-5 p-4 sm:p-6">
       <header className="lumi-topbar flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
@@ -946,9 +947,9 @@ export default function App() {
               Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
             </h1>
           </button>
-          {dreamNow && !showDreamPicker && (
+          {dreamNow && (
             <button
-              className="btn-kid !min-h-11 bg-white !px-3 !py-1.5 text-base text-slate-700 ring-1 ring-indigo-200"
+              className={`btn-kid !min-h-11 bg-white !px-3 !py-1.5 text-base text-slate-700 ring-1 ring-indigo-200 ${showDreamPicker ? "invisible" : ""}`}
               onClick={changeDream}
               aria-label={s.changeDream}
               title={s.changeDream}
@@ -958,7 +959,7 @@ export default function App() {
           )}
         </div>
         <nav className="flex flex-wrap gap-3" aria-label="Mode">
-          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"}>
+          <button className={tab("town")} onClick={() => switchMode("town")} aria-pressed={appMode === "town"} data-town-tab>
             🏘️ {s.town}
           </button>
           <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
@@ -986,6 +987,7 @@ export default function App() {
         </div>
       </header>
 
+      <main className={`mx-auto flex w-full flex-col gap-5 ${appMode === "town" ? "" : "max-w-7xl"}`}>
       {showDreamPicker ? (
         dreamPickerEl
       ) : appMode === "welcome" ? (
@@ -996,10 +998,13 @@ export default function App() {
         helpEl
       )}
 
-      <details className="card p-4 text-sm text-slate-600">
-        <summary className="cursor-pointer font-bold text-slate-700">🔧 {s.settings}</summary>
-        {settingsBody}
-      </details>
+      {appMode !== "town" && (
+        <details className="card p-4 text-sm text-slate-600">
+          <summary className="cursor-pointer font-bold text-slate-700">🔧 {s.settings}</summary>
+          {settingsBody}
+        </details>
+      )}
+      </main>
 
       {showReport && <ParentReport sessionId={sessionId} language={language} onClose={() => setShowReport(false)} />}
     </div>

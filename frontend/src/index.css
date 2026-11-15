@@ -53,6 +53,8 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px
 }
 
 /* Responsive interpretation of the desktop Figma frames. */
+html:has(.lumi-desktop) { scrollbar-gutter: stable; }
+
 .lumi-primary {
   color: #fff;
   background: #24242b;

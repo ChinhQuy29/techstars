@@ -22,6 +22,7 @@ interface Props {
   startStory?: string | null;
   onBackToHomework: () => void;
   onLearn: (concept: TeachConceptInfo | null) => void;
+  restoredSkills: number;
   /** Phone layout (docs/10-mobile-ui.md): Town and Journey are bottom tabs, so the header only switches Town/Scrapbook. */
   phone?: boolean;
   /** Show "Back to homework" (phone: only while a lesson is paused). Default true. */
@@ -33,7 +34,7 @@ interface Props {
  * the child has taught. Read-only: places open from Lumi's stars; every number comes from the backend.
  */
 export default function TownPage({
-  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, onLearn, phone = false, showBack = true,
+  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, onLearn, restoredSkills, phone = false, showBack = true,
 }: Props) {
   const s = t(language);
   const [info, setInfo] = useState<TownInfo | null>(null);
@@ -102,7 +103,7 @@ export default function TownPage({
 
   if (!scene && tab === "town") {
     return (
-      <StudyTown sessionId={sessionId} language={language} onLearn={onLearn}
+      <StudyTown sessionId={sessionId} language={language} onLearn={onLearn} restoredSkills={restoredSkills}
         notice={bubble !== info?.dream ? bubble : null}
         actions={
           <>
