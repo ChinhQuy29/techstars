@@ -7,9 +7,10 @@
 - **Lumi's Journey:** three acts × four versions unlocked by concept pairs in any order, choices, mystery clues, "What if…?" stories, four moon endings with the child's quotes, story notifications, saved choices; placeholder pictures.
 - **UI:** one mascot (9 expressions, 2 poses), kid design system, en/es/vi, accessibility basics, 375 px.
 - **Phone layout** ([10](10-mobile-ui.md)): bottom tab bar, Lumi's Brain Home (free choice of skill), one-problem-at-a-time lessons with notebook step tabs, pointing-hand hints and short Lumi lines, a one-step-at-a-time Help, Grown-ups sheet. Checked in the browser at 360 px and on the emulator; not yet on the owner's phone.
+- **Lumi's dream** ([12](12-dreams.md)): "Choose Lumi's dream" screen before the first lesson; the astronaut dream adds a space story to every Teach problem (all 12 concepts, en/es/vi) without changing the math. Doctor and baker next.
 - **Admin portal** (`/?admin=1`, dev only): presets, per-skill stars/readiness/quotes, story choices, problem and scene previews, deep links into the app.
 - **Android app** (Capacitor, debug APK): the whole app on a phone, back camera in Help, Lumi's voice through the phone's text-to-speech, server address in Grown-up settings, Android back button, Lumi icon and opening screen. Tested on the emulator and the owner's Galaxy Z Flip5 ([09](09-android-app.md)). Voice explanations in Teach through the phone's speech recognizer (big 🎤 button); real speech not yet tested.
-- 153 tests pass; frontend builds; main flows verified in the browser (picker, warm-up, a full Time sheet, all four pictures, Spanish, 375 px).
+- 218 backend tests pass; frontend builds; main flows verified in the browser (picker, warm-up, a full Time sheet, all four pictures, Spanish, 375 px).
 
 ## Not verified
 Real mic with children; real Gemini rating; Help camera after the restyle and real lighting; tablets; OS reduced motion end to end; fresh checkout elsewhere; backup demo video; how long kids watch scenes.

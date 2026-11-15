@@ -1,3 +1,4 @@
+import { getDream } from "./dream";
 const clean = (url: string | null | undefined) => (url ?? "").trim().replace(/\/$/, "");
 const SERVER_KEY = "lumi_server_url";
 
@@ -213,7 +214,8 @@ export type MathVisualData =
   | { type: "bars"; bars: { label: string; value: number }[]; max: number };
 
 /** Newer concepts mark the answer's place with "?"; the original four are "a op b". */
-export interface LumiProblem { id: number; problem: string; lumi_answer: string; kind: AnswerKind; visual: MathVisualData | null }
+/** `story`: the dream's one-line story above the problem (wording only; docs/12-dreams.md). */
+export interface LumiProblem { id: number; problem: string; lumi_answer: string; kind: AnswerKind; visual: MathVisualData | null; story?: string | null }
 export interface TeachUnlock { kind: "place" | "story"; key: string; title: string; emoji: string }
 export interface TeachChip { id: string; text: string }
 
@@ -224,7 +226,7 @@ export interface TeachTurn {
   focus_problem_id: number | null;
   highlight_ids: number[];
   chips: TeachChip[];
-  demo: { problem: string; steps: string[]; answer: string; visual: MathVisualData | null } | null;
+  demo: { problem: string; steps: string[]; answer: string; visual: MathVisualData | null; story?: string | null } | null;
   outcomes: { id: number; outcome: TeachOutcome }[];
   mastery: Record<string, number>;
   mastery_up: string | null;
@@ -252,7 +254,7 @@ export async function teachWorksheet(
   return json(await fetchT(`${BACKEND}/api/teach/worksheet`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session_id: sessionId, language, force, demo, concept }),
+    body: JSON.stringify({ session_id: sessionId, language, force, demo, concept, dream: getDream() }),
   }, QUICK_TIMEOUT_MS));
 }
 

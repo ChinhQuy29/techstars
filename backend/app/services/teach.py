@@ -22,6 +22,7 @@ from ..schemas import (
     TeachTurnRequest, TeachWorksheetResponse, WarmupCheckResponse, WarmupProblemOut, WarmupResponse,
 )
 from . import concepts as cx
+from . import dreams
 from . import llm
 from .concepts import ALL_CONCEPTS, NEW_CONCEPTS
 from .math_check import (
@@ -393,16 +394,18 @@ def _make(concept: str, planted: bool, rng: random.Random) -> tuple[str, str]:
 
 
 def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: set[str],
-             lang: str = "en") -> TeachProblem:
+             lang: str = "en", dream: Optional[str] = None) -> TeachProblem:
     if concept in NEW_CONCEPTS:
         for _ in range(50):
-            item = cx.make(concept, rng, lang)  # verified: right answer, planted mistake = this concept
+            # verified: right answer, planted mistake = this concept; the dream only swaps graph pictures
+            item = dreams.dress_item(cx.make(concept, rng, lang), dream)
             if item.problem in used:
                 continue
             used.add(item.problem)
             lumi = cx.display(item, item.wrong if planted else item.answer, lang)
             return TeachProblem(id=pid, problem=item.problem, lumi_answer=lumi, correct_answer=item.answer,
-                                planted=planted, concept=concept, kind=item.kind, visual=item.visual, data=item.data)
+                                planted=planted, concept=concept, kind=item.kind, visual=item.visual, data=item.data,
+                                story=dreams.story(dream, concept, item.problem, item.data, lang))
         raise TeachGenerationError(f"could not generate a {concept} problem")
     for _ in range(50):
         expr, lumi = _make(concept, planted, rng)
@@ -418,7 +421,8 @@ def _problem(pid: int, concept: str, planted: bool, rng: random.Random, used: se
                 continue
         used.add(expr)
         return TeachProblem(id=pid, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
-                            planted=planted, concept=concept, error_step=error_step)
+                            planted=planted, concept=concept, error_step=error_step,
+                            story=dreams.story(dream, concept, expr, {}, lang))
     raise TeachGenerationError(f"could not generate a {concept} problem")
 
 
@@ -432,7 +436,7 @@ def ready_concepts(session: Session) -> set[str]:
     return ready & set(ALL_CONCEPTS)
 
 
-def _demo_problems() -> list[TeachProblem]:
+def _demo_problems(dream: Optional[str] = None, lang: str = "en") -> list[TeachProblem]:
     problems = []
     for i, (expr, lumi, planted, concept) in enumerate(DEMO_SHEET, start=1):
         result = check(expr, lumi)
@@ -440,22 +444,24 @@ def _demo_problems() -> list[TeachProblem]:
         if result.is_correct == planted or tag != concept:
             raise TeachGenerationError(f"demo sheet row {i} failed verification")
         problems.append(TeachProblem(id=i, problem=expr, lumi_answer=lumi, correct_answer=result.correct_answer,
-                                     planted=planted, concept=concept, error_step=error_step))
+                                     planted=planted, concept=concept, error_step=error_step,
+                                     story=dreams.story(dream, concept, expr, {}, lang)))
     return problems
 
 
 def _problem_out(p: TeachProblem) -> LumiProblemOut:
-    return LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer, kind=p.kind, visual=p.visual)
+    return LumiProblemOut(id=p.id, problem=p.problem, lumi_answer=p.lumi_answer, kind=p.kind, visual=p.visual,
+                          story=p.story)
 
 
 def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random.Random] = None,
                   demo: bool = False, concept: Optional[str] = None) -> TeachWorksheetResponse:
     if demo:  # explicit adult demo action: fixed sheet, bypasses the gate on purpose
-        st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(), demo=True)
+        st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=_demo_problems(session.dream, lang), demo=True)
         session.teach = st
         session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=["borrow", "carry"],
                     planted=[p.id for p in st.problems if p.planted], demo=True)
-        turn = _turn(session, "happy", TT[lang]["intro"], "mark")
+        turn = _turn(session, "happy", dreams.intro(session.dream, lang, "intro") or TT[lang]["intro"], "mark")
         return TeachWorksheetResponse(
             ready=True, demo=True, worksheet_id=st.worksheet_id, concepts=["carry", "borrow"],
             problems=[_problem_out(p) for p in st.problems], turn=turn,
@@ -499,13 +505,14 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
     plan = [(c, True) for c in planted] + [(c, False) for c in correct]
     rng.shuffle(plan)
     used: set[str] = set()
-    problems = [_problem(i + 1, c, p, rng, used, lang) for i, (c, p) in enumerate(plan)]
+    problems = [_problem(i + 1, c, p, rng, used, lang, session.dream) for i, (c, p) in enumerate(plan)]
 
     st = TeachState(worksheet_id=uuid.uuid4().hex[:8], problems=problems, review=review)
     session.teach = st
     session.log("teach_worksheet", worksheet_id=st.worksheet_id, concepts=sorted(set(pool)),
                 planted=[p.id for p in problems if p.planted], demo=False)
-    turn = _turn(session, "happy", TT[lang]["review_intro" if review else "intro"], "mark")
+    key = "review_intro" if review else "intro"
+    turn = _turn(session, "happy", dreams.intro(session.dream, lang, key) or TT[lang][key], "mark")
     return TeachWorksheetResponse(
         ready=True, worksheet_id=st.worksheet_id, concepts=sorted(set(pool), key=ALL_CONCEPTS.index),
         problems=[_problem_out(p) for p in problems], turn=turn,
@@ -713,7 +720,8 @@ def _start_demo(session: Session, p: TeachProblem, lang: str, reaction: str, gai
     rng = _rng(st, p, 1)
     visual = None
     if p.concept in NEW_CONCEPTS:  # a fresh problem of the same concept, never the one just discussed
-        item = next(i for i in iter(lambda: cx.make(p.concept, rng, lang), None) if i.problem != p.problem)
+        item = next(i for i in iter(lambda: dreams.dress_item(cx.make(p.concept, rng, lang), session.dream), None)
+                    if i.problem != p.problem)
         expr, answer, steps, visual = item.problem, cx.display(item, item.answer, lang), cx.steps(item, lang), item.visual
     else:
         expr = next(e for e, _ in iter(lambda: _make(p.concept, False, rng), None) if e != p.problem)
@@ -725,8 +733,10 @@ def _start_demo(session: Session, p: TeachProblem, lang: str, reaction: str, gai
     p.demo = {"problem": expr, "answer": answer}
     quote = t["you_said"].format(quote=f"“{p.quote}”") if p.quote else ""
     say = " ".join(x for x in [reaction, quote, t["like_taught"], *steps, so, t["did_i"]] if x)
+    story = dreams.story(session.dream, p.concept, expr, item.data if p.concept in NEW_CONCEPTS else {}, lang)
     return _turn(session, "happy", say, "demo", p,
-                 demo=TeachDemo(problem=expr, steps=[*steps, so] if so else steps, answer=answer, visual=visual))
+                 demo=TeachDemo(problem=expr, steps=[*steps, so] if so else steps, answer=answer, visual=visual,
+                                story=story))
 
 
 async def _rate(session: Session, p: TeachProblem, lang: str, text: str) -> tuple[str, Optional[str], Optional[str]]:

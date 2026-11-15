@@ -13,6 +13,8 @@ import { isNativeApp, useIsPhone } from "./platform";
 import BottomSheet from "./components/phone/BottomSheet";
 import PhoneTabBar, { type PhoneTab } from "./components/phone/PhoneTabBar";
 import PhoneHome from "./views/PhoneHome";
+import DreamPicker from "./views/DreamPicker";
+import { dreamInfo, useDream, type DreamId } from "./dream";
 import { pretty, t } from "./i18n";
 import MistakeOverlay from "./components/MistakeOverlay";
 import { expressionFor } from "./components/mascot/lumiAssets";
@@ -167,6 +169,9 @@ export default function App() {
   const isPhone = useIsPhone();
   const [phoneStart, setPhoneStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
   const [grownupsOpen, setGrownupsOpen] = useState(false);
+  // Lumi's dream (docs/12-dreams.md): chosen before the first lesson; the child can change it from home.
+  const [dream, chooseDream] = useDream();
+  const [pickingDream, setPickingDream] = useState(false);
   const [phoneCam, setPhoneCam] = useState(false); // server allows the "phone as camera" relay (LUMI_PHONE_CAMERA=1)
   const [helpShow, setHelpShow] = useState<"camera" | "photo">("camera");
 
@@ -374,6 +379,21 @@ export default function App() {
   };
 
   /** Phone: start a lesson on the skill tapped on the Home path (null = Lumi picks). */
+  const showDreamPicker = pickingDream || (!dream && (appMode === "welcome" || appMode === "teach"));
+  const onDream = (d: DreamId) => {
+    chooseDream(d);
+    if (pickingDream) {
+      setPickingDream(false);
+      switchMode("welcome"); // back home; the next worksheet uses the new dream
+    }
+  };
+  const changeDream = () => {
+    speech.stopSpeaking();
+    setPickingDream(true);
+  };
+  const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream} />;
+  const dreamNow = dreamInfo(dream);
+
   const startFromHome = (c: api.TeachConceptInfo | null) => {
     speech.stopSpeaking();
     setPhoneStart(c);
@@ -408,6 +428,7 @@ export default function App() {
   backRef.current = () => {
     if (grownupsOpen) setGrownupsOpen(false);
     else if (showReport) setShowReport(false);
+    else if (pickingDream && dream) setPickingDream(false);
     else if (appMode === "town") {
       if (teachAlive) switchMode("teach");
       else switchMode("welcome");
@@ -832,6 +853,10 @@ export default function App() {
     return (
       <MotionConfig reducedMotion="user">
         <div className="flex h-[100dvh] flex-col">
+          {showDreamPicker ? (
+            <main className="min-h-0 flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]">{dreamPickerEl}</main>
+          ) : (
+          <>
           {!inLesson && (
             <header className="flex shrink-0 items-center justify-between gap-2 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
               <button className="flex items-center gap-2 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">
@@ -848,7 +873,15 @@ export default function App() {
           )}
           <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
             {appMode === "welcome" ? (
-              <PhoneHome key={`${sessionId}-${language}-${teachKey}`} sessionId={sessionId} language={language} remembered={remembered} onStart={startFromHome} />
+              <PhoneHome
+                key={`${sessionId}-${language}-${teachKey}`}
+                sessionId={sessionId}
+                language={language}
+                remembered={remembered}
+                onStart={startFromHome}
+                dream={dreamNow}
+                onChangeDream={changeDream}
+              />
             ) : appMode === "teach" || appMode === "town" ? (
               <div className={inLesson ? "h-full" : "p-3"}>{teachTownEl}</div>
             ) : (
@@ -856,6 +889,8 @@ export default function App() {
             )}
           </main>
           {!inLesson && <PhoneTabBar active={activeTab} onSelect={selectTab} s={s} />}
+          </>
+          )}
         </div>
 
         <BottomSheet open={grownupsOpen} onClose={() => setGrownupsOpen(false)} title={`👪 ${s.grownups}`} closeLabel={s.close}>
@@ -901,6 +936,16 @@ export default function App() {
               Lumi <span className="block text-sm font-semibold tracking-normal text-teal-600 sm:inline sm:text-lg">· {s.tagline}</span>
             </h1>
           </button>
+          {dreamNow && !showDreamPicker && (
+            <button
+              className="btn-kid !min-h-11 bg-white !px-3 !py-1.5 text-base text-slate-700 ring-1 ring-indigo-200"
+              onClick={changeDream}
+              aria-label={s.changeDream}
+              title={s.changeDream}
+            >
+              {dreamNow.emoji} {s.dreams[dreamNow.id].name}
+            </button>
+          )}
         </div>
         <nav className="flex flex-wrap gap-3" aria-label="Mode">
           <button className={tab("teach")} onClick={() => switchMode("teach")} aria-pressed={appMode === "teach"}>
@@ -931,7 +976,9 @@ export default function App() {
         </div>
       </header>
 
-      {appMode === "welcome" ? (
+      {showDreamPicker ? (
+        dreamPickerEl
+      ) : appMode === "welcome" ? (
         <WelcomeView language={language} remembered={remembered} onTeach={() => switchMode("teach")} onHelp={() => switchMode("help")} />
       ) : appMode === "teach" || appMode === "town" ? (
         teachTownEl

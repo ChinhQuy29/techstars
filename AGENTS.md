@@ -18,6 +18,7 @@ Lumi is a web app where a child (6–10) **teaches** a friendly robot math. Lumi
 | [08 Status and roadmap](docs/08-status-and-roadmap.md) | built, unverified, next, out of scope |
 | [09 Android app](docs/09-android-app.md) | Android plan, stages, build steps, test results (keep it current while working on the app) |
 | [10 Phone layout](docs/10-mobile-ui.md) | phone UI: tab bar, Lumi's Brain Home, one problem at a time, guidance |
+| [12 Lumi's dream](docs/12-dreams.md) | dream picker; dream stories on Teach problems (wording only, never the math) |
 
 Docs = intended behavior; code = implementation constraints. If they disagree (or docs disagree with each other), name it and ask; when a change is approved, update docs in the same change. Never invent requirements, assets, endpoints, libraries or test results. For large or ambiguous tasks, summarize requirements, current state, gaps and risks, and propose steps first; wait for approval when asked.
 

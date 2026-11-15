@@ -139,6 +139,7 @@ class LumiProblemOut(BaseModel):
     lumi_answer: str
     kind: AnswerKind = "number"  # which keypad the child gets
     visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart for the frontend to draw
+    story: Optional[str] = None  # the dream's one-line story above the problem (wording only)
 
 
 class TeachChip(BaseModel):
@@ -151,6 +152,7 @@ class TeachDemo(BaseModel):
     steps: list[str]
     answer: str
     visual: Optional[dict] = None
+    story: Optional[str] = None
 
 
 class TeachUnlock(BaseModel):
@@ -194,6 +196,7 @@ class TeachWorksheetRequest(BaseModel):
     force: bool = False  # adult-only: skip the readiness gate with {carry, off_by_one}
     demo: bool = False   # adult-only: the fixed canonical demo worksheet (47 + 38 = 75 ...)
     concept: Optional[str] = None  # the concept the child chose to teach (None: Lumi picks)
+    dream: Optional[str] = None  # what Lumi wants to be (services/dreams.py); unknown values are ignored
 
 
 class TeachWorksheetResponse(BaseModel):

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import * as api from "../api";
 import type { Language, TeachConceptInfo } from "../api";
 import LumiMascot from "../components/mascot/LumiMascot";
+import type { Dream } from "../dream";
 import { CONCEPT_EMOJI, t, type TeachConcept } from "../i18n";
 
 /** How brightly a skill light glows: dim until taught, brighter with each star (Lumi's cyan, `#6FE7EC`). */
@@ -17,12 +18,15 @@ function glow(stars: number): string {
  * child can tap, in any order. A light glows brighter as Lumi earns stars. No track and no suggested next skill: the
  * child chooses. The usual gates (quick warm-up, Help practice) still apply once a skill is picked.
  */
-export default function PhoneHome({ sessionId, language, remembered, onStart }: {
+export default function PhoneHome({ sessionId, language, remembered, onStart, dream, onChangeDream }: {
   sessionId: string;
   language: Language;
   remembered: number;
   /** null = let Lumi pick. */
   onStart: (c: TeachConceptInfo | null) => void;
+  /** Lumi's dream (docs/12-dreams.md): Lumi wears its outfit; tapping Lumi opens the dream picker. */
+  dream?: Dream | null;
+  onChangeDream?: () => void;
 }) {
   const s = t(language);
   const [menu, setMenu] = useState<TeachConceptInfo[] | null>(null);
@@ -37,9 +41,23 @@ export default function PhoneHome({ sessionId, language, remembered, onStart }: 
   return (
     <div className="flex min-h-full flex-col gap-2 px-3 pb-4">
       <section className="flex items-end gap-2">
-        <LumiMascot expression="default" pose="threeQuarter" wave label={s.welcomeHi} className="w-20 shrink-0" />
+        {dream ? (
+          <button onClick={onChangeDream} aria-label={s.changeDream} className="relative w-20 shrink-0 rounded-2xl active:scale-95">
+            <img src={dream.image} alt="" width={496} height={592} className="h-auto w-full select-none" draggable={false} />
+            <span className="absolute -right-1 bottom-0 grid h-7 w-7 place-items-center rounded-full bg-white text-sm shadow ring-1 ring-indigo-200" aria-hidden>
+              ✏️
+            </span>
+          </button>
+        ) : (
+          <LumiMascot expression="default" pose="threeQuarter" wave label={s.welcomeHi} className="w-20 shrink-0" />
+        )}
         <div className="relative mb-3 flex-1 rounded-2xl bg-white px-3 py-2 text-base leading-snug text-slate-800 shadow-sm ring-2 ring-sky-200">
-          <span className="font-extrabold">{s.brainAsk}</span>
+          {dream && (
+            <button onClick={onChangeDream} className="mb-1 rounded-full bg-indigo-50 px-2 py-0.5 text-sm font-bold text-indigo-900 ring-1 ring-indigo-200">
+              {dream.emoji} {s.dreams[dream.id].name}
+            </button>
+          )}
+          <span className="block font-extrabold">{s.brainAsk}</span>
           {remembered > 0 && (
             <span className="mt-0.5 block text-sm text-teal-700">
               👋 {remembered === 1 ? s.welcomeBackOne : s.welcomeBack.replace("{n}", String(remembered))}

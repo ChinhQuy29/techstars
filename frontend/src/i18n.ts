@@ -48,6 +48,9 @@ const en = {
     keepTeaching: "Keep teaching", stopLesson: "Stop", close: "Close", language: "Language",
     problemOf: "{n} of {total}", isLumiRight: "Did I get this one right?", fixIt: "Oops! What should the answer be?",
     allChecked: "All checked! Tap Done checking.", checkAgain: "Check again", newPhoto: "New photo",
+    chooseDream: "Choose Lumi's dream", selectDream: "Select", prevDream: "Previous dream", nextDream: "Next dream",
+    changeDream: "Change Lumi's dream", moreDreamsSoon: "More dreams coming soon!",
+    dreams: { astronaut: { name: "Astronaut", line: "I want to fly a rocket to the Moon!" } },
 };
 
 export type Strings = typeof en;
@@ -101,6 +104,9 @@ const STRINGS: Record<Language, Strings> = {
     keepTeaching: "Seguir enseñando", stopLesson: "Salir", close: "Cerrar", language: "Idioma",
     problemOf: "{n} de {total}", isLumiRight: "¿Este lo hice bien?", fixIt: "¡Uy! ¿Cuál debería ser la respuesta?",
     allChecked: "¡Todo revisado! Toca ¡Ya revisé!", checkAgain: "Revisar otra vez", newPhoto: "Otra foto",
+    chooseDream: "Elige el sueño de Lumi", selectDream: "Elegir", prevDream: "Sueño anterior", nextDream: "Sueño siguiente",
+    changeDream: "Cambiar el sueño de Lumi", moreDreamsSoon: "¡Pronto habrá más sueños!",
+    dreams: { astronaut: { name: "Astronauta", line: "¡Quiero volar en un cohete hasta la Luna!" } },
   },
   vi: {
     teachTab: "Dạy Lumi", helpTab: "Giúp mình", grownups: "Người lớn", settings: "Cài đặt cho người lớn",
@@ -148,6 +154,9 @@ const STRINGS: Record<Language, Strings> = {
     keepTeaching: "Dạy tiếp", stopLesson: "Dừng", close: "Đóng", language: "Ngôn ngữ",
     problemOf: "{n} / {total}", isLumiRight: "Câu này mình làm đúng không?", fixIt: "Ối! Đáp án đúng phải là gì?",
     allChecked: "Kiểm tra hết rồi! Bấm Kiểm tra xong!", checkAgain: "Kiểm tra lại", newPhoto: "Chụp ảnh khác",
+    chooseDream: "Chọn ước mơ cho Lumi", selectDream: "Chọn", prevDream: "Ước mơ trước", nextDream: "Ước mơ tiếp",
+    changeDream: "Đổi ước mơ của Lumi", moreDreamsSoon: "Sắp có thêm nhiều ước mơ!",
+    dreams: { astronaut: { name: "Phi hành gia", line: "Mình muốn bay tên lửa lên Mặt Trăng!" } },
   },
 };
 

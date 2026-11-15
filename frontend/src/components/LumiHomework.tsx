@@ -69,6 +69,7 @@ export default function LumiHomework(p: Props) {
                   finding ? "cursor-pointer hover:bg-amber-100" : "cursor-default"
                 }`}
               >
+                {pr.story && <span className="font-display text-base leading-snug text-indigo-900/80 sm:text-lg">{pr.story}</span>}
                 <span
                   className={
                     sentence

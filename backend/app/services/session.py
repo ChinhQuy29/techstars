@@ -36,6 +36,7 @@ class Session:
     grade_count: int = 0
     # Teach mode (see docs/02-learning-design.md): current worksheet + Lumi's per-concept stars (0..3).
     teach: Optional["TeachState"] = None
+    dream: Optional[str] = None  # what Lumi wants to be (services/dreams.py); only changes problem wording
     lumi_mastery: dict[str, float] = field(default_factory=dict)
     teach_quotes: dict[str, tuple[str, str]] = field(default_factory=dict)  # concept -> (quality, text)
     town_visits: dict[str, int] = field(default_factory=dict)  # Lumi's Town: scene visits per concept (fresh problem each visit)
@@ -82,6 +83,7 @@ class TeachProblem:
     kind: str = "number"  # how the child types an answer: number | time | compare
     visual: Optional[dict] = None  # ruler / shape / fraction bars / bar chart, drawn by the frontend
     data: dict = field(default_factory=dict)  # the numbers behind the problem (newer concepts)
+    story: Optional[str] = None  # the dream's one-line story (services/dreams.py); wording only
     # filled in after the child checks the page
     outcome: Optional[str] = None
     child_fix: Optional[str] = None

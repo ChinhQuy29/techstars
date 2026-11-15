@@ -8,7 +8,7 @@ from ..schemas import (
     TeachUnlock, TeachWorksheetRequest, TeachWorksheetResponse, TownRequest, TownResponse, WarmupCheckRequest,
     WarmupCheckResponse, WarmupRequest, WarmupResponse,
 )
-from ..services import profile, story, teach, town
+from ..services import dreams, profile, story, teach, town
 from ..services.concepts import ALL_CONCEPTS, NEW_CONCEPTS
 from ..services.math_check import TEACHABLE
 from ..services.session import get_session
@@ -23,6 +23,7 @@ async def teach_worksheet(req: TeachWorksheetRequest) -> TeachWorksheetResponse:
     try:
         if req.concept is not None and req.concept not in ALL_CONCEPTS:
             raise HTTPException(400, detail={"code": "unknown_concept", "message": "Unknown concept."})
+        session.dream = dreams.valid_dream(req.dream)
         resp = teach.new_worksheet(session, req.language, req.force, demo=req.demo, concept=req.concept)
         profile.autosave(session)  # remembers Teach readiness for another day (only with consent)
         return resp
