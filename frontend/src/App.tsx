@@ -170,7 +170,6 @@ export default function App() {
   // Phone layout (docs/10-mobile-ui.md)
   const isPhone = useIsPhone();
   const [lessonStart, setLessonStart] = useState<api.TeachConceptInfo | null | undefined>(undefined);
-  const [lessonFromTown, setLessonFromTown] = useState(false);
   const [grownupsOpen, setGrownupsOpen] = useState(false);
   // Desktop: a running lesson takes the whole page (TeachView reports it).
   const [lessonFocus, setLessonFocus] = useState(false);
@@ -381,7 +380,6 @@ export default function App() {
     } else if (!(m === "teach" && appMode === "town" && teachAlive)) {
       setTeachDemo(false);
       setLessonStart(undefined);
-      setLessonFromTown(false);
       setTeachKey((k) => k + 1); // fresh Teach view (and worksheet) each time the tab is opened
     }
     if (m === "teach") setTeachAlive(true);
@@ -412,7 +410,11 @@ export default function App() {
       const next = afterDream.current;
       closeDreamPicker();
       if (next) next();
-      else transitionMode("welcome");
+      else {
+        setTeachAlive(false);
+        setLessonStart(undefined);
+        enterTown(null);
+      }
     }
   };
   const changeDream = () => {
@@ -421,40 +423,37 @@ export default function App() {
     setPickingDream(true);
   };
   const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream}
-    onBack={pickingDream ? closeDreamPicker : isPhone ? () => exitLesson() : undefined} />;
+    onBack={pickingDream ? closeDreamPicker : isPhone ? () => transitionMode("landing") : undefined} />;
   const dreamNow = dreamInfo(dream);
 
-  const startLesson = (c: api.TeachConceptInfo | null, fromTown = false) => {
+  const startLesson = (c: api.TeachConceptInfo | null) => {
     speech.stopSpeaking();
     setLessonStart(c);
-    setLessonFromTown(fromTown);
     setTeachDemo(false);
     setTeachKey((k) => k + 1);
     setTeachAlive(true);
     setAppMode("teach");
   };
 
-  /** Phone: leave the lesson for Home (after "Stop this homework?"). */
+  /** Leave the lesson for Town (after "Stop this homework?"). */
   const exitLesson = () => {
     setLessonStart(undefined);
-    if (lessonFromTown) {
-      setTeachAlive(false);
-      setLessonFromTown(false);
-      openTown(null);
-    } else switchMode("welcome");
+    setTeachAlive(false);
+    openTown(null);
   };
 
   const selectTab = (tb: PhoneTab) => {
-    if (tb === "home") switchMode("welcome");
+    if (tb === "teach") switchMode("welcome");
     else if (tb === "help") switchMode("help");
     else showTown();
   };
 
-  const openTown = (concept: Concept | null, story: string | null = null) => withDream(() => {
+  const enterTown = (concept: Concept | null, story: string | null = null) => {
     speech.stopSpeaking();
     setTownStart((t0) => ({ concept, story, key: t0.key + 1 }));
     setAppMode("town");
-  });
+  };
+  const openTown = (concept: Concept | null, story: string | null = null) => withDream(() => enterTown(concept, story));
 
   const showingMap = appMode === "town" && !townStart.story && !townStart.concept;
   const showTown = () => {
@@ -471,8 +470,9 @@ export default function App() {
     else if (pickingDream) closeDreamPicker();
     else if (appMode === "town") {
       if (teachAlive) switchMode("teach");
-      else switchMode("welcome");
-    } else if (appMode === "help") switchMode("welcome");
+      else if (!showingMap) showTown();
+      else void NativeApp.minimizeApp();
+    } else if (appMode === "help" || appMode === "welcome") showTown();
     else void NativeApp.minimizeApp();
   };
   useEffect(() => {
@@ -502,7 +502,6 @@ export default function App() {
     speech.stopSpeaking();
     setGrownupsOpen(false);
     setTeachDemo(true);
-    setLessonFromTown(false);
     setTeachKey((k) => k + 1);
     setAppMode("teach");
   };
@@ -589,7 +588,7 @@ export default function App() {
             startConcept={townStart.concept}
             startStory={townStart.story}
             onBackToHomework={() => switchMode("teach")}
-            onLearn={(concept) => startLesson(concept, true)}
+            onLearn={startLesson}
             restoredSkills={remembered}
             phone={isPhone}
             showBack={teachAlive}
@@ -962,7 +961,7 @@ export default function App() {
   if (isPhone) {
     const inLesson = appMode === "teach";
     const activeTab: PhoneTab | null =
-      appMode === "welcome" ? "home" : appMode === "help" ? "help" : showingMap ? "town" : null;
+      appMode === "welcome" ? "teach" : appMode === "help" ? "help" : showingMap ? "town" : null;
     return (
       <MotionConfig reducedMotion="user">
         <div className="flex h-[100dvh] flex-col">

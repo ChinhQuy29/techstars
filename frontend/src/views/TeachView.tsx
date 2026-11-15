@@ -492,7 +492,7 @@ export default function TeachView({
                 <button className="btn-kid bg-sun text-slate-900" disabled={busy} onClick={() => load()}>
                   📚 {s.moreHomework}
                 </button>
-                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={phone && onExit ? onExit : openPicker}>
+                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" disabled={busy} onClick={openPicker}>
                   🔀 {s.teachSomethingElse}
                 </button>
                 <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={onShowReport}>
@@ -587,7 +587,7 @@ export default function TeachView({
             className="btn-kid !min-h-12 shrink-0 bg-white !px-3 !py-2 text-base text-slate-700 ring-1 ring-slate-200"
             onClick={leaveLesson}
           >
-            🏠 {s.home}
+            🏘️ {s.townShort}
           </button>
           {phase !== "pick" && chosen.current && (
             <span className="truncate rounded-full bg-amber-100 px-3 py-1.5 text-base font-extrabold text-amber-800">
@@ -769,7 +769,7 @@ export default function TeachView({
     {focus && (
       <div className="lumi-teach flex items-center gap-3">
         <button className="btn-kid !min-h-12 bg-white !px-4 !py-2 text-lg text-slate-700 ring-1 ring-slate-200" onClick={leaveLesson}>
-          ← 🏠 {s.home}
+          ← 🏘️ {s.townShort}
         </button>
       </div>
     )}
