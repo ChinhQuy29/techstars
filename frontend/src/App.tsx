@@ -967,7 +967,7 @@ export default function App() {
       <MotionConfig reducedMotion="user">
         <div className="flex h-[100dvh] flex-col">
           {showDreamPicker ? (
-            <main className="min-h-0 flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]">{dreamPickerEl}</main>
+            <main className="min-h-0 flex-1 overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">{dreamPickerEl}</main>
           ) : (
           <>
           {!inLesson && (

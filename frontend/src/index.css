@@ -54,6 +54,9 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 4px
 
 /* Responsive interpretation of the desktop Figma frames. */
 html:has(.lumi-desktop) { scrollbar-gutter: stable; }
+html:has(.lumi-dream-picker) { overflow: hidden; overscroll-behavior: none; }
+.lumi-desktop:has(.lumi-dream-picker) { height: 100dvh; min-height: 0; }
+.lumi-desktop > main:has(> .lumi-dream-picker) { flex: 1; min-height: 0; }
 
 .lumi-primary {
   color: #fff;

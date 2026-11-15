@@ -47,19 +47,19 @@ export default function DreamPicker({ language, current, onSelect, onBack }: {
   );
 
   return (
-    <section className="flex min-h-full w-full flex-col items-center justify-center gap-3 px-3 py-4 text-center">
-      {onBack && <button type="button" onClick={onBack} className="btn-kid self-start bg-white !px-3 text-base text-slate-700">← {s.back}</button>}
-      <h1 className="text-3xl font-extrabold tracking-tight text-[#202740] sm:text-4xl">{s.chooseDream}</h1>
+    <section className={`lumi-dream-picker relative flex h-full min-h-0 w-full flex-col items-center justify-center gap-3 overflow-hidden px-3 pb-4 text-center ${onBack ? "pt-20" : "pt-4"}`}>
+      {onBack && <button type="button" onClick={onBack} className="btn-kid absolute top-3 left-3 z-20 bg-white !px-3 text-base text-slate-700">← {s.back}</button>}
+      <h1 className="shrink-0 text-[clamp(1.35rem,6vw,1.875rem)] font-extrabold tracking-tight text-[#202740] sm:text-4xl">{s.chooseDream}</h1>
 
-      <div className="grid w-full max-w-4xl grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] items-center gap-x-2 sm:-mt-8">
+      <div className="grid min-h-0 w-full max-w-4xl flex-1 grid-cols-[3.5rem_minmax(0,1fr)_3.5rem] grid-rows-[minmax(0,1fr)_auto] items-center gap-x-2">
         {arrow(-1, s.prevDream)}
         <motion.div
           onPanEnd={(_, { offset }) => {
             if (Math.abs(offset.x) > Math.max(60, Math.abs(offset.y))) go(offset.x < 0 ? 1 : -1);
           }}
-          className="col-span-3 col-start-1 row-start-1 min-w-0 touch-pan-y sm:col-span-1 sm:col-start-2"
+          className="col-span-3 col-start-1 row-start-1 h-full max-h-[21rem] min-h-0 min-w-0 touch-none sm:col-span-1 sm:col-start-2 sm:max-h-[31rem]"
         >
-          <div className="grid h-[clamp(16rem,39dvh,21rem)] w-full select-none grid-cols-1 grid-rows-1 overflow-hidden sm:h-[clamp(20.5rem,min(54dvh,100dvh-25rem),31rem)]" aria-hidden="true">
+          <div className="grid h-full w-full select-none grid-cols-1 grid-rows-1 overflow-hidden" aria-hidden="true">
             {/* Keep every outfit loaded on the same canvas. Only the selected overlay moves. */}
             <img
               src={pickerArt("lumi")}
@@ -97,7 +97,7 @@ export default function DreamPicker({ language, current, onSelect, onBack }: {
       </div>
 
       {!many && <p className="text-sm text-slate-500">{s.moreDreamsSoon}</p>}
-      <button className="btn-kid lumi-primary px-12 text-xl" onClick={() => onSelect(dream.id)}>
+      <button className="btn-kid lumi-primary shrink-0 px-12 text-xl" onClick={() => onSelect(dream.id)}>
         {s.selectDream}
       </button>
     </section>
