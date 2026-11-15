@@ -27,10 +27,10 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 - Welcome: "Welcome back! Lumi remembers…" with saved progress.
 
 ## As built
-- **Map** (`components/town/StudyTown.tsx`): a fenced, scrollable road with Math, English, and Biology houses from left to right. Use Left/Right or A/D with the map focused, the on-screen arrows, or tap the road. Visit a house through its sign or the row of subject buttons.
-- **House menus:** Math lists the existing backend skills in their supplied order and opens the existing Teach flow, including the chosen dream and readiness gates. English and Biology display planned topics. Town movement and house selection stay in memory.
-- **Town activities** (`views/TownPage.tsx`): the four existing skill scenes, unlocks, Scrapbook, and Journey remain accessible. The subject houses are lesson entrances separate from those earned activities.
-- **Map assets:** `frontend/public/assets/map_asset/spring-grove.png` is the map art at 3840 × 1280. It is displayed at 1920 × 640 with a 400 × 210 crop offset. The scene uses the team's Study Town demo art assembled with Kenney CC0 pieces.
+- **Map** (`components/town/StudyTown.tsx`): a large game viewport with a fenced road and Math, English, and Biology houses. Use the arrow keys, WASD, the on-screen arrows, or tap the road. The camera follows Lumi horizontally. The in-map subject shortcuts guide Lumi to the same doorways.
+- **House menus:** Reaching a door opens its popup. Math uses the existing Teach Lumi skill picker and starts the existing lesson flow with the chosen dream and readiness gate. English and Biology display planned topics. Town movement and house selection stay in memory.
+- **Town extras** (`views/TownPage.tsx`): the in-map controls open Scrapbook, Journey on desktop, and paused homework when available. Existing skill scenes still open through their lesson links.
+- **Map assets:** `frontend/public/assets/map_asset/spring-grove.png` contains the assembled Kenney CC0 map at 3840 × 1280. The scene displays a 1380-pixel horizontal slice starting 258 pixels into the map at half scale. `empty-road.png` is the 1920 × 80 road exported from the Study Town Figma file. It extends the walkable band before the original foreground.
 - **Character assets:** Edit `map_asset/character_asset/lumi-walk.svg` and export over `lumi-walk.png` to replace the sprite. Keep the transparent 480 × 480 sheet, 160 × 160 cells, rows for down/right/up in that order, and foot anchor at (80, 137) in each cell. Columns are step A, standing, and step B, and the right row mirrors for left. The stylesheet holds the map crop and sprite display size.
 - **Scene** (`components/town/SkillScene.tsx`): a 16:9 picture, then the math board and captions. One caption every 1.8 s; picture, board and captions share one `stage`.
   - Lemonade: price tags 🍋 a¢ / 🍪 b¢; register board fills ones, pops the carried 1, then tens and total; coins slide to Lumi.

@@ -937,7 +937,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className="lumi-desktop mx-auto flex min-h-full max-w-7xl flex-col gap-5 p-4 sm:p-6">
+    <div className={`lumi-desktop mx-auto flex min-h-full flex-col gap-5 p-4 sm:p-6 ${appMode === "town" ? "w-full" : "max-w-7xl"}`}>
       <header className="lumi-topbar flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-3 rounded-2xl" onClick={() => switchMode("welcome")} aria-label="Lumi home">

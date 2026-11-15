@@ -4,7 +4,7 @@ import type { Concept, Language, TeachConceptInfo, TownInfo, TownScene } from ".
 import { BuildingArt } from "../components/town/Buildings";
 import Journey from "../components/town/Journey";
 import SkillScene from "../components/town/SkillScene";
-import StudyTown, { townCopy } from "../components/town/StudyTown";
+import StudyTown from "../components/town/StudyTown";
 import { t } from "../i18n";
 import type { useSpeech } from "../robot/useSpeech";
 
@@ -21,7 +21,7 @@ interface Props {
   /** Go straight into this story scene (from a "new story scene" notification). */
   startStory?: string | null;
   onBackToHomework: () => void;
-  onLearn: (concept: TeachConceptInfo) => void;
+  onLearn: (concept: TeachConceptInfo | null) => void;
   /** Phone layout (docs/10-mobile-ui.md): Town and Journey are bottom tabs, so the header only switches Town/Scrapbook. */
   phone?: boolean;
   /** Show "Back to homework" (phone: only while a lesson is paused). Default true. */
@@ -100,6 +100,23 @@ export default function TownPage({
     load();
   };
 
+  if (!scene && tab === "town") {
+    return (
+      <StudyTown sessionId={sessionId} language={language} onLearn={onLearn}
+        notice={bubble !== info?.dream ? bubble : null}
+        actions={
+          <>
+            <button type="button" onClick={() => setTab("scrapbook")}>📔 {s.scrapbook}</button>
+            {!phone && <button type="button" onClick={() => setTab("journey")}>🌙 {s.journey}</button>}
+            {showBack && (
+              <button type="button" onClick={() => { stopSpeaking(); onBackToHomework(); }}>📒 {s.backToHomework}</button>
+            )}
+          </>
+        }
+      />
+    );
+  }
+
   return (
     <section className="flex flex-col gap-4" aria-label={s.town}>
       {/* header */}
@@ -115,9 +132,8 @@ export default function TownPage({
           ) : phone && tab === "journey" ? null : (
             <>
               <button
-                className={`btn-small ${tab === "town" ? "bg-teal-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
+                className="btn-small bg-white text-slate-700 ring-1 ring-slate-200"
                 onClick={() => setTab("town")}
-                aria-pressed={tab === "town"}
               >
                 🗺️ {s.town}
               </button>
@@ -169,33 +185,6 @@ export default function TownPage({
             </button>
           </div>
         </div>
-      )}
-
-      {!scene && tab === "town" && <StudyTown sessionId={sessionId} language={language} onLearn={onLearn} />}
-      {!scene && tab === "town" && info && (
-        <section className="flex flex-col gap-3" aria-label={townCopy(language).activities}>
-          <h3 className="text-lg font-extrabold text-slate-800">{townCopy(language).activities}</h3>
-          {bubble && bubble !== info.dream && (
-            <p role="status" className="card p-3 text-slate-700">{bubble}</p>
-          )}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {info.places.map((pl) => (
-              <button
-                key={pl.concept}
-                onClick={() => visit(pl.concept)}
-                className={`card flex items-center gap-3 p-3 text-left ${pl.unlocked ? "ring-2 ring-amber-300" : "opacity-80"}`}
-              >
-                <span className={`text-4xl ${pl.unlocked ? "" : "grayscale"}`} aria-hidden>{pl.emoji}</span>
-                <span>
-                  <span className="block text-lg font-extrabold text-slate-800">{pl.name}</span>
-                  <span className="block text-sm text-slate-600">
-                    {pl.unlocked ? `${"★".repeat(Math.floor(pl.stars))}${pl.stars % 1 ? "½" : ""} · 👋 ${s.visit}` : `🔒 ${pl.need}`}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
       )}
 
       {/* Lumi's Journey to the moon */}

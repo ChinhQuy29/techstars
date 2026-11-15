@@ -1,23 +1,18 @@
 .study-town {
-  display: grid;
   min-width: 0;
-  gap: .8rem;
-  color: #27364e;
-}
-
-.study-town__guide {
-  font-weight: 700;
+  color: #27344a;
 }
 
 .study-town__view {
   position: relative;
-  contain: paint;
-  height: clamp(310px, 49vh, 490px);
+  isolation: isolate;
+  height: max(430px, calc(100dvh - 9rem));
   overflow: clip;
-  border: 3px solid white;
-  border-radius: 24px;
+  border: 3px solid #fff;
+  border-radius: 22px;
   background: #a8d58d;
-  box-shadow: 0 12px 28px #314a6230;
+  box-shadow: 0 8px 30px #2739533b;
+  touch-action: none;
 }
 
 .study-town__view:focus-visible {
@@ -28,15 +23,38 @@
 .study-town__world {
   position: absolute;
   inset: 0 auto auto 0;
-  width: 1140px;
-  height: 388px;
+  width: 1380px;
+  height: 720px;
   transform-origin: top left;
-  background: #a8d58d url("/assets/map_asset/spring-grove.png") -400px -210px / 1920px 640px no-repeat;
+  overflow: hidden;
+  background: #a8d58d;
+}
+
+.study-town__terrain, .study-town__foreground, .study-town__road {
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+}
+
+.study-town__terrain, .study-town__foreground {
+  background: url("/assets/map_asset/spring-grove.png") -258px 0 / 1920px 640px no-repeat;
+}
+
+.study-town__terrain { inset-block: 0 auto; height: 546px; }
+.study-town__road {
+  top: 546px;
+  height: 89px;
+  background: url("/assets/map_asset/empty-road.png") -258px 0 / 1920px 89px no-repeat;
+}
+.study-town__foreground {
+  top: 635px;
+  height: 85px;
+  background-position: -258px -555px;
 }
 
 .study-town__fence {
   position: absolute;
-  top: 271px;
+  top: 487px;
   height: 19px;
   pointer-events: none;
   background:
@@ -45,129 +63,169 @@
   filter: drop-shadow(0 2px 1px #6c563c50);
 }
 
-.study-town__fence--front {
-  inset: 346px 0 auto;
-}
+.study-town__fence--front { inset: 626px 0 auto; }
 
 .study-town__house {
   position: absolute;
-  top: 139px;
-  width: 172px;
-  height: 160px;
+  top: 345px;
+  width: 174px;
+  height: 174px;
   translate: -50% 0;
-  border-radius: 18px;
   display: grid;
   align-items: start;
   justify-items: center;
+  border-radius: 16px;
   cursor: pointer;
 }
 
 .study-town__sign {
-  padding: 5px 10px;
-  border: 2px solid #fff;
-  border-radius: 12px;
-  background: #fff8e6;
-  color: #303652;
-  box-shadow: 0 3px 0 #6f563451;
+  padding: 6px 11px;
+  border: 1px solid #fff;
+  border-radius: 9px;
+  background: #fff9e9;
+  box-shadow: 0 3px 0 #5d442751;
   white-space: nowrap;
   font-weight: 850;
 }
 
-.study-town__house:hover .study-town__sign,
-.study-town__house:focus-visible .study-town__sign,
-.study-town__house[aria-expanded="true"] .study-town__sign {
-  background: #dce8ff;
-  color: #23396a;
-}
+.study-town__house:hover .study-town__sign { background: #e0ecff; }
 
 .study-town__sprite {
   position: absolute;
-  top: 320px;
-  left: 116px;
-  width: 49.6px;
-  height: 49.6px;
+  top: 572px;
+  left: 250px;
+  width: 50px;
+  height: 50px;
   translate: -50% -85.625%;
   background: url("/assets/map_asset/character_asset/lumi-walk.png") var(--frame, 50%) 0 / 300% 300% no-repeat;
   pointer-events: none;
 }
 
 .study-town__sprite[data-facing="right"],
-.study-town__sprite[data-facing="left"] {
-  background-position-y: 50%;
+.study-town__sprite[data-facing="left"] { background-position-y: 50%; }
+.study-town__sprite[data-facing="up"] { background-position-y: 100%; }
+.study-town__sprite[data-facing="left"] { scale: -1 1; }
+
+.study-town__hud {
+  position: absolute;
+  inset: 14px 14px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: none;
 }
 
-.study-town__sprite[data-facing="left"] {
-  scale: -1 1;
+.study-town__travel {
+  max-width: 100%;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid #ffffffd9;
+  border-radius: 16px;
+  background: #f8fbffeF;
+  box-shadow: 0 4px 14px #143c3852;
+  pointer-events: auto;
+}
+
+.study-town__travel p {
+  padding-inline: 4px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.study-town__shortcuts, .study-town__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.study-town__shortcuts button, .study-town__actions button {
+  min-height: 44px;
+  border: 1px solid #d3e0ef;
+  border-radius: 10px;
+  padding: 5px 10px;
+  background: #f8fbff;
+  color: #223650;
+  font-size: .86rem;
+  font-weight: 850;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.study-town__shortcuts button { background: #edf3ff; }
+.study-town__actions button { box-shadow: 0 3px 9px #263b3150; }
+.study-town__shortcuts button:hover, .study-town__actions button:hover { background: #dce8ff; }
+
+.study-town__notice {
+  position: absolute;
+  inset: auto auto 16px 16px;
+  max-width: min(480px, calc(100% - 205px));
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fff9e9;
+  font-weight: 700;
 }
 
 .study-town__controls {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  gap: 8px;
+  right: 14px;
+  bottom: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, min(56px, 14vw));
+  gap: 4px;
 }
 
 .study-town__controls button {
-  width: 56px;
-  height: 56px;
-  border: 2px solid white;
-  border-radius: 16px;
-  background: #fffbec;
-  color: #293850;
-  box-shadow: 0 3px 0 #34435243;
-  font-size: 26px;
+  aspect-ratio: 1;
+  border: 2px solid #fff;
+  border-radius: 13px;
+  background: #fffbecF5;
+  box-shadow: 0 3px 0 #46544068;
+  font-size: 25px;
   cursor: pointer;
+  touch-action: none;
 }
 
-.study-town__controls button:hover {
-  background: #e5edff;
+.study-town__controls button:active { translate: 0 2px; background: #e5edff; }
+.study-town__controls button:first-child { grid-column: 2; }
+.study-town__controls button:nth-child(2) { grid-column: 1; grid-row: 2; }
+.study-town__controls button:nth-child(3) { grid-column: 2; grid-row: 2; }
+.study-town__controls button:last-child { grid-column: 3; grid-row: 2; }
+
+.study-town__dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(680px, calc(100% - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 22px;
+  overflow: auto;
+  background: #f8faff;
+  color: #25344b;
+  box-shadow: 0 16px 55px #172e525c;
 }
 
-.study-town__doors, .study-town__skills {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 144px), 1fr));
-  gap: 8px;
-}
-
-.study-town__door {
-  background: #f3f6ff;
-  color: #263856;
-  border: 1px solid #dce6fa;
-  font-size: 1rem;
-}
-
-.study-town__door[aria-expanded="true"] {
-  background: #dce8ff;
-}
-
-.study-town__chooser {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-}
-
-.study-town__chooser-heading {
+.study-town__dialog::backdrop { background: #19283978; }
+.study-town__chooser { padding: clamp(12px, 3vw, 22px); }
+.study-town__chooser header, .study-town__chooser-error {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 12px;
 }
+.study-town__chooser h2 { font-size: 1.4rem; font-weight: 850; }
+.study-town__close { background: #eef3ff; color: #253c60; }
+.study-town__planned { display: grid; gap: 8px; margin-top: 8px; }
+.study-town__planned li { padding: 12px; border-radius: 10px; background: #edf3ff; }
 
-.study-town__chooser h3 {
-  font-size: 1.35rem;
-  font-weight: 850;
-}
-
-.study-town__planned {
-  border-radius: 12px;
-  background: #f1f5f9;
-  padding: 12px;
-}
-
-@media (max-width: 560px) {
-  .study-town__view { border-radius: 16px; }
-  .study-town__doors { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .study-town__doors .study-town__door { padding-inline: 4px; font-size: .88rem; }
+@media (max-width: 767px) {
+  .study-town__view { height: max(390px, calc(100dvh - 8.5rem)); border-radius: 16px; }
+  .study-town__hud { inset: 8px 8px auto; }
+  .study-town__controls { right: 8px; bottom: 9px; }
+  .study-town__shortcuts button, .study-town__actions button { padding-inline: 7px; }
 }
