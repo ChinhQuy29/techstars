@@ -18,7 +18,7 @@ Design: [`assets/new_lumi_screen.png`](assets/new_lumi_screen.png).
 - **When it shows:** on the first visit, before Home (phone) or before the welcome screen and Teach (desktop). Help, Town and Journey don't need a dream.
 - **Changing it:** on the phone, tap Lumi or the dream chip (e.g. "🧁 Baker") on Home. On desktop, use the chip in the header. Lumi goes back Home; the next page of homework uses the new dream.
 - **Saved** on the device (`localStorage` key `lumi_dream`). It is just the dream id, no personal data.
-- **Lumi wears the dream:** once a dream is chosen, every Lumi in the app (header, Home, lessons, Help, Town) is that dream's Lumi, and it changes the moment the child picks another dream (`useDreamArt()` in `frontend/src/dream.ts`, read by `LumiMascot`). Each outfit has one pose, so moods show through movement plus the "?", "hmm" and "Z z" extras: a bounce for happy and celebrate, a wobble for confused, a head tilt for thinking, curious and listening, and dozing for sleeping. Before a dream is chosen, Lumi uses the mood poses.
+- **Lumi wears the dream:** once a dream is chosen, every Lumi in the app (header, Home, lessons, Help, Town) is that dream's Lumi, and it changes the moment the child picks another dream (`useDreamArt()` in `frontend/src/dream.ts`, read by `LumiMascot`). Dream Lumi has the same five mood poses as plain Lumi (waving, excited, thinking, confused, sleeping), each dressed in the outfit, plus the "?", "hmm" and "Z z" extras. Before a dream is chosen, Lumi uses the plain poses.
 
 ## The rule: wording only
 The dream never touches the math.
@@ -49,9 +49,18 @@ All from Figma (file "Lumi", page "new"), exported as SVG with the page, section
 - `astronaut.svg`: "Group 13" `20:1792`
 - `baker.svg`: "Group 26" `20:3074` (the full one; `20:3308` is the faded side preview)
 - `doctor.svg`: "Group 27" `20:3254` (`20:3358` and `20:3411` are side previews)
- To give an outfit real moods later, export thinking, confused, excited and sleeping poses for it and map them like the default Lumi's (`RASTER_ASSETS`).
+ **Outfit poses** (`frontend/public/assets/mascot/<dream>/lumi-<pose>.svg`, 15 files) are built by `scripts/dream_outfits.py` from the plain poses and the dream drawings:
+- **Head pieces** (astronaut helmet `Group 12` + `Vector 72`, chef's hat `Group 21`) are pinned to Lumi's two ear bolts, so they follow each head's position, size and tilt.
+- **Body pieces** (apron `Group 25`, doctor's coat `Vector 104–107`) are fitted to the body and trimmed to that pose's body outline, so no sleeve floats where an arm used to be. The doctor's coat therefore has no sleeves in the arms-down poses.
+- **The stethoscope** (`Group 28`) follows the body, and **the baguette** (`Rectangle 28`, `Vector 97–99`) goes to Lumi's left hand.
+- Outfit poses share a taller 372×470 canvas (hats need room) with the feet at the same spot, so Lumi never jumps between moods (`OUTFIT_SIZE`).
+
+If Minh changes a pose or a dream drawing, export it again (background removed, see above), re-measure the anchors in the browser and rerun `python scripts/dream_outfits.py`. To measure, load each SVG into a page and read `getBBox()` for the ear bolts (`Union`, `Union_2`), the body (`Vector 2`) and the left hand (`Vector 7`). The numbers live in `ANCHORS` at the top of the script.
+
+The picker and the small Lumi on Home still show the original Figma dream drawings.
 
 ## Log
+- 2026-11-14 (outfit moods): every dream Lumi now has the five mood poses, dressed by `scripts/dream_outfits.py`; checked on the emulator (baker on Home, in a lesson and asleep in Help; switch to astronaut).
 - 2026-11-14 (dream outfits): Lumi wears the chosen dream everywhere and switches when the dream changes; checked on the emulator (astronaut, then doctor).
 - 2026-11-14 (newest): baker and doctor added to the picker (Figma Group 26 and 27); baker lessons with 5 versions per kind in en/es/vi; dream tests run for every dream. 345 backend tests pass. Checked on the emulator.
 - 2026-11-14 (latest): four varied questions per skill, never repeated on one page; each problem in its own notebook row (the old fixed ruling ran through two-line questions). 256 backend tests pass.

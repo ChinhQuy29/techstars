@@ -1,20 +1,11 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useId, useState } from "react";
 import {
-  ARTWORK_EXTRAS, ARTWORK_SIZE, EXPRESSIONS, LUMI_COLORS as C, RASTER_ASSETS, resolveExpression, type LumiExpression, type LumiPose,
+  ARTWORK_EXTRAS, ARTWORK_SIZE, EXPRESSIONS, OUTFIT_SIZE, LUMI_COLORS as C, RASTER_ASSETS, resolveExpression, type LumiExpression, type LumiPose,
 } from "./lumiAssets";
 import { useDreamArt } from "../../dream";
 
 const SIZES = { xs: "w-10", sm: "w-20", md: "w-32", lg: "w-44", hero: "w-60" } as const;
-
-/** How a one-pose outfit shows each mood: a tilt (degrees, from the feet), a gentle wobble, or dozing. */
-const OUTFIT_MOOD: Partial<Record<LumiExpression, { rotate?: number | number[]; wobble?: boolean; opacity?: number }>> = {
-  confused: { rotate: [-5, 4], wobble: true },
-  thinking: { rotate: -5 },
-  curious: { rotate: -4 },
-  listening: { rotate: 4 },
-  sleeping: { rotate: 4, opacity: 0.85 },
-};
 
 interface Props {
   expression?: LumiExpression | string;
@@ -45,13 +36,16 @@ export default function LumiMascot({
   const reduce = useReducedMotion();
   const moving = animated && !reduce;
   const id = useId().replace(/:/g, "");
-  // Once the child picks a dream, every Lumi wears that outfit (docs/12-dreams.md). Outfits have one pose, so the
-  // mood shows through movement and the "?", "hmm", "Z z" extras. No dream yet (or the file fails): the mood poses.
+  // Once the child picks a dream, every Lumi wears that outfit in every mood (docs/12-dreams.md): the same poses,
+  // dressed by scripts/dream_outfits.py into /assets/mascot/<dream>/. No dream yet, or a file fails: the plain pose.
   const outfit = useDreamArt();
   const [failedRaster, setFailedRaster] = useState<string>();
-  const wearing = outfit && failedRaster !== outfit.image ? outfit : null;
-  const raster = wearing ? wearing.image : RASTER_ASSETS[expression];
+  const plain = RASTER_ASSETS[expression];
+  const dressed = outfit && plain ? plain.replace("/assets/mascot/", `/assets/mascot/${outfit.id}/`) : undefined;
+  const wearing = dressed !== undefined && failedRaster !== dressed;
+  const raster = wearing ? dressed : plain;
   const useArtwork = raster !== undefined && failedRaster !== raster;
+  const box = wearing ? OUTFIT_SIZE : ARTWORK_SIZE;
   const [blink, setBlink] = useState(false);
   const [mouthOpen, setMouthOpen] = useState(false);
   const ariaLabel = label === "auto" ? spec.label : label;
@@ -80,32 +74,25 @@ export default function LumiMascot({
 
   if (useArtwork) {
     const extras = ARTWORK_EXTRAS[expression] ?? [];
-    const mood = wearing ? OUTFIT_MOOD[expression] : undefined;
     return (
       <span
-        className={`relative inline-block aspect-[342/353] select-none align-bottom [container-type:inline-size] ${sizeClass} ${className}`}
+        className={`relative inline-block select-none align-bottom [container-type:inline-size] ${sizeClass} ${className}`}
+        style={{ aspectRatio: `${box.w} / ${box.h}` }}
         role={ariaLabel ? "img" : undefined}
         aria-label={ariaLabel}
         aria-hidden={ariaLabel ? undefined : true}
       >
-        {/* Same box for every pose and outfit (342×353), so Lumi never jumps when the mood or dream changes. */}
+        {/* One box per look (plain poses 342×353; outfits are taller for hats), with the feet at the same spot in
+            every pose, so Lumi never jumps when the mood changes. */}
         <motion.img
           key={raster}
           src={raster}
-          width={wearing ? wearing.w : ARTWORK_SIZE.w}
-          height={wearing ? wearing.h : ARTWORK_SIZE.h}
+          width={box.w}
+          height={box.h}
           onError={() => setFailedRaster(raster)}
           initial={moving ? { opacity: 0.6, scale: 0.97 } : false}
-          animate={{
-            opacity: mood?.opacity ?? 1,
-            scale: 1,
-            rotate: mood?.rotate ?? 0,
-            y: moving && (expression === "celebrate" || (wearing && expression === "happy")) ? [0, -8, 0] : 0,
-          }}
-          transition={moving && mood?.wobble
-            ? { rotate: { duration: 1.4, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }, default: { duration: 0.3 } }
-            : { duration: 0.3 }}
-          style={{ transformOrigin: "50% 90%" }}
+          animate={moving && expression === "celebrate" ? { opacity: 1, scale: 1, y: [0, -8, 0] } : { opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
           alt=""
           className="block h-full w-full object-contain object-bottom"
           draggable={false}
@@ -116,7 +103,7 @@ export default function LumiMascot({
             key={`${expression}-${i}`}
             aria-hidden
             className="pointer-events-none absolute font-display font-extrabold leading-none text-[#212A42]"
-            style={{ right: `${2 + i * 9}%`, top: `${-4 + i * 13}%`, fontSize: `${(text.length > 1 ? 11 : 20) - i * 5}cqw` }}
+            style={{ right: `${2 + i * 9}%`, top: `${(wearing ? 16 : -4) + i * 13}%`, fontSize: `${(text.length > 1 ? 11 : 20) - i * 5}cqw` }}
             initial={{ opacity: 0, y: 4 }}
             animate={
               !moving ? { opacity: 1, y: 0 }

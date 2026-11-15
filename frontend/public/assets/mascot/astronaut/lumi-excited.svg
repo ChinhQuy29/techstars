@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="372" height="470" viewBox="-76.504 -128.159 372 470" fill="none">
+<g id="excited">
+<g id="Ellipse 26" filter="url(#filter0_f_lumi_excited)">
+<ellipse cx="109.496" cy="320.841" rx="64.5" ry="12.5" transform="rotate(0.179129 109.496 320.841)" fill="#2E364B" />
+</g>
+<path id="Vector 6" d="M126.66 318.585C117.574 315.747 117.526 296.317 118.638 286.957C140.716 289.835 157.088 282.395 162.514 278.316C167.911 283.6 177.398 296.622 172.171 306.437C165.636 318.707 138.017 322.132 126.66 318.585Z" fill="url(#paint0_linear_lumi_excited)" />
+<path id="Vector 5" d="M52.189 287.588C49.4457 276.467 58.0419 266.77 62.6829 263.312C63.8468 261.268 67.2164 257.182 71.3836 257.195C76.5925 257.211 99.1372 265.963 104.33 271.188C109.522 276.414 107.764 283.488 107.751 287.762C103.097 295.271 91.7061 310.284 83.3719 310.257C72.9541 310.225 55.6182 301.489 52.189 287.588Z" fill="url(#paint1_linear_lumi_excited)" />
+<path id="Vector 4" d="M64.6636 185.184C36.9132 175.374 21.9705 141.643 17.968 126.003C23.7683 121.97 37.1064 113.562 44.0559 112.194C51.0055 110.827 56.1829 120.914 57.9029 126.128C59.2399 142.801 73.4355 156.273 80.3663 160.925L64.6636 185.184Z" fill="url(#paint2_linear_lumi_excited)" />
+<path id="Rectangle 1" d="M155.471 19.2281C159.017 8.88654 170.276 3.37809 180.617 6.92462L192.44 10.979C202.781 14.5255 208.29 25.784 204.743 36.1256L155.471 19.2281Z" fill="url(#paint3_linear_lumi_excited)" />
+<path id="Union" d="M257.06 101.994C258.125 97.8923 262.314 95.4308 266.415 96.4956C270.517 97.5606 272.979 101.749 271.914 105.851L268.105 120.522C267.04 124.623 262.851 127.085 258.75 126.021C254.648 124.956 252.186 120.767 253.251 116.665L253.944 113.996L242.001 110.712L244.764 100.667L256.562 103.911L257.06 101.994Z" fill="#212A42" />
+<path id="Union_2" d="M45.7471 49.1472C47.0038 45.1001 51.3028 42.8377 55.3499 44.0942C59.397 45.3509 61.6596 49.6508 60.4029 53.6979L59.5851 56.3301L71.3612 60.1726L68.1291 70.0766L56.4944 66.2805L55.9074 68.1732C54.6507 72.2202 50.3517 74.4826 46.3047 73.2262C42.2576 71.9695 39.9951 67.6695 41.2517 63.6224L45.7471 49.1472Z" fill="url(#paint4_linear_lumi_excited)" />
+<path id="Vector 7" d="M0.922766 114.597C3.74427 100.715 13.7027 99.589 18.3292 100.761C27.0053 102.524 25.2309 114.673 30.4453 112.953C35.6596 111.233 32.1978 107.75 30.4887 99.0627C28.7795 90.3758 32.263 86.914 40.9445 86.9412C49.626 86.9683 54.8186 92.1935 54.7698 107.82C54.7209 123.447 47.7595 128.634 37.3254 133.81C26.8913 138.987 -2.60412 131.949 0.922766 114.597Z" fill="url(#paint5_linear_lumi_excited)" />
+<path id="Vector 19" d="M28.3072 151.145C35.8221 154.062 52.9507 155.042 61.3457 135.622" stroke="#7285B8" stroke-width="3.47262" stroke-linecap="round" />
+<path id="Vector 20" d="M42.1432 168.552C49.6581 171.469 66.7868 172.448 75.1818 153.028" stroke="#7285B8" stroke-width="3.47262" stroke-linecap="round" />
+<g id="Group 18">
+<path id="Vector 3" d="M227.556 170.822C221.499 167.151 200.782 176.892 191.181 182.222L171.227 203.974L182.955 219.444C209.729 213.373 233.838 202.502 240.88 194.825C247.922 187.148 235.127 175.411 227.556 170.822Z" fill="#374C83" />
+<path id="Vector 8" d="M270.318 193.556C273.453 179.741 268.713 178.497 264.121 177.194C255.729 174.375 249.491 183.244 245.84 179.144C242.188 175.043 245.743 172.347 251.573 165.684C257.404 159.021 256.123 154.28 248.595 149.955C241.068 145.631 233.956 147.552 226.171 161.102C218.386 174.651 221.813 182.628 228.252 192.334C234.69 202.041 267.22 207.207 270.318 193.556Z" fill="url(#paint6_linear_lumi_excited)" />
+<path id="Vector 21" d="M174.114 185.416C181.615 188.369 194.865 199.268 187.861 219.232" stroke="#7285B8" stroke-width="3.47262" stroke-linecap="round" />
+<path id="Vector 22" d="M198.434 179.451C205.935 182.405 219.186 193.303 212.182 213.267" stroke="#7285B8" stroke-width="3.47262" stroke-linecap="round" />
+</g>
+<path id="Vector 2" d="M55.7704 252.873C40.5822 223.656 65.8393 179.401 80.3663 160.925C111.61 164.229 176.169 174.475 184.458 189.032C186.702 211.611 186.663 261.27 168.549 279.271C145.906 301.772 74.7557 289.395 55.7704 252.873Z" fill="url(#paint7_linear_lumi_excited)" />
+<path id="Vector 17" d="M87.8271 215.768C89.0741 209.633 90.5679 204.604 92.0357 200.514C93.672 195.954 99.5346 194.983 103.443 197.845C117.948 208.468 136.798 212.759 151.108 212.417C156.579 212.287 161.715 217.506 160.306 222.794L156.918 235.511C156.328 237.725 154.689 239.542 152.475 240.134C127.957 246.698 102.391 232.204 89.9677 221.955C88.1509 220.456 87.358 218.076 87.8271 215.768Z" fill="#212C4A" />
+<g id="Group 1">
+<path id="Vector 1" d="M183.226 27.5497C147.73 14.1121 117.22 15.3402 99.897 19.0146C92.858 20.5076 86.5011 24.3409 82.3641 30.2283C69.1684 49.0077 61.0106 82.288 57.9515 110.501C54.3758 143.48 69.9699 153.947 92.493 169.644C115.016 185.341 180.968 194.229 207.04 185.629C233.112 177.029 243.736 111.082 249.021 86.7902C254.306 62.4982 238.722 48.559 183.226 27.5497Z" fill="url(#paint8_linear_lumi_excited)" />
+</g>
+<path id="Vector 83" d="M84.7195 89.4722C87.8862 82.7449 98.5883 69.9777 116.063 72.7272C133.538 75.4767 136.189 95.0016 134.176 103.417" stroke="#121B33" stroke-width="6" stroke-linecap="round" />
+<path id="Vector 86" d="M162.654 110.506C165.821 103.779 177.237 89.3565 194.712 92.106C212.187 94.8555 213.814 114.244 211.801 122.66" stroke="#121B33" stroke-width="6" stroke-linecap="round" />
+<path id="Vector 85" d="M122.649 133.531C122.394 131.796 122.507 130.282 122.823 128.996C123.769 125.15 128.009 123.289 131.751 124.587C135.646 125.939 141.487 131.111 150.026 131.653C158.565 132.195 161.497 132.292 163.395 135.565C166.559 141.018 157.943 155.213 141.858 152.054C125.773 148.894 123.621 140.161 122.649 133.531Z" fill="#212A42" />
+<ellipse id="Ellipse 38" cx="83.6451" cy="113.259" rx="13" ry="6" transform="rotate(15.9224 83.6451 113.259)" fill="#6B81BD" />
+<ellipse id="Ellipse 39" cx="199.684" cy="145.924" rx="13" ry="6" transform="rotate(15.9224 199.684 145.924)" fill="#4B619D" />
+<g id="outfit head" transform="matrix(0.94823 0.00309 -0.00309 0.94823 1.19224 -64.42998)"><g id="Group 12">
+<path id="Vector 62" d="M55.9508 247.379L60.2832 226.065C124.897 297.54 202.178 280.906 232.741 263.655L228.904 282.534C147.689 312.699 79.7623 271.666 55.9508 247.379Z" fill="#C2CDEB" />
+<circle id="Ellipse 34" opacity="0.6" cx="166.555" cy="149.372" r="121.667" transform="rotate(11.4894 166.555 149.372)" fill="#D9D9D9" fill-opacity="0.5" stroke="white" stroke-width="4" />
+<path id="Vector 60" d="M287.012 174.49C214.477 17.189 96.0153 76.2688 45.8515 125.471C52.5755 79.9108 103.38 7.79818 191.074 25.6225C293.275 46.3951 296.716 137.145 287.012 174.49Z" fill="#212A42" />
+<rect id="Rectangle 12" x="33.865" y="100.206" width="19.8862" height="54.687" rx="9.94309" transform="rotate(11.4894 33.865 100.206)" fill="#212A42" />
+<rect id="Rectangle 13" x="285.967" y="157.79" width="19.8862" height="54.687" rx="9.94309" transform="rotate(11.4894 285.967 157.79)" fill="#212A42" />
+<path id="Vector 61" d="M58.4266 235.199L62.759 213.885C127.373 285.36 204.654 268.726 235.217 251.475L231.38 270.354C150.165 300.52 82.2381 259.487 58.4266 235.199Z" fill="#212A42" />
+</g>
+<path id="Vector 72" d="M88 65.912C105.5 49.5787 148.5 16.9121 217 44.912" stroke="#545F7D" stroke-width="4" stroke-linecap="round" />
+</g></g>
+<defs>
+<filter id="filter0_f_lumi_excited" x="29.8966" y="293.239" width="159.199" height="55.2033" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix" />
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+<feGaussianBlur stdDeviation="7.55" result="effect1_foregroundBlur_18_1174" />
+</filter>
+<linearGradient id="paint0_linear_lumi_excited" x1="145.98" y1="278.264" x2="145.85" y2="319.935" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4F73D4" />
+<stop offset="1" stop-color="#93A6D9" />
+</linearGradient>
+<linearGradient id="paint1_linear_lumi_excited" x1="79.9327" y1="257.222" x2="79.7669" y2="310.246" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4F73D4" />
+<stop offset="1" stop-color="#93A6D9" />
+</linearGradient>
+<linearGradient id="paint2_linear_lumi_excited" x1="35.2199" y1="161.584" x2="80.4159" y2="145.057" gradientUnits="userSpaceOnUse">
+<stop stop-color="#4D6AB5" />
+<stop offset="1" stop-color="#374C83" />
+</linearGradient>
+<linearGradient id="paint3_linear_lumi_excited" x1="186.528" y1="8.95179" x2="180.107" y2="27.6768" gradientUnits="userSpaceOnUse">
+<stop stop-color="#6DB26F" />
+<stop offset="1" stop-color="#2F4C30" />
+</linearGradient>
+<linearGradient id="paint4_linear_lumi_excited" x1="56.1931" y1="43.7568" x2="56.0998" y2="73.5968" gradientUnits="userSpaceOnUse">
+<stop stop-color="#546AA8" />
+<stop offset="1" stop-color="#212A42" />
+</linearGradient>
+<linearGradient id="paint5_linear_lumi_excited" x1="40.5103" y1="135.557" x2="11.232" y2="59.0672" gradientUnits="userSpaceOnUse">
+<stop stop-color="#212A42" />
+<stop offset="1" stop-color="#546AA8" />
+</linearGradient>
+<linearGradient id="paint6_linear_lumi_excited" x1="279.93" y1="159.961" x2="227.122" y2="189.274" gradientUnits="userSpaceOnUse">
+<stop stop-color="#546AA8" />
+<stop offset="1" stop-color="#212A42" />
+</linearGradient>
+<linearGradient id="paint7_linear_lumi_excited" x1="130.668" y1="177.51" x2="118.055" y2="290.504" gradientUnits="userSpaceOnUse">
+<stop stop-color="#5175D2" />
+<stop offset="1" stop-color="#AFBFED" />
+</linearGradient>
+<linearGradient id="paint8_linear_lumi_excited" x1="119.013" y1="17.7317" x2="206.994" y2="200.32" gradientUnits="userSpaceOnUse">
+<stop stop-color="#A3B2DB" />
+<stop offset="0.991784" stop-color="#456CD4" />
+</linearGradient>
+<clipPath id="outfit_body_astronaut_excited"><path d="M55.7704 252.873C40.5822 223.656 65.8393 179.401 80.3663 160.925C111.61 164.229 176.169 174.475 184.458 189.032C186.702 211.611 186.663 261.27 168.549 279.271C145.906 301.772 74.7557 289.395 55.7704 252.873Z" /></clipPath></defs>
+</svg>

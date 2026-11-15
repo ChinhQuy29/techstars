@@ -35,7 +35,7 @@ The expression follows state the backend already decided. It never decides anyth
 Original vector artwork written in code for this project (no third-party images, fonts or icon packs in the mascot). Drawn to match the reference sheet's stable features: rounded white head and compact body, navy face screen `#0F2D3D`, glowing cyan eyes and mouth, teal ear panels and chest light `#4FC3C7`, orange antenna tip `#FFB347`, short rounded limbs. The favicon `public/lumi.svg` is a simplified head of the same drawing.
 
 ## Figma poses (what the app shows)
-Once the child picks a dream, `LumiMascot` shows that dream's Lumi instead (one pose per outfit; moods become a bounce, wobble, tilt or doze plus the extras, see `OUTFIT_MOOD`). Before that, the app shows the blue robot from the Figma file **Lumi**, page **new**. Each pose is exported as an SVG into `public/assets/mascot/` and listed in `RASTER_ASSETS`. The drawn white robot above is only a fallback if a file fails to load.
+Once the child picks a dream, `LumiMascot` shows the same mood poses dressed in that dream's outfit (`/assets/mascot/<dream>/`, built by `scripts/dream_outfits.py`, 372×470 canvas `OUTFIT_SIZE`). Before that, the app shows the blue robot from the Figma file **Lumi**, page **new**. Each pose is exported as an SVG into `public/assets/mascot/` and listed in `RASTER_ASSETS`. The drawn white robot above is only a fallback if a file fails to load.
 
 | Figma frame (node) | File | Used for |
 |---|---|---|
