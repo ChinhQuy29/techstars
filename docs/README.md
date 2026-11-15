@@ -16,5 +16,6 @@ Lumi is a software robot that children (6–10) teach math to. These docs specif
 | [10 Phone layout](10-mobile-ui.md) | phone UI plan, decisions, test results |
 | [11 Science pilot](11-science-pilot.md) | proposal: a two-week "Float or sink" science pilot for ages 5–8 |
 | [12 Lumi's dream](12-dreams.md) | the child picks Lumi's dream (astronaut first); problems get stories from it, the math stays the same |
+| [13 Hosting](13-hosting.md) | the website as a Render static site, and what to check before kids try it |
 
 Assets: `assets/lumi-robot-mascot-design-reference.png` (Lumi reference) and `assets/town/` (31 source illustrations, `SOURCE.md`, `PROMPT.md`).
