@@ -286,6 +286,8 @@ main > div:has(> .study-town) { height: 100%; }
 .study-town__controls button:nth-child(3) { grid-column: 2; grid-row: 2; }
 .study-town__controls button:last-child { grid-column: 3; grid-row: 2; }
 
+.study-town__joystick { display: none; }
+
 .study-town__dialog {
   position: fixed;
   inset: 0;
@@ -327,7 +329,33 @@ main > div:has(> .study-town) { height: 100%; }
   .study-town__footer { inset: auto 8px 9px; gap: 8px; }
   .study-town__xp { padding: 7px 8px 9px; }
   .study-town__xp-label { gap: 5px; font-size: .78rem; }
-  .study-town__controls { grid-template-columns: repeat(3, clamp(44px, 13vw, 56px)); }
+  .study-town__controls { display: none; }
+  .study-town__joystick {
+    display: grid;
+    flex: none;
+    width: 112px;
+    height: 112px;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #f8fbffe3;
+    box-shadow: 0 3px 0 #46544068;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .study-town__joystick:focus-visible { outline: 3px solid #344980; outline-offset: 3px; }
+  .study-town__joystick-thumb {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #f8fbff;
+    border-radius: 50%;
+    background: #5574c8;
+    box-shadow: 0 2px 5px #24385f75;
+    translate: var(--stick-x, 0px) var(--stick-y, 0px);
+    pointer-events: none;
+  }
   .study-town__dialog {
     inset: auto 0 0;
     width: 100%;

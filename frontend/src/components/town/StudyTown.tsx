@@ -21,21 +21,21 @@ type Point = { x: number; y: number };
 
 const COPY = {
   en: {
-    guide: "Walk to a door to go inside.", shortcuts: "Quick access",
+    guide: "Walk to a door to go inside.", shortcuts: "Quick access", joystick: "Drag to move Lumi",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
     math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
     xp: "XP", taught: "skills taught",
     topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"], art: ["Colors", "Drawing"], astronomy: ["The Moon", "Planets"] },
   },
   es: {
-    guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido",
+    guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido", joystick: "Arrastra para mover a Lumi",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
     math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
     xp: "XP", taught: "habilidades enseñadas",
     topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"], art: ["Colores", "Dibujo"], astronomy: ["La Luna", "Planetas"] },
   },
   vi: {
-    guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh",
+    guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh", joystick: "Kéo để di chuyển Lumi",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
     math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
     xp: "XP", taught: "kỹ năng đã dạy",
@@ -91,6 +91,8 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const sprite = useRef<HTMLDivElement>(null);
+  const joystick = useRef<HTMLDivElement>(null);
+  const joystickPointer = useRef<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const camera = useRef({ scale: 1, x: 0, y: 0 });
   const walker = useRef({
@@ -98,6 +100,27 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   });
   const inputs = useRef(new Map<string | number, Direction>());
   const taught = menu === null ? null : Math.min(XP_GOAL, menu.filter((concept) => concept.stars > 0).length);
+
+  const resetJoystick = () => {
+    const pointer = joystickPointer.current;
+    if (pointer !== null) inputs.current.delete(pointer);
+    joystickPointer.current = null;
+    joystick.current?.style.removeProperty("--stick-x");
+    joystick.current?.style.removeProperty("--stick-y");
+  };
+
+  const moveJoystick = (event: PointerEvent<HTMLDivElement>) => {
+    if (joystickPointer.current !== event.pointerId) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - (bounds.left + bounds.width / 2);
+    const y = event.clientY - (bounds.top + bounds.height / 2);
+    const distance = Math.hypot(x, y);
+    const reach = distance > 8 ? Math.min(1, 29 / distance) : 0;
+    event.currentTarget.style.setProperty("--stick-x", `${x * reach}px`);
+    event.currentTarget.style.setProperty("--stick-y", `${y * reach}px`);
+    if (!reach) inputs.current.delete(event.pointerId);
+    else inputs.current.set(event.pointerId, Math.abs(x) > Math.abs(y) ? WALK[x < 0 ? 1 : 3] : WALK[y < 0 ? 0 : 2]);
+  };
 
   useEffect(() => {
     let active = true;
@@ -170,6 +193,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
         actor.route = [];
         actor.door = door.id;
         held.clear();
+        resetJoystick();
         setSelected(door);
       } else if (!door) actor.door = null;
 
@@ -201,7 +225,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       held.set(key, direction);
     };
     const keyUp = (event: KeyboardEvent) => { held.delete(event.key.toLowerCase()); };
-    const stop = () => { held.clear(); };
+    const stop = () => { held.clear(); resetJoystick(); };
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
     window.addEventListener("blur", stop);
@@ -235,7 +259,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   };
 
   const pointOnRoad = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog, details")) return;
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog, details, [data-town-joystick]")) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const { scale, x, y } = camera.current;
     const point = {
@@ -314,6 +338,23 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
                 }}
               >{direction.icon}</button>
             ))}
+          </div>
+          <div className="study-town__joystick" data-town-joystick ref={joystick} role="group" tabIndex={0} aria-label={copy.joystick}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || joystickPointer.current !== null || dialog.current?.open) return;
+              event.preventDefault();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              walker.current.route = [];
+              joystickPointer.current = event.pointerId;
+              moveJoystick(event);
+            }}
+            onPointerMove={moveJoystick}
+            onPointerUp={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onPointerCancel={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onLostPointerCapture={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            <span className="study-town__joystick-thumb" aria-hidden="true" />
           </div>
         </div>
       </div>

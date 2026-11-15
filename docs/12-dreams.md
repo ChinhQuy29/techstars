@@ -15,8 +15,8 @@ Design: [`assets/new_lumi_screen.png`](assets/new_lumi_screen.png).
 
 ## The screen
 - **Choose Lumi's dream:** title, Lumi in the dream's outfit, the dream's name and Lumi's line ("I want to fly a rocket to the Moon!"), ‹ › arrows (and swipe) to browse, and **Select**. Lumi holds one waving pose while the picker swaps the outfit overlay.
-- **When it shows:** the first time a child opens Teach, or when they choose to change careers. The landing page, Home, Help, Town and Journey can all open before a career is picked.
-- **Changing it:** open the header menu and choose **Change Lumi's dream**. On phone Home, tapping Lumi or the dream chip also opens the picker. Lumi goes back Home; the next page of homework uses the new dream.
+- **When it shows:** the welcome screen opens first. On the first trip into Town, Teach, Help, Scrapbook, or Journey, choosing a career continues to the screen the child tapped.
+- **Changing it:** open the header menu and choose **Change Lumi's dream**. The next worksheet uses the new dream.
 - **Saved** on the device (`localStorage` key `lumi_dream`). It is just the dream id, no personal data.
 - **Lumi wears the dream:** once a dream is chosen, every Lumi in the app (header, Home, lessons, Help, Town) is that dream's Lumi, and it changes the moment the child picks another dream (`useDreamArt()` in `frontend/src/dream.ts`, read by `LumiMascot`). Dream Lumi has the same five mood poses as plain Lumi (waving, excited, thinking, confused, sleeping), each dressed in the outfit, plus the "?", "hmm" and "Z z" extras. Before a dream is chosen, Lumi uses the plain poses.
 

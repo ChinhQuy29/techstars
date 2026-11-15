@@ -48,7 +48,7 @@ const en = {
     keepTeaching: "Keep teaching", stopLesson: "Stop", close: "Close", language: "Language",
     problemOf: "{n} of {total}", isLumiRight: "Did I get this one right?", fixIt: "Oops! What should the answer be?",
     allChecked: "All checked! Tap Done checking.", checkAgain: "Check again", newPhoto: "New photo",
-    menu: "Menu", hideMenu: "Hide menu", back: "Back",
+    menu: "Menu", hideMenu: "Hide menu", back: "Back", teachMe: "Teach Me",
     chooseDream: "Choose Lumi's dream", selectDream: "Select", prevDream: "Previous dream", nextDream: "Next dream",
     changeDream: "Change Lumi's dream", moreDreamsSoon: "More dreams coming soon!",
     dreams: {
@@ -109,7 +109,7 @@ const STRINGS: Record<Language, Strings> = {
     keepTeaching: "Seguir enseñando", stopLesson: "Salir", close: "Cerrar", language: "Idioma",
     problemOf: "{n} de {total}", isLumiRight: "¿Este lo hice bien?", fixIt: "¡Uy! ¿Cuál debería ser la respuesta?",
     allChecked: "¡Todo revisado! Toca ¡Ya revisé!", checkAgain: "Revisar otra vez", newPhoto: "Otra foto",
-    menu: "Menú", hideMenu: "Ocultar menú", back: "Atrás",
+    menu: "Menú", hideMenu: "Ocultar menú", back: "Atrás", teachMe: "Enséñame",
     chooseDream: "Elige el sueño de Lumi", selectDream: "Elegir", prevDream: "Sueño anterior", nextDream: "Sueño siguiente",
     changeDream: "Cambiar el sueño de Lumi", moreDreamsSoon: "¡Pronto habrá más sueños!",
     dreams: {
@@ -164,7 +164,7 @@ const STRINGS: Record<Language, Strings> = {
     keepTeaching: "Dạy tiếp", stopLesson: "Dừng", close: "Đóng", language: "Ngôn ngữ",
     problemOf: "{n} / {total}", isLumiRight: "Câu này mình làm đúng không?", fixIt: "Ối! Đáp án đúng phải là gì?",
     allChecked: "Kiểm tra hết rồi! Bấm Kiểm tra xong!", checkAgain: "Kiểm tra lại", newPhoto: "Chụp ảnh khác",
-    menu: "Menu", hideMenu: "Ẩn menu", back: "Quay lại",
+    menu: "Menu", hideMenu: "Ẩn menu", back: "Quay lại", teachMe: "Dạy mình",
     chooseDream: "Chọn ước mơ cho Lumi", selectDream: "Chọn", prevDream: "Ước mơ trước", nextDream: "Ước mơ tiếp",
     changeDream: "Đổi ước mơ của Lumi", moreDreamsSoon: "Sắp có thêm nhiều ước mơ!",
     dreams: {

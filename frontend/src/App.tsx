@@ -177,6 +177,7 @@ export default function App() {
   // Lumi's dream (docs/12-dreams.md): chosen before the first lesson; the child can change it from home.
   const [dream, chooseDream] = useDream();
   const [pickingDream, setPickingDream] = useState(false);
+  const afterDream = useRef<(() => void) | null>(null);
   const [phoneCam, setPhoneCam] = useState(false); // server allows the "phone as camera" relay (LUMI_PHONE_CAMERA=1)
   const [helpShow, setHelpShow] = useState<"camera" | "photo">("camera");
 
@@ -369,7 +370,7 @@ export default function App() {
   const showDreamPicker = pickingDream || (!dream && appMode === "teach");
   const townWelcome = !showDreamPicker && (appMode === "landing" || (!isPhone && appMode === "welcome"));
 
-  const switchMode = (m: Mode) => {
+  const transitionMode = (m: Mode) => {
     if (m === appMode) return;
     speech.stopSpeaking();
     if (m === "town") {
@@ -389,19 +390,38 @@ export default function App() {
     setAppMode(m);
   };
 
+  const withDream = (next: () => void) => {
+    if (dream) next();
+    else {
+      speech.stopSpeaking();
+      afterDream.current = next;
+      setPickingDream(true);
+    }
+  };
+  const switchMode = (m: Mode) => {
+    if (m === "landing" || (m === "welcome" && !isPhone)) transitionMode(m);
+    else withDream(() => transitionMode(m));
+  };
+  const closeDreamPicker = () => {
+    afterDream.current = null;
+    setPickingDream(false);
+  };
   const onDream = (d: DreamId) => {
     chooseDream(d);
     if (pickingDream) {
-      setPickingDream(false);
-      switchMode("welcome"); // back home; the next worksheet uses the new dream
+      const next = afterDream.current;
+      closeDreamPicker();
+      if (next) next();
+      else transitionMode("welcome");
     }
   };
   const changeDream = () => {
     speech.stopSpeaking();
+    afterDream.current = null;
     setPickingDream(true);
   };
   const dreamPickerEl = <DreamPicker language={language} current={dream} onSelect={onDream}
-    onBack={isPhone ? () => pickingDream ? setPickingDream(false) : exitLesson() : undefined} />;
+    onBack={pickingDream ? closeDreamPicker : isPhone ? () => exitLesson() : undefined} />;
   const dreamNow = dreamInfo(dream);
 
   const startLesson = (c: api.TeachConceptInfo | null, fromTown = false) => {
@@ -430,11 +450,11 @@ export default function App() {
     else showTown();
   };
 
-  const openTown = (concept: Concept | null, story: string | null = null) => {
+  const openTown = (concept: Concept | null, story: string | null = null) => withDream(() => {
     speech.stopSpeaking();
     setTownStart((t0) => ({ concept, story, key: t0.key + 1 }));
     setAppMode("town");
-  };
+  });
 
   const showingMap = appMode === "town" && !townStart.story && !townStart.concept;
   const showTown = () => {
@@ -448,7 +468,7 @@ export default function App() {
   backRef.current = () => {
     if (grownupsOpen) setGrownupsOpen(false);
     else if (showReport) setShowReport(false);
-    else if (pickingDream) setPickingDream(false);
+    else if (pickingDream) closeDreamPicker();
     else if (appMode === "town") {
       if (teachAlive) switchMode("teach");
       else switchMode("welcome");
@@ -915,18 +935,19 @@ export default function App() {
       {dreamNow.emoji} {s.dreams[dreamNow.id].name}
     </span>
   );
-  const townLinks = (
+  const townLinks = (close?: () => void) => (
     <>
       <button type="button" className="lumi-header-action" aria-label={s.scrapbook} aria-pressed={appMode === "town" && townStart.story === SCRAPBOOK_TAB}
-        onClick={() => openTown(null, SCRAPBOOK_TAB)}>📔 {s.scrapbookShort}</button>
+        onClick={() => { close?.(); openTown(null, SCRAPBOOK_TAB); }}>📔 {s.scrapbookShort}</button>
       <button type="button" className="lumi-header-action" aria-label={s.journey} aria-pressed={appMode === "town" && Boolean(townStart.story && townStart.story !== SCRAPBOOK_TAB)}
-        onClick={() => openTown(null, JOURNEY_TAB)}>🌙 {s.journeyShort}</button>
+        onClick={() => { close?.(); openTown(null, JOURNEY_TAB); }}>🌙 {s.journeyShort}</button>
     </>
   );
   const headerMenu = (
     <IdleDisclosure label={s.menu} className="lumi-header-menu" trigger={<span aria-hidden="true">☰</span>}>
       {(close) => (
         <div className="lumi-header-menu-panel">
+          {isPhone && townLinks(close)}
           {!showDreamPicker && (
             <button type="button" className="lumi-header-action" onClick={() => { close(); changeDream(); }}>
               ✨ {dreamNow ? s.changeDream : s.chooseDream}
@@ -959,7 +980,6 @@ export default function App() {
                 {careerBadge}
               </div>
               {headerMenu}
-              {appMode === "town" && <nav className="lumi-header-links" aria-label={s.town}>{townLinks}</nav>}
             </header>
           )}
           <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
@@ -970,8 +990,6 @@ export default function App() {
                 language={language}
                 remembered={remembered}
                 onStart={startLesson}
-                dream={dreamNow}
-                onChangeDream={changeDream}
               />
             ) : appMode === "teach" || appMode === "town" || townWelcome ? (
               <div className={inLesson ? "h-full" : "p-3"}>{teachTownEl}</div>
@@ -1019,7 +1037,7 @@ export default function App() {
           </button>
         </nav>
         <div className="flex items-center justify-end gap-3">
-          <nav className="lumi-header-links" aria-label={s.town}>{townLinks}</nav>
+          <nav className="lumi-header-links" aria-label={s.town}>{townLinks()}</nav>
           {headerMenu}
         </div>
       </header>

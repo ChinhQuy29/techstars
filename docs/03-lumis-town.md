@@ -23,7 +23,7 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 
 ## Where it appears
 - The welcome page previews Study Town, and Town is the first mode tab. The 🏘️ button on the Teach screen still opens Town. TeachView stays mounted (hidden) in Town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
-- The closer camera follows Lumi along the road, with extra foreground in view. The chevron opens Quick access at the bottom on desktop and the top on phones. It closes after five seconds without interaction. The header holds Scrapbook, Journey, and the auto-closing menu with Grown-ups.
+- The closer camera follows Lumi along the road, with extra foreground in view. Drag the joystick on phones or use the desktop arrows to walk. The chevron opens Quick access at the bottom on desktop and the top on phones. It closes after five seconds without interaction. The header holds Scrapbook, Journey, and the auto-closing menu with Grown-ups.
 - On Teach `next`, when a concept just reached 1 star: "🎉 New place in Lumi's Town: 🍋 Lemonade Stand!" → Visit opens that scene.
 - Welcome: "Welcome back! Lumi remembers…" with saved progress.
 

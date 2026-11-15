@@ -118,12 +118,6 @@ html:has(.lumi-desktop) { scrollbar-gutter: stable; }
   align-items: center;
   gap: .25rem .75rem;
 }
-.lumi-phone-header .lumi-header-links {
-  grid-column: 1 / -1;
-  gap: .75rem;
-  border-top: 1px solid #dce4f6;
-}
-.lumi-phone-header .lumi-header-links .lumi-header-action { min-height: 44px; font-size: .9rem; }
 
 .lumi-header-menu { position: relative; z-index: 20; }
 .lumi-header-menu > summary {
