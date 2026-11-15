@@ -34,7 +34,7 @@ Every newer problem is checked when generated: one right answer computed in Pyth
 Out of scope: word problems, algebra, "teach Lumi anything".
 
 ## Choosing what to teach
-Teach mode opens on a **concept picker**: "What do you want to teach Lumi today?". Every concept appears with Lumi's stars and its state: **Teach** (ready), **Practice in Help me first** (original four), or **Quick warm-up first** (newer eight). The child picks any concept in any order; **🎲 Lumi, you pick!** keeps the old behavior (Lumi chooses among ready concepts). After a sheet: **📚 More homework** (same concept) or **🔀 Teach something else**.
+Teach mode opens on a **concept picker**. Choosing a skill offers a larger **Teach Lumi** button for starting that skill immediately and **I'm not too confident about this problem** for opening Help. The direct choice starts one worksheet without recording readiness. **🎲 Lumi, you pick!** chooses among ready concepts, or starts a worksheet with carrying and careful counting when none are ready. After a sheet, the child can request more homework or pick something else.
 
 - **Warm-up** (newer concepts, first time): the child solves two problems of that concept on the matching keypad. The backend checks them (answers never reach the browser); both right → the concept is ready (`warm_ready`, saved with progress); otherwise **Try two more**.
 - **Chosen worksheet:** all 2–3 planted mistakes are the chosen concept; the correct rows mix in other ready concepts (the chosen one weighted ×2), so the whole page still needs checking. A chosen concept at 3 stars → review mode.
@@ -44,7 +44,7 @@ Teach mode opens on a **concept picker**: "What do you want to teach Lumi today?
 The **server owns the flow**; the client renders `step` and sends actions.
 
 ```
-Gate (ready concepts?) ── no → practice_first (→ Help, or adult hold "try anyway")
+Teach Lumi or Lumi picks → worksheet
  → worksheet: 5 problems, 2–3 planted, ≥2 correct → child marks ✓/✗ (+ optional fix) → Done checking!
  → SymPy scores → queue, one problem at a time:
      caught_fixed → Explain → Demo → Next
@@ -54,7 +54,7 @@ Gate (ready concepts?) ── no → practice_first (→ Help, or adult hold "tr
  → Done: "You found X of my Y mistakes!" → More homework | Grown-up report
 ```
 
-**Gate.** An original concept is ready if, in Help mode, the child solved one correctly or fixed one after hints (`concepts_of`: `+` → carry or add, plus off_by_one; `−` → borrow or sub, plus off_by_one; `×` → mul), plus readiness saved from earlier days. No ready concept → `practice_first` with **🙋 Practice with Lumi** and **🔒 Grown-up: try anyway** (hold 1.5 s; sends `force`, uses carry + off_by_one). All ready concepts at 3 stars → review mode ("I think I forgot a little…").
+**Readiness.** An original concept is ready if, in Help mode, the child solved one correctly or fixed one after hints (`concepts_of`: `+` → carry or add, plus off_by_one; `−` → borrow or sub, plus off_by_one; `×` → mul), plus readiness saved from earlier days. The app requests a direct worksheet for both Teach and Lumi picks. All ready concepts at 3 stars → review mode ("I think I forgot a little…").
 
 **Demo worksheet** (Grown-up settings → 🎬, `demo: true`, bypasses the gate, fixed seed): `23+14=37` ✓, `47+38=75` ✗ carry, `6×7=42` ✓, `52−17=45` ✗ borrow, `34+25=59` ✓. Events carry `demo: true`; the report labels it. Nothing is faked.
 

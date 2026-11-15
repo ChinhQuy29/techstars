@@ -22,7 +22,8 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 5. **No new data** beyond a visit count per place (seeds fresh problems).
 
 ## Where it appears
-- Study Town is the opening view and the first mode tab. The 🏘️ button on the Teach screen still opens Town. TeachView stays mounted (hidden) in Town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
+- The welcome page previews Study Town, and Town is the first mode tab. The 🏘️ button on the Teach screen still opens Town. TeachView stays mounted (hidden) in Town so a worksheet survives; **📒 Back to homework** returns. Leaving to Help or Welcome resets it.
+- The closer camera follows Lumi along the road, with extra foreground in view. Drag the joystick on phones or use the desktop arrows to walk. The chevron opens Quick access at the bottom on desktop and the top on phones. It closes after five seconds without interaction. The header holds Scrapbook, Journey, and the auto-closing menu with Grown-ups.
 - On Teach `next`, when a concept just reached 1 star: "🎉 New place in Lumi's Town: 🍋 Lemonade Stand!" → Visit opens that scene.
 - Welcome: "Welcome back! Lumi remembers…" with saved progress.
 
@@ -31,7 +32,7 @@ Why kids come back. **Every skill the child teaches lets Lumi *do* something new
 - **House menus:** Reaching a door opens its popup. Math uses the existing Teach Lumi skill picker and starts the existing lesson flow with the chosen dream and readiness gate. The other houses display planned topics. Town movement and house selection stay in memory.
 - **XP:** The five marks count distinct skills with teaching credit across Town, capped at five. The bar follows the current session and any opted-in saved progress attached to it. Math is the first subject with lessons.
 - **Town extras** (`views/TownPage.tsx`): the in-map controls open Scrapbook, Journey on desktop, and paused homework when available. Existing skill scenes still open through their lesson links.
-- **Map assets:** `frontend/public/assets/map_asset/walking-terrain.png` is the 3840 × 1280 Spring Grove Walking Terrain export from Figma. The game shows it at 1920 × 640 and mirrors a section of its right edge to extend the road and forest. The house PNGs are existing Spring Grove components from the same Kenney CC0 kit. The assembled map and road exports are also available in the asset folder.
+- **Map assets:** `frontend/public/assets/map_asset/walking-terrain-draft.png` exports the meadow, road, and prop layers of Spring Grove from the Study Town Figma file’s `draft` page. The game shows it at 1920 × 810 and mirrors a section of its right edge to extend the road and forest. The house PNGs are existing Spring Grove components from the same Kenney CC0 kit. The original walking terrain, assembled map, and road exports are also available in the asset folder.
 - **Character assets:** Edit `map_asset/character_asset/lumi-walk.svg` and export over `lumi-walk.png` to replace the sprite. Keep the transparent 480 × 480 sheet, 160 × 160 cells, rows for down/right/up in that order, and foot anchor at (80, 137) in each cell. Columns are step A, standing, and step B, and the right row mirrors for left. The stylesheet holds the map crop and sprite display size.
 - **Scene** (`components/town/SkillScene.tsx`): a 16:9 picture, then the math board and captions. One caption every 1.8 s; picture, board and captions share one `stage`.
   - Lemonade: price tags 🍋 a¢ / 🍪 b¢; register board fills ones, pops the carried 1, then tens and total; coins slide to Lumi.

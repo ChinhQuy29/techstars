@@ -4,7 +4,7 @@ import { CONCEPT_EMOJI, type Strings, type TeachConcept } from "../i18n";
 
 /**
  * "What do you want to teach Lumi today?" The child picks any skill, in any order.
- * Ready skills go straight to Lumi's homework; others show how they unlock (Help mode or a quick warm-up).
+ * Each skill opens a choice between teaching and Help.
  */
 export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }: {
   concepts: TeachConceptInfo[];
@@ -39,9 +39,6 @@ export default function ConceptPicker({ concepts, busy, onPick, onLumiPicks, s }
               <span className="text-amber-500" aria-label={`${c.stars} of 3 stars`}>
                 {"★".repeat(Math.floor(c.stars))}{c.stars % 1 ? "½" : ""}
                 <span className="text-slate-200">{"★".repeat(3 - Math.ceil(c.stars))}</span>
-              </span>
-              <span className={`text-xs font-bold ${c.ready ? "text-green-700" : "text-slate-500"}`}>
-                {c.ready ? `🧑‍🏫 ${s.teachThis}` : c.gate === "warmup" ? `🏃 ${s.needsWarmup}` : `🙋 ${s.needsHelp}`}
               </span>
             </button>
           </motion.li>

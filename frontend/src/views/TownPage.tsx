@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import * as api from "../api";
 import type { Concept, Language, TeachConceptInfo, TownInfo, TownScene } from "../api";
 import { BuildingArt } from "../components/town/Buildings";
@@ -11,6 +12,7 @@ import type { useSpeech } from "../robot/useSpeech";
 const STEP_MS = 1800;
 /** `startStory` value that opens the Journey tab without playing a scene. */
 export const JOURNEY_TAB = "*";
+export const SCRAPBOOK_TAB = "scrapbook";
 
 interface Props {
   sessionId: string;
@@ -18,15 +20,16 @@ interface Props {
   speech: ReturnType<typeof useSpeech>;
   /** Go straight into this place (from the "new place" banner). */
   startConcept?: Concept | null;
-  /** Go straight into this story scene (from a "new story scene" notification). */
+  /** Open a story scene, Journey, or the Scrapbook. */
   startStory?: string | null;
   onBackToHomework: () => void;
   onLearn: (concept: TeachConceptInfo | null) => void;
   restoredSkills: number;
-  /** Phone layout (docs/10-mobile-ui.md): Town and Journey are bottom tabs, so the header only switches Town/Scrapbook. */
+  /** Phone layout (docs/10-mobile-ui.md). */
   phone?: boolean;
   /** Show "Back to homework" (phone: only while a lesson is paused). Default true. */
   showBack?: boolean;
+  welcome?: ReactNode;
 }
 
 /**
@@ -34,13 +37,13 @@ interface Props {
  * the child has taught. Read-only: places open from Lumi's stars; every number comes from the backend.
  */
 export default function TownPage({
-  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, onLearn, restoredSkills, phone = false, showBack = true,
+  sessionId, language, speech, startConcept = null, startStory = null, onBackToHomework, onLearn, restoredSkills, phone = false, showBack = true, welcome,
 }: Props) {
   const s = t(language);
   const [info, setInfo] = useState<TownInfo | null>(null);
   const [scene, setScene] = useState<TownScene | null>(null);
   const [stage, setStage] = useState(0);
-  const [tab, setTab] = useState<"town" | "scrapbook" | "journey">(startStory ? "journey" : "town");
+  const tab = startStory === SCRAPBOOK_TAB ? "scrapbook" : startStory ? "journey" : "town";
   const [bubble, setBubble] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const { speak, stopSpeaking } = speech;
@@ -79,7 +82,7 @@ export default function TownPage({
   );
 
   useEffect(() => {
-    if (startStory) return; // the Journey tab loads itself
+    if (tab === "journey") return; // the Journey tab loads itself
     load();
     if (startConcept) visit(startConcept);
     return () => stopSpeaking();
@@ -105,15 +108,10 @@ export default function TownPage({
     return (
       <StudyTown sessionId={sessionId} language={language} onLearn={onLearn} restoredSkills={restoredSkills}
         notice={bubble !== info?.dream ? bubble : null}
-        actions={
-          <>
-            <button type="button" onClick={() => setTab("scrapbook")}>📔 {s.scrapbook}</button>
-            {!phone && <button type="button" onClick={() => setTab("journey")}>🌙 {s.journey}</button>}
-            {showBack && (
-              <button type="button" onClick={() => { stopSpeaking(); onBackToHomework(); }}>📒 {s.backToHomework}</button>
-            )}
-          </>
-        }
+        welcome={welcome}
+        actions={showBack && (
+          <button type="button" onClick={() => { stopSpeaking(); onBackToHomework(); }}>📒 {s.backToHomework}</button>
+        )}
       />
     );
   }
@@ -123,38 +121,13 @@ export default function TownPage({
       {/* header */}
       <div className="card flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
         <h2 className={`font-extrabold text-teal-700 ${phone ? "text-2xl" : "text-3xl"}`}>
-          {scene ? `🏘️ ${scene.title}` : phone && tab === "journey" ? `🌙 ${s.journey}` : `🏘️ ${s.town}`}
+          {scene ? `🏘️ ${scene.title}` : tab === "journey" ? `🌙 ${s.journey}` : `📔 ${s.scrapbook}`}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {scene ? (
+          {scene && (
             <button className="btn-kid !min-h-12 bg-white !py-2 text-base text-slate-700 ring-2 ring-slate-200" onClick={backToTown}>
               🗺️ {s.town}
             </button>
-          ) : phone && tab === "journey" ? null : (
-            <>
-              <button
-                className="btn-small bg-white text-slate-700 ring-1 ring-slate-200"
-                onClick={() => setTab("town")}
-              >
-                🗺️ {s.town}
-              </button>
-              <button
-                className={`btn-small ${tab === "scrapbook" ? "bg-violet-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
-                onClick={() => setTab("scrapbook")}
-                aria-pressed={tab === "scrapbook"}
-              >
-                📔 {s.scrapbook}
-              </button>
-              {!phone && (
-                <button
-                  className={`btn-small ${tab === "journey" ? "bg-indigo-600 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}
-                  onClick={() => setTab("journey")}
-                  aria-pressed={tab === "journey"}
-                >
-                  🌙 {s.journey}
-                </button>
-              )}
-            </>
           )}
           {showBack && (
             <button className="btn-kid !min-h-12 bg-violet-500 !py-2 text-base text-white" onClick={() => { stopSpeaking(); onBackToHomework(); }}>
@@ -196,7 +169,6 @@ export default function TownPage({
       {/* the scrapbook */}
       {!scene && tab === "scrapbook" && info && (
         <section className="notebook card p-4 sm:p-6">
-          <h3 className="mb-3 pl-14 text-2xl font-extrabold text-violet-700">📔 {s.scrapbook}</h3>
           {info.scrapbook.length === 0 && <p className="pl-14 text-lg text-slate-500">{s.scrapbookEmpty}</p>}
           <ul className="flex flex-col gap-3 pl-14">
             {info.scrapbook.map((e) => {

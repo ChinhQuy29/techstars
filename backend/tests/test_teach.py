@@ -2,6 +2,7 @@
 import os
 import random
 from pathlib import Path
+from uuid import uuid4
 
 os.environ["GEMINI_API_KEY"] = ""  # force mock mode
 
@@ -69,6 +70,17 @@ def test_gate_blocks_fresh_session_then_force_works():
     assert {p.concept for p in truth("teach-gate").values()} <= {"carry", "off_by_one"}
 
 
+@pytest.mark.parametrize("concept", ["carry", "fractions"])
+def test_direct_teach_opens_selected_skill_without_marking_it_ready(concept):
+    session = get_session(uuid4().hex)
+    gated = teach.new_worksheet(session, "en", force=False, concept=concept)
+    assert gated.turn.step == "practice_first"
+    direct = teach.new_worksheet(session, "en", force=True, concept=concept)
+    assert direct.turn.step == "mark"
+    assert {p.concept for p in session.teach.problems if p.planted} == {concept}
+    assert concept not in teach.ready_concepts(session)
+
+
 def test_gate_opens_after_help_mode():
     sid = "teach-gate-help"
     for name in ("worksheet-1.png", "worksheet-2.png"):
@@ -77,6 +89,14 @@ def test_gate_opens_after_help_mode():
     assert "carry" in teach.ready_concepts(get_session(sid))
     w = worksheet(sid, force=False)
     assert w["ready"] and "carry" in w["concepts"]
+
+
+def test_direct_teach_lumi_picks_opens_worksheet_for_new_child():
+    session = get_session(uuid4().hex)
+    worksheet = teach.new_worksheet(session, "en", force=True)
+    assert worksheet.turn.step == "mark"
+    assert set(worksheet.concepts) == {"carry", "off_by_one"}
+    assert not teach.ready_concepts(session)
 
 
 # ---------- happy path ----------

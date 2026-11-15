@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { publicAsset } from "./assets";
 
 /**
  * Lumi's dream (docs/12-dreams.md): the child picks what Lumi wants to be, and Teach problems get short stories
@@ -17,9 +18,9 @@ export interface Dream {
 }
 
 export const DREAMS: Dream[] = [
-  { id: "astronaut", emoji: "🚀", image: "/assets/dreams/astronaut.svg", w: 326, h: 428 },
-  { id: "baker", emoji: "🧁", image: "/assets/dreams/baker.svg", w: 351, h: 499 },
-  { id: "doctor", emoji: "🩺", image: "/assets/dreams/doctor.svg", w: 342, h: 405 },
+  { id: "astronaut", emoji: "🚀", image: publicAsset("assets/dreams/astronaut.svg"), w: 326, h: 428 },
+  { id: "baker", emoji: "🧁", image: publicAsset("assets/dreams/baker.svg"), w: 351, h: 499 },
+  { id: "doctor", emoji: "🩺", image: publicAsset("assets/dreams/doctor.svg"), w: 342, h: 405 },
 ];
 
 const KEY = "lumi_dream";

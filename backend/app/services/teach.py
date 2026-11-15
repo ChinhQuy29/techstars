@@ -472,6 +472,8 @@ def new_worksheet(session: Session, lang: str, force: bool, rng: Optional[random
         )
     rng = rng or random.Random()
     ready = ready_concepts(session)
+    if concept is not None and force:
+        ready = ready | {concept}
     if concept is not None and concept not in ready:
         # The child picked something they haven't shown yet: practice first (Help mode or a warm-up).
         session.teach = None

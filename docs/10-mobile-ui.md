@@ -8,7 +8,7 @@ On a phone the current app is one long scrolling page: the header (logo, three t
 ## Decisions (agreed with the owner, 2026-11-14)
 | Question | Decision |
 |---|---|
-| Moving between screens | **Always-visible bottom tab bar** with four big emoji tabs: 🏠 Home · 🙋 Help · 🏘️ Town · 🌙 Journey. Hidden during a lesson, so the lesson fills the screen. |
+| Moving between screens | The bottom tab bar has 🏘️ Town, 🏠 Home, and 🙋 Help. The header has a menu with Grown-ups, and the Town screens show 📔 Scrapbook and 🌙 Journey. Navigation hides during a lesson so the lesson fills the screen. |
 | Home | **Lumi's Brain** (changed 2026-11-14 after owner feedback): Lumi above its navy brain screen; the 12 skills are lights in a 3-column grid that glow brighter with stars. The child picks **any** skill: no track, no suggested next skill, no hand pointing at one. "🎲 Lumi, you pick!" stays. ~~Skill path with a Next badge~~ (dropped: felt like a copy of another app and pushed a fixed order). |
 | Lesson | **One problem at a time:** Lumi small with its speech bubble, one big problem card with ✓ / ✗. After the last one, the whole sheet is shown with "Done checking". Top: a labelled **🏠 Home** button and the skill, then **notebook tabs** for the lesson's three parts (✓ Check · 💬 Explain · 🤖 Lumi tries) instead of a progress bar and ✕ (changed after owner feedback). |
 | Guidance | **Pointing hand** on the next tap (appears when the child hesitates); **Lumi says what to do** (a short spoken + written line for each problem); **progress and small cheers** (the notebook tabs fill in, dots under the card, a soft sound per mark; no streaks or timers). |

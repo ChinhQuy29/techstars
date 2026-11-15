@@ -191,7 +191,7 @@ class TeachTurn(BaseModel):
 class TeachWorksheetRequest(BaseModel):
     session_id: str
     language: Language = "en"
-    force: bool = False  # adult-only: skip the readiness gate with {carry, off_by_one}
+    force: bool = False  # Start the chosen skill directly, or use the default pair when none is ready.
     demo: bool = False   # adult-only: the fixed canonical demo worksheet (47 + 38 = 75 ...)
     concept: Optional[str] = None  # the concept the child chose to teach (None: Lumi picks)
     dream: Optional[str] = None  # what Lumi wants to be (services/dreams.py); unknown values are ignored

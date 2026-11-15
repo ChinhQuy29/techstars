@@ -1,8 +1,12 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent, ReactNode } from "react";
 import { teachConcepts, type Language, type TeachConceptInfo } from "../../api";
+import { publicAsset } from "../../assets";
+import { useDreamArt } from "../../dream";
 import { t } from "../../i18n";
 import ConceptPicker from "../ConceptPicker";
+import IdleDisclosure from "../IdleDisclosure";
 import "./study-town.css";
 
 const HOUSES = [
@@ -17,21 +21,21 @@ type Point = { x: number; y: number };
 
 const COPY = {
   en: {
-    guide: "Walk to a door to go inside.", shortcuts: "Quick access",
+    guide: "Walk to a door to go inside.", shortcuts: "Quick access", joystick: "Drag to move Lumi",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
     math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
     xp: "XP", taught: "skills taught",
     topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"], art: ["Colors", "Drawing"], astronomy: ["The Moon", "Planets"] },
   },
   es: {
-    guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido",
+    guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido", joystick: "Arrastra para mover a Lumi",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
     math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
     xp: "XP", taught: "habilidades enseñadas",
     topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"], art: ["Colores", "Dibujo"], astronomy: ["La Luna", "Planetas"] },
   },
   vi: {
-    guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh",
+    guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh", joystick: "Kéo để di chuyển Lumi",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
     math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
     xp: "XP", taught: "kỹ năng đã dạy",
@@ -39,7 +43,8 @@ const COPY = {
   },
 };
 
-const WORLD = { width: 2460, height: 640 };
+const CAMERA_REFERENCE_HEIGHT = 640;
+const WORLD = { width: 2460, height: 810 };
 const GATE_X = 2210;
 const ROAD = { left: 22, top: 501, bottom: 549, center: 539 };
 const DOOR_Y = 511;
@@ -71,11 +76,14 @@ interface Props {
   actions: ReactNode;
   notice?: string | null;
   restoredSkills: number;
+  welcome?: ReactNode;
 }
 
-export default function StudyTown({ sessionId, language, onLearn, actions, notice, restoredSkills }: Props) {
+export default function StudyTown({ sessionId, language, onLearn, actions, notice, restoredSkills, welcome }: Props) {
   const copy = COPY[language];
   const strings = t(language);
+  const dream = useDreamArt();
+  const preview = Boolean(welcome);
   const [selected, setSelected] = useState<House | null>(null);
   const [menu, setMenu] = useState<TeachConceptInfo[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -83,13 +91,36 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   const viewport = useRef<HTMLDivElement>(null);
   const world = useRef<HTMLDivElement>(null);
   const sprite = useRef<HTMLDivElement>(null);
+  const joystick = useRef<HTMLDivElement>(null);
+  const joystickPointer = useRef<number | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const camera = useRef({ scale: 1, x: 0, y: 0 });
   const walker = useRef({
-    x: 505, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
+    x: 650, y: ROAD.center, facing: "down", route: [] as Point[], door: null as House["id"] | null, walkTime: 0,
   });
   const inputs = useRef(new Map<string | number, Direction>());
   const taught = menu === null ? null : Math.min(XP_GOAL, menu.filter((concept) => concept.stars > 0).length);
+
+  const resetJoystick = () => {
+    const pointer = joystickPointer.current;
+    if (pointer !== null) inputs.current.delete(pointer);
+    joystickPointer.current = null;
+    joystick.current?.style.removeProperty("--stick-x");
+    joystick.current?.style.removeProperty("--stick-y");
+  };
+
+  const moveJoystick = (event: PointerEvent<HTMLDivElement>) => {
+    if (joystickPointer.current !== event.pointerId) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - (bounds.left + bounds.width / 2);
+    const y = event.clientY - (bounds.top + bounds.height / 2);
+    const distance = Math.hypot(x, y);
+    const reach = distance > 8 ? Math.min(1, 29 / distance) : 0;
+    event.currentTarget.style.setProperty("--stick-x", `${x * reach}px`);
+    event.currentTarget.style.setProperty("--stick-y", `${y * reach}px`);
+    if (!reach) inputs.current.delete(event.pointerId);
+    else inputs.current.set(event.pointerId, Math.abs(x) > Math.abs(y) ? WALK[x < 0 ? 1 : 3] : WALK[y < 0 ? 0 : 2]);
+  };
 
   useEffect(() => {
     let active = true;
@@ -112,7 +143,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
     const avatar = sprite.current!;
     const actor = walker.current;
     const held = inputs.current;
-    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     let width = 0;
     let height = 0;
     let last = 0;
@@ -120,7 +151,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
     const measure = () => {
       width = view.clientWidth;
       height = view.clientHeight;
-      camera.current.scale = Math.max(width / WORLD.width, height / WORLD.height, .8);
+      camera.current.scale = Math.max(width / WORLD.width, height / CAMERA_REFERENCE_HEIGHT, .8) * 1.12;
     };
     const observer = new ResizeObserver(measure);
     observer.observe(view);
@@ -162,14 +193,15 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
         actor.route = [];
         actor.door = door.id;
         held.clear();
+        resetJoystick();
         setSelected(door);
       } else if (!door) actor.door = null;
 
       actor.walkTime = walking ? actor.walkTime + dt : 0;
-      const frame = walking && !motion.matches ? FRAME_ORDER[Math.floor(actor.walkTime * 8) % FRAME_ORDER.length] : 1;
+      const frame = walking && !reducedMotion.matches ? FRAME_ORDER[Math.floor(actor.walkTime * 8) % FRAME_ORDER.length] : 1;
       const { scale } = camera.current;
-      const cameraX = clamp(width * .48 - actor.x * scale, Math.min(0, width - WORLD.width * scale), 0);
-      const cameraY = clamp(height * .72 - ROAD.center * scale, Math.min(0, height - WORLD.height * scale), 0);
+      const cameraX = clamp(width * .5 - actor.x * scale, Math.min(0, width - WORLD.width * scale), 0);
+      const cameraY = clamp(height * .55 - ROAD.center * scale, Math.min(0, height - WORLD.height * scale), 0);
       camera.current.x = cameraX;
       camera.current.y = cameraY;
       map.style.transform = `translate(${cameraX}px, ${cameraY}px) scale(${scale})`;
@@ -180,18 +212,20 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       raf = requestAnimationFrame(draw);
     };
     const keyDown = (event: KeyboardEvent) => {
+      if (preview) return;
       const key = event.key.toLowerCase();
       const direction = WALK_KEYS[key];
       if (!direction || event.altKey || event.ctrlKey || event.metaKey || dialog.current?.open) return;
       const target = event.target;
       if (!(target instanceof Element)) return;
+      if (target.closest("details")) return;
       if (target !== document.body && !view.contains(target) && !target.closest("[data-town-tab]")) return;
       event.preventDefault();
       actor.route = [];
       held.set(key, direction);
     };
     const keyUp = (event: KeyboardEvent) => { held.delete(event.key.toLowerCase()); };
-    const stop = () => { held.clear(); };
+    const stop = () => { held.clear(); resetJoystick(); };
     window.addEventListener("keydown", keyDown);
     window.addEventListener("keyup", keyUp);
     window.addEventListener("blur", stop);
@@ -203,7 +237,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
       window.removeEventListener("keyup", keyUp);
       window.removeEventListener("blur", stop);
     };
-  }, []);
+  }, [preview]);
 
   const go = (point: Point) => {
     inputs.current.clear();
@@ -225,7 +259,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   };
 
   const pointOnRoad = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog")) return;
+    if (event.button !== 0 || (event.target as HTMLElement).closest("button, dialog, details, [data-town-joystick]")) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const { scale, x, y } = camera.current;
     const point = {
@@ -239,38 +273,41 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
 
   return (
     <section className="study-town" aria-label={strings.town}>
-      <div className="study-town__view" ref={viewport} tabIndex={0} aria-label={strings.town} aria-describedby="study-town-guide"
+      <div className="study-town__view" ref={viewport} tabIndex={0} inert={preview} aria-label={strings.town} aria-describedby="study-town-guide"
         onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) inputs.current.clear(); }}
         onPointerDown={pointOnRoad}
       >
         <div className="study-town__world" ref={world}>
           <div className="study-town__terrain" aria-hidden />
           <div className="study-town__terrain study-town__terrain--extension" aria-hidden />
-          <img className="study-town__gate" style={{ left: GATE_X }} src="/assets/map_asset/roadblock.png"
+          <img className="study-town__gate" style={{ left: GATE_X }} src={publicAsset("assets/map_asset/roadblock.png")}
             width={128} height={112} alt="" draggable={false} />
           {HOUSES.map((house) => (
             <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button" tabIndex={-1}
               aria-haspopup="dialog" onClick={() => approach(house)}
             >
-              <img className="study-town__house-art" src={`/assets/map_asset/${house.asset}.png`} alt="" draggable={false} />
+              <img className="study-town__house-art" src={publicAsset(`assets/map_asset/${house.asset}.png`)} alt="" draggable={false} />
               <span className="study-town__sign"><span aria-hidden>{house.icon}</span> {copy[house.id]}</span>
             </button>
           ))}
-          <div className="study-town__sprite" ref={sprite} aria-hidden />
+          <div className="study-town__sprite" ref={sprite} data-dream={dream?.id} aria-hidden />
         </div>
-        <div className="study-town__hud">
-          <div className="study-town__travel">
-            <p id="study-town-guide">{copy.guide}</p>
+        <p id="study-town-guide" className="sr-only">{copy.guide}</p>
+        <IdleDisclosure className="study-town__travel" label={copy.shortcuts} trigger={
+          <span className="study-town__chevron" aria-hidden="true" />
+        }>
+          {(closeDrawer) => (
             <nav className="study-town__shortcuts" aria-label={copy.shortcuts}>
+              <p>{copy.shortcuts}</p>
               {HOUSES.map((house) => (
-                <button key={house.id} type="button" aria-haspopup="dialog" onClick={() => approach(house)}>
+                <button key={house.id} type="button" aria-haspopup="dialog" onClick={() => { closeDrawer(); approach(house); }}>
                   <span aria-hidden>{house.icon}</span> {copy[house.id]}
                 </button>
               ))}
             </nav>
-          </div>
-          <div className="study-town__actions">{actions}</div>
-        </div>
+          )}
+        </IdleDisclosure>
+        {actions && <div className="study-town__actions">{actions}</div>}
         <div className="study-town__footer">
           <div className="study-town__feedback">
             {notice && <p className="study-town__notice" role="status">{notice}</p>}
@@ -302,8 +339,39 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
               >{direction.icon}</button>
             ))}
           </div>
+          <div className="study-town__joystick" data-town-joystick ref={joystick} role="group" tabIndex={0} aria-label={copy.joystick}
+            onPointerDown={(event) => {
+              if (event.button !== 0 || joystickPointer.current !== null || dialog.current?.open) return;
+              event.preventDefault();
+              event.currentTarget.setPointerCapture(event.pointerId);
+              walker.current.route = [];
+              joystickPointer.current = event.pointerId;
+              moveJoystick(event);
+            }}
+            onPointerMove={moveJoystick}
+            onPointerUp={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onPointerCancel={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onLostPointerCapture={(event) => { if (joystickPointer.current === event.pointerId) resetJoystick(); }}
+            onContextMenu={(event) => event.preventDefault()}
+          >
+            <span className="study-town__joystick-thumb" aria-hidden="true" />
+          </div>
         </div>
       </div>
+
+      <AnimatePresence onExitComplete={() => viewport.current?.focus({ preventScroll: true })}>
+        {welcome && (
+          <motion.div
+            className="study-town__welcome"
+            initial={false}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, pointerEvents: "none" }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            {welcome}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <dialog className="study-town__dialog" ref={dialog} aria-labelledby="study-town-chooser-title"
         onCancel={(event) => { event.preventDefault(); close(); }}

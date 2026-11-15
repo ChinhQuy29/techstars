@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import type { Concept } from "../../api";
+import { publicAsset } from "../../assets";
 import type { LumiExpression } from "../mascot/lumiAssets";
 import type { CritterKind } from "./Critter";
 import { TOWN_ART_FILES } from "./townArtFiles";
@@ -27,7 +28,7 @@ export const art = {
 };
 
 export function artUrl(name: string): string | null {
-  return TOWN_ART_FILES.has(name) ? `/assets/town/${name}.webp` : null;
+  return TOWN_ART_FILES.has(name) ? publicAsset(`assets/town/${name}.webp`) : null;
 }
 
 /** The illustration if it exists and loads, otherwise `fallback`. Decorative: captions carry the meaning. */
