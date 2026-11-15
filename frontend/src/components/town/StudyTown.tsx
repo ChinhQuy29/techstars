@@ -22,6 +22,7 @@ type Point = { x: number; y: number };
 const COPY = {
   en: {
     guide: "Walk to a door to go inside.", shortcuts: "Quick access", joystick: "Drag to move Lumi",
+    firstGuide: "Tap the Math house or walk to its door.",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
     math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
     xp: "XP", taught: "skills taught",
@@ -29,6 +30,7 @@ const COPY = {
   },
   es: {
     guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido", joystick: "Arrastra para mover a Lumi",
+    firstGuide: "Toca la casa de Matemáticas o camina hasta su puerta.",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
     math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
     xp: "XP", taught: "habilidades enseñadas",
@@ -36,6 +38,7 @@ const COPY = {
   },
   vi: {
     guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh", joystick: "Kéo để di chuyển Lumi",
+    firstGuide: "Chạm vào nhà Toán hoặc đi đến cửa nhà.",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
     math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
     xp: "XP", taught: "kỹ năng đã dạy",
@@ -85,6 +88,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
   const dream = useDreamArt();
   const preview = Boolean(welcome);
   const [selected, setSelected] = useState<House | null>(null);
+  const [visitedMath, setVisitedMath] = useState(false);
   const [menu, setMenu] = useState<TeachConceptInfo[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -195,6 +199,7 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
         held.clear();
         resetJoystick();
         setSelected(door);
+        if (door.id === "math") setVisitedMath(true);
       } else if (!door) actor.door = null;
 
       actor.walkTime = walking ? actor.walkTime + dt : 0;
@@ -283,7 +288,8 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
           <img className="study-town__gate" style={{ left: GATE_X }} src={publicAsset("assets/map_asset/roadblock.png")}
             width={128} height={112} alt="" draggable={false} />
           {HOUSES.map((house) => (
-            <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button" tabIndex={-1}
+            <button key={house.id} className="study-town__house" style={{ left: house.x }} type="button"
+              tabIndex={-1} data-guided={!preview && !visitedMath && house.id === "math"}
               aria-haspopup="dialog" onClick={() => approach(house)}
             >
               <img className="study-town__house-art" src={publicAsset(`assets/map_asset/${house.asset}.png`)} alt="" draggable={false} />
@@ -292,7 +298,9 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
           ))}
           <div className="study-town__sprite" ref={sprite} data-dream={dream?.id} aria-hidden />
         </div>
-        <p id="study-town-guide" className="sr-only">{copy.guide}</p>
+        <p id="study-town-guide" className={!preview && !visitedMath ? "study-town__guide" : "sr-only"}>
+          {visitedMath ? copy.guide : copy.firstGuide}
+        </p>
         <IdleDisclosure className="study-town__travel" label={copy.shortcuts} trigger={
           <span className="study-town__chevron" aria-hidden="true" />
         }>

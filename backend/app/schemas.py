@@ -84,6 +84,7 @@ class TutorRequest(BaseModel):
     problem_id: Optional[int] = None
     child_said: Optional[str] = None
     history: list[ChatTurn] = []
+    worksheet_only: bool = False
 
 
 class TutorResponse(BaseModel):

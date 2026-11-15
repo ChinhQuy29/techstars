@@ -1,13 +1,8 @@
 import { MotionConfig } from "framer-motion";
-import { QRCodeSVG } from "qrcode.react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as api from "./api";
 import type { ChatTurn, Concept, Emotion, GradeResponse, Language } from "./api";
 import { lumiLogo } from "./assets";
-import { useCaptureTrigger } from "./camera/useCaptureTrigger";
-import { useHandDetector } from "./camera/useHandDetector";
-import { useRemoteCamera } from "./camera/useRemoteCamera";
-import { useWebcam } from "./camera/useWebcam";
 import ServerSetting from "./components/ServerSetting";
 import IdleDisclosure from "./components/IdleDisclosure";
 import { App as NativeApp } from "@capacitor/app";
@@ -31,17 +26,7 @@ import WelcomeView from "./views/WelcomeView";
 import SavedProgress from "./components/SavedProgress";
 import LumiMascot from "./components/mascot/LumiMascot";
 
-/**
- * Two modes (big tabs): "Help me" (Lumi tutors the child's own worksheet) and "Teach Lumi"
- * (the child teaches Lumi — server-driven, see views/TeachView.tsx and docs/02-learning-design.md).
- *
- * Help-mode state machine:
- *   SLEEPING --hand appears--> WATCHING
- *   WATCHING --no hands + still 1.5s + page changed--> CAPTURING --> THINKING --> RESULT --> WATCHING
- *   any state --60s no activity--> SLEEPING
- */
 type Phase = "SLEEPING" | "WATCHING" | "CAPTURING" | "THINKING" | "RESULT";
-type Source = "webcam" | "remote";
 type Mode = "landing" | "welcome" | "teach" | "help" | "town";
 
 const SLEEP_AFTER_MS = 60_000;
@@ -49,8 +34,6 @@ const SLEEP_AFTER_MS = 60_000;
 const LINES: Record<Language, Record<string, string>> = {
   en: {
     hello: "Hi, I'm Lumi! Show me your worksheet and I'll check it with you.",
-    hand: "Move your hand so I can see!",
-    unreadable: "Hmm, I can't read that. Can you hold the page still and closer to the camera?",
     empty: "I don't see any math problems yet. Show me your worksheet!",
     error: "Oops, my brain hiccupped. Let's try again!",
     wake: "Oh, hello! I'm awake.",
@@ -62,8 +45,6 @@ const LINES: Record<Language, Record<string, string>> = {
   },
   es: {
     hello: "¡Hola, soy Lumi! Muéstrame tu hoja y la revisamos juntos.",
-    hand: "¡Mueve la mano para que pueda ver!",
-    unreadable: "Mmm, no puedo leerlo. ¿Puedes acercar la hoja a la cámara y dejarla quieta?",
     empty: "Todavía no veo problemas de matemáticas. ¡Muéstrame tu hoja!",
     error: "¡Uy! Probemos otra vez.",
     wake: "¡Oh, hola! Ya estoy despierto.",
@@ -75,8 +56,6 @@ const LINES: Record<Language, Record<string, string>> = {
   },
   vi: {
     hello: "Chào con, mình là Lumi! Cho mình xem bài tập, mình cùng kiểm tra nhé.",
-    hand: "Con bỏ tay ra để mình nhìn thấy nhé!",
-    unreadable: "Ừm, mình chưa đọc được. Con giữ tờ giấy yên và gần camera hơn nhé?",
     empty: "Mình chưa thấy bài toán nào. Cho mình xem bài tập nhé!",
     error: "Ối, mình bị lỗi một chút. Thử lại nhé!",
     wake: "Ồ, chào con! Mình dậy rồi.",
@@ -139,12 +118,16 @@ function saveSessionId(id: string) {
   }
 }
 
+async function fetchSample(url: string): Promise<Blob> {
+  const response = await fetch(`${api.BACKEND}${url}`);
+  if (!response.ok) throw new Error(`Worksheet request failed: ${response.status}`);
+  return response.blob();
+}
+
 export default function App() {
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [language, setLanguage] = useState<Language>("en");
   const [appMode, setAppMode] = useState<Mode>("landing");
-  const [source, setSource] = useState<Source>("webcam");
-  const [cameraOn, setCameraOn] = useState(false);
   const [phase, setPhase] = useState<Phase>("WATCHING");
   const [emotion, setEmotion] = useState<Emotion>("idle");
   const [bubble, setBubble] = useState(LINES.en.hello);
@@ -153,12 +136,8 @@ export default function App() {
   const [focusId, setFocusId] = useState<number | null>(null);
   const [history, setHistory] = useState<ChatTurn[]>([]);
   const [showReport, setShowReport] = useState(false);
-  const [voiceTrigger, setVoiceTrigger] = useState(false);
-  // Photos are taken when someone asks (Check my work). Auto-snap when hands leave the frame is an opt-in grown-up setting.
-  const [autoSnap, setAutoSnap] = useState(false);
   const [mode, setMode] = useState<string>("…");
-  const [samples, setSamples] = useState<{ name: string; url: string }[]>([]);
-  const [showDebug, setShowDebug] = useState(false);
+  const [samples, setSamples] = useState<{ name: string; url: string }[] | null>(null);
   const [teachKey, setTeachKey] = useState(0);
   const [teachDemo, setTeachDemo] = useState(false);
   const [townStart, setTownStart] = useState<{ concept: Concept | null; story: string | null; key: number }>({ concept: null, story: null, key: 0 });
@@ -177,35 +156,24 @@ export default function App() {
   const [dream, chooseDream] = useDream();
   const [pickingDream, setPickingDream] = useState(false);
   const afterDream = useRef<(() => void) | null>(null);
-  const [phoneCam, setPhoneCam] = useState(false); // server allows the "phone as camera" relay (LUMI_PHONE_CAMERA=1)
-  const [helpShow, setHelpShow] = useState<"camera" | "photo">("camera");
 
   const busy = useRef(false);
   const lastActivity = useRef(Date.now());
-  const fileInput = useRef<HTMLInputElement>(null);
-  const markGraded = useRef<() => void>(() => {});
   const runGradeRef = useRef<(get: () => Promise<Blob>) => void>(() => {});
+  const schoolSheetAttempt = useRef<string | null>(null);
 
   const helping = appMode === "help";
   const speech = useSpeech(language);
-  const webcam = useWebcam(helping && cameraOn && source === "webcam");
-  const remote = useRemoteCamera(sessionId, helping && cameraOn && source === "remote");
-  const cam = source === "webcam" ? webcam : remote;
-  const hands = useHandDetector();
   const L = LINES[language];
   const s = t(language);
-  const { startPhraseListener } = speech;
-  const captureRef = useRef(cam.captureHighRes);
-  captureRef.current = cam.captureHighRes;
 
   useEffect(() => {
     api.health()
       .then((h) => {
         setMode(h.mode === "mock" ? "mock mode" : h.model);
-        setPhoneCam(!!h.phone_camera);
       })
       .catch(() => setMode("backend offline"));
-    api.samples().then(setSamples).catch(() => {});
+    api.samples().then(setSamples).catch(() => setSamples([]));
   }, []);
 
   const say = useCallback(
@@ -239,7 +207,6 @@ export default function App() {
         setPhase("CAPTURING");
         sounds.shutter();
         const blob = await getImage();
-        markGraded.current();
         setCaptureUrl((old) => {
           if (old?.startsWith("blob:")) URL.revokeObjectURL(old);
           return URL.createObjectURL(blob);
@@ -260,13 +227,12 @@ export default function App() {
           return void (await say(L.quota, "confused"));
         }
         if (g.llm_error) return void (await say(g.llm_error === "timeout" ? L.slow : L.error, "confused"));
-        if (g.hand_blocking) return void (await say(L.hand, "confused"));
-        if (g.unreadable) return void (await say(L.unreadable, "confused"));
+        if (g.hand_blocking || g.unreadable) return void (await say(L.error, "confused"));
         setResult(g);
-        if (!g.problems.length) return void (await say(L.empty, "curious"));
+        if (!g.problems.length) return;
         setPhase("RESULT");
-        const tr = await api.tutor({ session_id: sessionId, language, action: "react", history });
-        await afterTutor(tr);
+        setEmotion("curious");
+        setBubble(s.pickWorksheetProblem);
       } catch (e) {
         console.error(e);
         await say(L.error, "confused");
@@ -276,31 +242,22 @@ export default function App() {
         setPhase((p) => (p === "SLEEPING" ? p : "WATCHING"));
       }
     },
-    [sessionId, language, history, L, say, afterTutor, speech],
+    [sessionId, L, say, speech, s.pickWorksheetProblem],
   );
   runGradeRef.current = runGrade;
 
-  const trigger = useCaptureTrigger({
-    element: cam.element,
-    enabled: helping && cameraOn && cam.ready && autoSnap,
-    detectHands: hands.detect,
-    onTrigger: () => runGradeRef.current(cam.captureHighRes),
-    onActivity: (handsVisible) => {
-      lastActivity.current = Date.now();
-      if (handsVisible) {
-        setPhase((p) => {
-          if (p === "SLEEPING") {
-            setEmotion("idle");
-            setBubble(L.wake);
-            return "WATCHING";
-          }
-          return p;
-        });
-      }
-    },
-  });
+  const schoolSheetUrl = samples?.[0]?.url;
+  const loadingSchoolSheet = !result?.problems.length && (
+    samples === null || (!!schoolSheetUrl && schoolSheetAttempt.current !== sessionId) ||
+    phase === "CAPTURING" || phase === "THINKING"
+  );
+  const showingSchoolSheet = !!captureUrl && !!result?.problems.length;
 
-  markGraded.current = trigger.markGraded;
+  useEffect(() => {
+    if (!helping || !schoolSheetUrl || busy.current || schoolSheetAttempt.current === sessionId) return;
+    schoolSheetAttempt.current = sessionId;
+    runGradeRef.current(() => fetchSample(schoolSheetUrl));
+  }, [helping, schoolSheetUrl, sessionId, phase]);
 
   // Sleep after ~60 s of no activity (Help mode only).
   useEffect(() => {
@@ -323,13 +280,6 @@ export default function App() {
     }
   }, [phase, speech.speaking]);
 
-  // Voice fallback trigger: "check my work".
-  useEffect(() => {
-    if (!voiceTrigger || !cameraOn || !helping) return;
-    const phrases = { en: ["check my work", "check it"], es: ["revisa mi trabajo", "revisa"], vi: ["kiểm tra", "chấm bài"] }[language];
-    return startPhraseListener(phrases, () => runGradeRef.current(captureRef.current));
-  }, [voiceTrigger, cameraOn, helping, language, startPhraseListener]);
-
   const touch = () => {
     lastActivity.current = Date.now();
     if (phase === "SLEEPING") setPhase("WATCHING");
@@ -340,7 +290,7 @@ export default function App() {
     setEmotion("thinking");
     try {
       const tr = await api.tutor({
-        session_id: sessionId, language, action, child_said, history,
+        session_id: sessionId, language, action, child_said, history, worksheet_only: true,
         problem_id: problemId ?? focusId,
       });
       await afterTutor(tr);
@@ -357,14 +307,23 @@ export default function App() {
     const heard = await speech.listen();
     if (!heard) return setEmotion("idle");
     setHistory((h) => [...h.slice(-8), { role: "child", text: heard }]);
-    if (/check (my )?work|revisa|kiểm tra/i.test(heard)) return runGrade(cam.captureHighRes);
     await askTutor(/hint|help|ayuda|gợi ý/i.test(heard) ? "hint" : "chat", heard);
   };
 
-  const gradeSample = (url: string) => {
-    touch();
-    runGrade(() => fetch(`${api.BACKEND}${url}`).then((r) => r.blob()));
+  const retrySchoolSheet = () => {
+    if (schoolSheetUrl) {
+      void runGrade(() => fetchSample(schoolSheetUrl));
+      return;
+    }
+    setSamples(null);
+    api.samples().then(setSamples).catch(() => setSamples([]));
   };
+  const worksheetStatus = (
+    <div className="card flex flex-col items-center gap-3 p-4 text-center">
+      <p role="status" className="font-bold">{loadingSchoolSheet ? s.loadingHomework : s.oopsError}</p>
+      {!loadingSchoolSheet && <button className="btn-kid bg-white" onClick={retrySchoolSheet}>{s.tryAgain}</button>}
+    </div>
+  );
 
   const showDreamPicker = pickingDream || (!dream && appMode === "teach");
   const townWelcome = !showDreamPicker && (appMode === "landing" || (!isPhone && appMode === "welcome"));
@@ -375,8 +334,10 @@ export default function App() {
     if (m === "town") {
       if (!townWelcome) setTownStart((t0) => ({ concept: null, story: null, key: t0.key + 1 }));
     } else if (m === "help") {
-      setEmotion("idle");
-      setBubble(L.hello);
+      if (!showingSchoolSheet) {
+        setEmotion("idle");
+        setBubble(s.pickWorksheetProblem);
+      }
     } else if (!(m === "teach" && appMode === "town" && teachAlive)) {
       setTeachDemo(false);
       setLessonStart(undefined);
@@ -520,7 +481,6 @@ export default function App() {
     setTeachKey((k) => k + 1);
   };
 
-  const phoneUrl = `${location.origin}${import.meta.env.BASE_URL}?phone=${sessionId}`;
   const isLocalhost = /localhost|127\.0\.0\.1/.test(location.hostname);
 
   const deleteSessionData = async () => {
@@ -618,8 +578,7 @@ export default function App() {
         </>
   );
 
-  const helpEl = (
-        <>
+  const helpEl = showingSchoolSheet ? (
           <TutorView
             emotion={emotion}
             talking={speech.speaking}
@@ -634,9 +593,6 @@ export default function App() {
               askTutor("hint", undefined, id);
             }}
           >
-            <button className="btn-kid bg-sun text-slate-900" disabled={!cam.ready || busy.current} onClick={() => runGrade(cam.captureHighRes)}>
-              ✅ {s.checkWork}
-            </button>
             <button className="btn-kid bg-violet-500 text-white" disabled={!result?.problems.length} onClick={() => askTutor("hint")}>
               💡 {s.hint}
             </button>
@@ -646,63 +602,8 @@ export default function App() {
               </button>
             )}
           </TutorView>
+  ) : worksheetStatus;
 
-          <section className="grid gap-5 lg:grid-cols-12">
-            <div className="card p-5 lg:col-span-7">
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-xl font-extrabold">📷 {s.camera}</h2>
-                <button
-                  className={`btn-kid !min-h-12 !py-2 text-base ${cameraOn ? "bg-slate-200 text-slate-700" : "bg-sun text-slate-900"}`}
-                  onClick={() => { touch(); setCameraOn((c) => !c); }}
-                >
-                  {cameraOn ? s.cameraOff : s.cameraOn}
-                </button>
-              </div>
-              <div className="relative overflow-hidden rounded-2xl bg-slate-900">
-                {source === "webcam" ? (
-                  <video ref={webcam.videoRef} playsInline muted className="aspect-video w-full object-contain" />
-                ) : (
-                  <RemoteCanvas canvas={remote.element as HTMLCanvasElement | null} />
-                )}
-                {!cameraOn && <div className="absolute inset-0 grid place-items-center text-xl text-slate-400">📷 {s.cameraIsOff}</div>}
-                {cam.error && <div className="absolute inset-0 grid place-items-center p-4 text-center text-red-300">{cam.error}</div>}
-              </div>
-            </div>
-
-            <div className="card flex flex-col gap-3 p-5 lg:col-span-5">
-              <h2 className="text-xl font-extrabold">🧪 {s.trySample}</h2>
-              <p className="text-slate-500">{s.trySampleHint}</p>
-              <div className="flex flex-wrap gap-2">
-                {samples.map((x) => (
-                  <button key={x.name} className="btn-kid bg-amber-100 text-amber-900" onClick={() => gradeSample(x.url)}>
-                    📄 {x.name}
-                  </button>
-                ))}
-                <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={() => fileInput.current?.click()}>
-                  ⬆️ {s.upload}
-                </button>
-                <input
-                  ref={fileInput}
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) runGrade(async () => f);
-                    e.target.value = "";
-                  }}
-                />
-              </div>
-            </div>
-          </section>
-        </>
-  );
-
-  // Phone Help (docs/10-mobile-ui.md): one thing at a time: start → camera → photo with circles.
-  useEffect(() => {
-    if (captureUrl) setHelpShow("photo");
-  }, [captureUrl]);
-  const showPhoto = helpShow === "photo" && !!captureUrl;
   const phoneHelpEl = (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-start gap-2 px-3 pt-1 pb-2">
@@ -721,7 +622,7 @@ export default function App() {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3">
-        {showPhoto ? (
+        {showingSchoolSheet ? (
           <>
             <div className="flex justify-center">
               <MistakeOverlay
@@ -749,66 +650,14 @@ export default function App() {
               </ul>
             )}
           </>
-        ) : cameraOn ? (
-          <div className="relative shrink-0 overflow-hidden rounded-3xl bg-slate-900">
-            <video ref={webcam.videoRef} playsInline muted className="h-[min(50dvh,28rem)] w-full object-contain" />
-            {cam.error && <div className="absolute inset-0 grid place-items-center p-4 text-center text-red-300">{cam.error}</div>}
-          </div>
-        ) : (
-          <div className="card my-auto grid gap-5 p-4 text-center">
-            <h2 className="text-2xl font-extrabold">🙋 {s.helpTab}</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="btn-kid lumi-primary !px-2 text-base" onClick={() => { touch(); setCameraOn(true); }}>
-                📷 {s.cameraOn}
-              </button>
-              <button className="btn-kid bg-white !px-2 text-base text-slate-700 ring-1 ring-slate-300" onClick={() => fileInput.current?.click()}>
-                ⬆️ {s.upload}
-              </button>
-            </div>
-            {samples.length > 0 && <div className="grid gap-2 border-t border-slate-200 pt-3">
-              <p className="font-semibold text-slate-600">{s.trySampleHint}</p>
-              {samples.map((x) => (
-                <button key={x.name} className="btn-kid bg-sky-50 text-base text-slate-800 ring-1 ring-sky-200" onClick={() => gradeSample(x.url)}>
-                  📄 {x.name}
-                </button>
-              ))}
-            </div>}
-          </div>
-        )}
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) runGrade(async () => f);
-            e.target.value = "";
-          }}
-        />
+        ) : worksheetStatus}
       </div>
 
-      {(showPhoto || cameraOn) && (
-        <div className="grid shrink-0 grid-cols-2 gap-3 px-3 pt-1 pb-3">
-          {showPhoto ? (
-            <>
-              <button className="btn-kid bg-violet-500 text-white" disabled={!result?.problems.length} onClick={() => askTutor("hint")}>
-                💡 {s.hint}
-              </button>
-              <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={() => { touch(); setCameraOn(true); setHelpShow("camera"); }}>
-                📷 {s.newPhoto}
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="btn-kid col-span-2 bg-sun py-4 text-2xl text-slate-900" disabled={!cam.ready || busy.current} onClick={() => runGrade(cam.captureHighRes)}>
-                ✅ {s.checkWork}
-              </button>
-              <button className="btn-small col-span-2 bg-slate-100 text-slate-600" onClick={() => setCameraOn(false)}>
-                {s.cameraOff}
-              </button>
-            </>
-          )}
+      {showingSchoolSheet && (
+        <div className="grid shrink-0 px-3 pt-1 pb-3">
+          <button className="btn-kid bg-violet-500 text-white" onClick={() => askTutor("hint")}>
+            💡 {s.hint}
+          </button>
         </div>
       )}
     </div>
@@ -820,12 +669,6 @@ export default function App() {
             session <code>{sessionId}</code> · {mode}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            {!isNativeApp && phoneCam && (
-              <select value={source} onChange={(e) => setSource(e.target.value as Source)} className="rounded-lg bg-slate-100 px-3 py-2">
-                <option value="webcam">Webcam</option>
-                <option value="remote">Phone camera</option>
-              </select>
-            )}
             <button className="btn-small bg-slate-100" onClick={newSession}>
               {s.newSession}
             </button>
@@ -850,45 +693,9 @@ export default function App() {
           />
           <p className="text-xs text-slate-500">
             Data: without saved progress, everything stays in this server's memory for this session only. No photos or audio
-            are stored. In Help mode the worksheet photo, and in Teach mode the typed or spoken explanation text, are sent to
+            are stored. In Practice mode the sample worksheet, and in Teach mode the typed or spoken explanation text, are sent to
             Google Gemini when a key is configured (none when MOCK_MODE=1). See docs/06-privacy-and-safety.md.
           </p>
-          <div className="flex flex-wrap gap-2 text-xs">
-            <Badge on={(trigger.status.hands ?? 0) > 0} label={trigger.status.hands === null ? `hands: ${hands.status}` : `hands: ${trigger.status.hands}`} />
-            <Badge on={!trigger.status.moving} label={trigger.status.moving ? "moving" : "still"} />
-            <Badge on={trigger.status.armed} label={trigger.status.armed ? "armed" : "waiting for hands"} />
-          </div>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} /> trigger debug
-          </label>
-          {showDebug && (
-            <pre className="rounded-xl bg-slate-900 p-3 text-xs text-slate-300">
-              {JSON.stringify({ ...trigger.status, stillMs: Math.round(trigger.status.stillMs), pageChange: trigger.status.pageChange.toFixed(4) }, null, 1)}
-            </pre>
-          )}
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={autoSnap} onChange={(e) => setAutoSnap(e.target.checked)} />
-            Auto-snap: take the photo by itself when hands leave the page (the camera picture stays on this device until a photo is taken)
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={voiceTrigger} onChange={(e) => setVoiceTrigger(e.target.checked)} disabled={!speech.canListen} />
-            Voice trigger: say “check my work”
-          </label>
-          {source === "remote" && (
-            <div className="flex items-center gap-4">
-              <div className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
-                <QRCodeSVG value={phoneUrl} size={140} />
-              </div>
-              <div>
-                <p>Scan with the phone, allow the camera, and point it down at the worksheet.</p>
-                <p className="mt-2">
-                  Status: <span className={remote.connected ? "text-green-600" : "text-slate-400"}>{remote.connected ? "connected" : "waiting"}</span>
-                </p>
-                {isLocalhost && <p className="mt-2 text-amber-600">Phones can't open localhost — open this page via your ngrok / Cloudflare Tunnel HTTPS URL first.</p>}
-                <p className="mt-2 text-xs">Other cameras can POST JPEGs to /api/frame/{sessionId}</p>
-              </div>
-            </div>
-          )}
         </div>
   );
 
@@ -1058,19 +865,4 @@ export default function App() {
     </div>
     </MotionConfig>
   );
-}
-
-function Badge({ on, label }: { on: boolean; label: string }) {
-  return <span className={`rounded-full px-2 py-1 ${on ? "bg-green-500 text-white" : "bg-slate-200 text-slate-600"}`}>{label}</span>;
-}
-
-function RemoteCanvas({ canvas }: { canvas: HTMLCanvasElement | null }) {
-  const host = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!canvas || !host.current) return;
-    canvas.className = "w-full h-full object-contain";
-    host.current.appendChild(canvas);
-    return () => canvas.remove();
-  }, [canvas]);
-  return <div ref={host} className="grid aspect-video w-full place-items-center" />;
 }

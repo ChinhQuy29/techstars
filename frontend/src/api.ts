@@ -167,6 +167,7 @@ export async function tutor(body: {
   session_id: string;
   language: Language;
   action: "react" | "hint" | "chat";
+  worksheet_only?: boolean;
   problem_id?: number | null;
   child_said?: string;
   history?: ChatTurn[];

@@ -37,7 +37,7 @@ export default function WelcomeView({ language, onTown, onHelp, remembered = 0 }
             🏘️ {s.town}
           </button>
           <button className="btn-kid bg-white text-slate-700 ring-2 ring-slate-200" onClick={onHelp}>
-            🙋 {s.welcomeHelp}
+            🙋 {s.practice}
           </button>
         </div>
       </div>

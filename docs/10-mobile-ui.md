@@ -36,7 +36,8 @@ On a phone the current app is one long scrolling page: the header (logo, three t
 ## Desktop website (agreed with the owner, 2026-11-15)
 The website (768 px and wider) follows the same idea of fewer things to click:
 - **Header:** the Lumi logo, the dream chip, **☰ Menu / ▲ Hide menu** and one **👪 Grown-ups** button.
-- **Nav bar:** Teach Lumi, Help me and Lumi's Town sit in their own bar under the header. The child can hide it with the menu button, and the choice is remembered on the device (`localStorage` key `lumi_nav_open`).
+- **Nav bar:** Teach Lumi, Practice and Lumi's Town sit in their own bar under the header. The child can hide it with the menu button, and the choice is remembered on the device (`localStorage` key `lumi_nav_open`).
+- **Practice:** Opens the first sample as the school-assigned worksheet. The child taps a problem and Lumi helps them work through that problem using backend hints.
 - **Grown-ups:** one centred dialog with the language, the grown-up report and every grown-up setting (the same panel as the phone's Grown-ups sheet, `BottomSheet variant="dialog"`). The settings box at the bottom of the page is gone.
 - **Lessons take the whole page:** once a skill is picked (warm-up or Lumi's homework), the header, nav bar and Town button hide (`TeachView` `onFocusChange`). Only **← 🏠 Home** stays at the top left; it asks "Stop this homework?" (Keep teaching / Stop) unless the page is finished, then goes Home. The skill picker itself keeps the header and nav bar.
 
@@ -57,7 +58,7 @@ Everything else in [04](04-character-ui-and-art.md) "Must keep" still applies: c
 - **Home (Lumi's Brain):** 12 skill lights, any order; brightness and three dots show stars; 🏃 / 🙋 badges show a skill needs the warm-up or Help practice first (the gate runs after tapping, as before). "🎲 Lumi, you pick!" below.
 - **Lesson:** one card per problem ("2 of 5"), dots to go back, ✓ / ✗ at the bottom, keypad on ✗; the whole sheet + Done checking at the end; later steps show only the problem being discussed; the demo bubble drops the steps already on the card. ✕ asks "Stop this homework?".
 - **Guidance:** the hand appears after 5 s without a tap, only on a single next action (Next) or centred between ✓ and ✗, never leaning toward an answer or a skill. Lumi's per-problem lines: "Did I get this one right?", "Oops! What should the answer be?", "All checked! Tap Done checking." Soft `pop` per mark (same sound for ✓ and ✗).
-- **Help (phone):** start screen (Turn on camera, samples, upload) → camera with Check my work → photo with circles, Hint please, New photo.
+- **Practice (phone):** assigned worksheet with tappable problem rows and a Hint please button.
 
 ## Test results
 | Check | Browser 360 × 780 | Emulator 412 × 867 | Phone | Notes |

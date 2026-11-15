@@ -34,7 +34,7 @@ Every newer problem is checked when generated: one right answer computed in Pyth
 Out of scope: word problems, algebra, "teach Lumi anything".
 
 ## Choosing what to teach
-Teach mode opens on a **concept picker**. Choosing a skill offers a larger **Teach Lumi** button for starting that skill immediately and **I'm not too confident about this problem** for opening Help. The direct choice starts one worksheet without recording readiness. **🎲 Lumi, you pick!** chooses among ready concepts, or starts a worksheet with carrying and careful counting when none are ready. After a sheet, the child can request more homework or pick something else.
+Teach mode opens on a **concept picker**. Choosing a skill offers a larger **I'm ready to teach!** button for starting that skill immediately and **Practice with Lumi first** for working through the assigned sample worksheet. Lumi explains the selected problem through the server's hint sequence. The direct choice starts one worksheet without recording readiness. **🎲 Lumi, you pick!** chooses among ready concepts, or starts a worksheet with addition and counting when none are ready. After a sheet, the child can request more homework or pick something else.
 
 - **Warm-up** (newer concepts, first time): the child solves two problems of that concept on the matching keypad. The backend checks them (answers never reach the browser); both right → the concept is ready (`warm_ready`, saved with progress); otherwise **Try two more**.
 - **Chosen worksheet:** all 2–3 planted mistakes are the chosen concept; the correct rows mix in other ready concepts (the chosen one weighted ×2), so the whole page still needs checking. A chosen concept at 3 stars → review mode.

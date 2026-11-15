@@ -122,6 +122,23 @@ main > div:has(> .study-town) { height: 100%; }
 }
 
 .study-town__house:hover .study-town__sign { background: #e0ecff; }
+.study-town__house[data-guided="true"] .study-town__sign {
+  box-shadow: 0 3px 0 #5d442751, 0 0 0 4px #fff0ac, 0 0 18px #fff6d2;
+}
+
+.study-town__guide {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  max-width: min(17rem, 65%);
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #f7fbff;
+  color: #253c60;
+  font-weight: 750;
+  line-height: 1.25;
+  pointer-events: none;
+}
 
 .study-town__sprite {
   position: absolute;
@@ -326,6 +343,8 @@ main > div:has(> .study-town) { height: 100%; }
   .study-town__travel .study-town__chevron { rotate: 135deg; }
   .study-town__travel[open] .study-town__chevron { rotate: -45deg; }
   .study-town__actions { top: 48px; right: 8px; }
+  .study-town__guide { top: 48px; left: 8px; font-size: .875rem; }
+  .study-town__view:has(.study-town__travel[open]) .study-town__guide { visibility: hidden; }
   .study-town__footer { inset: auto 8px 9px; gap: 8px; }
   .study-town__xp { padding: 7px 8px 9px; }
   .study-town__xp-label { gap: 5px; font-size: .78rem; }
