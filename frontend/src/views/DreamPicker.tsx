@@ -55,20 +55,21 @@ export default function DreamPicker({ language, current, onSelect }: {
               onDragEnd={(_, d) => d.offset.x < -60 ? go(1) : d.offset.x > 60 ? go(-1) : undefined}
               className="flex flex-col items-center"
             >
+              {/* Fixed-height box: the three outfits have different shapes, so Lumi stays the same size. */}
               <motion.img
                 src={dream.image}
                 alt=""
-                width={326}
-                height={428}
+                width={dream.w}
+                height={dream.h}
                 draggable={false}
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="h-auto w-52 select-none sm:w-64"
+                className="h-64 w-auto max-w-full select-none object-contain sm:h-80"
               />
               <p className="mt-2 text-2xl font-extrabold text-[#202740]">
                 {dream.emoji} {info.name}
               </p>
-              <p className="font-hand text-xl text-slate-600">“{info.line}”</p>
+              <p className="font-hand flex min-h-[3.5rem] max-w-xs items-start justify-center text-xl leading-7 text-slate-600">“{info.line}”</p>
             </motion.div>
           </AnimatePresence>
         </div>

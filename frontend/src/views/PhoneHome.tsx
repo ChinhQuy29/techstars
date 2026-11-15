@@ -43,7 +43,7 @@ export default function PhoneHome({ sessionId, language, remembered, onStart, dr
       <section className="flex items-end gap-2">
         {dream ? (
           <button onClick={onChangeDream} aria-label={s.changeDream} className="relative w-20 shrink-0 rounded-2xl active:scale-95">
-            <img src={dream.image} alt="" width={326} height={428} className="h-auto w-full select-none" draggable={false} />
+            <img src={dream.image} alt="" width={dream.w} height={dream.h} className="h-24 w-full select-none object-contain object-bottom" draggable={false} />
             <span className="absolute -right-1 bottom-0 grid h-7 w-7 place-items-center rounded-full bg-white text-sm shadow ring-1 ring-indigo-200" aria-hidden>
               ✏️
             </span>

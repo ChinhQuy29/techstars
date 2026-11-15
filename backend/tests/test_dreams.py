@@ -30,13 +30,14 @@ def _ready_session(name: str):
     return s
 
 
+@pytest.mark.parametrize("dream", dreams.DREAMS)
 @pytest.mark.parametrize("lang", LANGS)
 @pytest.mark.parametrize("concept", ALL_CONCEPTS)
-def test_every_problem_gets_a_story_with_no_new_numbers(concept, lang):
+def test_every_problem_gets_a_story_with_no_new_numbers(concept, lang, dream):
     for seed in range(40):
         rng = random.Random(seed)
         planted = seed % 2 == 0
-        p = teach._problem(1, concept, planted, rng, set(), lang, "astronaut")
+        p = teach._problem(1, concept, planted, rng, set(), lang, dream)
         assert p.story, (concept, lang)
         # Every number in the story comes from the math problem, so the story can't add or reveal anything.
         assert set(NUM.findall(p.story)) <= set(NUM.findall(p.problem)), (p.story, p.problem)
@@ -46,11 +47,12 @@ def test_every_problem_gets_a_story_with_no_new_numbers(concept, lang):
         assert lumi_answer_not_in_story(p), (p.story, p.lumi_answer)
 
 
+@pytest.mark.parametrize("dream", dreams.DREAMS)
 @pytest.mark.parametrize("concept", ALL_CONCEPTS)
-def test_the_dream_never_changes_the_math(concept):
+def test_the_dream_never_changes_the_math(concept, dream):
     for seed in range(30):
         plain = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), "en")
-        dreamy = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), "en", "astronaut")
+        dreamy = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), "en", dream)
         assert plain.story is None
         assert (dreamy.lumi_answer, dreamy.correct_answer, dreamy.planted, dreamy.kind) == \
             (plain.lumi_answer, plain.correct_answer, plain.planted, plain.kind)
@@ -58,10 +60,11 @@ def test_the_dream_never_changes_the_math(concept):
             assert dreamy.problem == plain.problem
 
 
-def test_graph_pictures_become_space_pictures():
-    fruit = set(dreams.GRAPH_ICONS["astronaut"])
+@pytest.mark.parametrize("dream", dreams.DREAMS)
+def test_graph_pictures_match_the_dream(dream):
+    fruit = set(dreams.GRAPH_ICONS[dream])
     for seed in range(30):
-        item = dreams.dress_item(cx.make("graphs", random.Random(seed), "en"), "astronaut")
+        item = dreams.dress_item(cx.make("graphs", random.Random(seed), "en"), dream)
         labels = [b["label"] for b in item.visual["bars"]]
         assert not fruit & set(labels) and not any(f in item.problem for f in fruit)
         assert item.data["e1"] in labels and item.data["e2"] in labels
@@ -116,17 +119,18 @@ def _key(p) -> str:
     return {"+": "add", "-": "sub", "×": "mul"}[m.group(2)] if m else p.concept
 
 
+@pytest.mark.parametrize("dream", dreams.DREAMS)
 @pytest.mark.parametrize("lang", LANGS)
 @pytest.mark.parametrize("concept", ALL_CONCEPTS)
-def test_every_version_is_short_and_safe(concept, lang):
+def test_every_version_is_short_and_safe(concept, lang, dream):
     for seed in range(12):
-        p = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), lang, "astronaut")
+        p = teach._problem(1, concept, seed % 2 == 0, random.Random(seed), set(), lang, dream)
         key = _key(p)
-        versions = dreams.STORIES["astronaut"][lang][key]
+        versions = dreams.STORIES[dream][lang][key]
         data = p.data if concept in NEW_CONCEPTS else {}
         for i in range(len(versions)):
             taken = {f"story:{key}:{j}" for j in range(len(versions)) if j != i}
-            text = dreams.story("astronaut", concept, p.problem, data, lang, taken)
+            text = dreams.story(dream, concept, p.problem, data, lang, taken)
             assert text.count("?") == 1 and len(text) <= 90, (len(text), text)
             assert set(NUM.findall(text)) <= set(NUM.findall(p.problem)), (text, p.problem)
             assert "{" not in text
@@ -140,11 +144,36 @@ def test_each_kind_has_several_versions_in_every_language():
             assert {k: len(v) for k, v in dreams.STORIES[d][lang].items()} == counts, lang
 
 
-def test_a_worksheet_never_repeats_a_story_version():
+@pytest.mark.parametrize("dream", dreams.DREAMS)
+def test_a_worksheet_never_repeats_a_story_version(dream):
     for seed in range(20):
-        s = _ready_session(f"dream-variety-{seed}")
-        s.dream = "astronaut"
+        s = _ready_session(f"dream-variety-{dream}-{seed}")
+        s.dream = dream
         w = teach.new_worksheet(s, "en", False, rng=random.Random(seed))
         stories = [p.story for p in s.teach.problems]
         assert len(set(stories)) == len(stories), stories
         assert w.ready
+
+
+def test_baker_worksheet_reads_like_a_bakery():
+    sid = "dream-baker"
+    _ready_session(sid)
+    w = client.post("/api/teach/worksheet", json={"session_id": sid, "language": "en", "dream": "baker"}).json()
+    assert w["ready"] and "baker" in w["turn"]["say"]
+    assert all(p["problem"].count("?") == 1 for p in w["problems"])
+
+
+def test_dreams_do_not_share_stories():
+    a, b = dreams.STORIES["astronaut"], dreams.STORIES["baker"]
+    for lang in LANGS:
+        for key in a[lang]:
+            assert not set(a[lang][key]) & set(b[lang][key]), (lang, key)
+
+
+def test_doctor_is_offered_but_still_plain_math():
+    # The app lets children pick "doctor"; until its stories are written and reviewed, its sheets are plain math.
+    assert dreams.valid_dream("doctor") is None
+    sid = "dream-doctor"
+    _ready_session(sid)
+    w = client.post("/api/teach/worksheet", json={"session_id": sid, "language": "en", "dream": "doctor"}).json()
+    assert w["ready"] and all(st.story is None for st in get_session(sid).teach.problems)

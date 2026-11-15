@@ -50,7 +50,11 @@ const en = {
     allChecked: "All checked! Tap Done checking.", checkAgain: "Check again", newPhoto: "New photo",
     chooseDream: "Choose Lumi's dream", selectDream: "Select", prevDream: "Previous dream", nextDream: "Next dream",
     changeDream: "Change Lumi's dream", moreDreamsSoon: "More dreams coming soon!",
-    dreams: { astronaut: { name: "Astronaut", line: "I want to fly a rocket to the Moon!" } },
+    dreams: {
+      astronaut: { name: "Astronaut", line: "I want to fly a rocket to the Moon!" },
+      baker: { name: "Baker", line: "I want to bake treats that make everyone smile!" },
+      doctor: { name: "Doctor", line: "I want to help everyone feel better!" },
+    },
 };
 
 export type Strings = typeof en;
@@ -106,7 +110,11 @@ const STRINGS: Record<Language, Strings> = {
     allChecked: "¡Todo revisado! Toca ¡Ya revisé!", checkAgain: "Revisar otra vez", newPhoto: "Otra foto",
     chooseDream: "Elige el sueño de Lumi", selectDream: "Elegir", prevDream: "Sueño anterior", nextDream: "Sueño siguiente",
     changeDream: "Cambiar el sueño de Lumi", moreDreamsSoon: "¡Pronto habrá más sueños!",
-    dreams: { astronaut: { name: "Astronauta", line: "¡Quiero volar en un cohete hasta la Luna!" } },
+    dreams: {
+      astronaut: { name: "Astronauta", line: "¡Quiero volar en un cohete hasta la Luna!" },
+      baker: { name: "Panadero", line: "¡Quiero hornear dulces que hagan sonreír a todos!" },
+      doctor: { name: "Doctor", line: "¡Quiero ayudar a que todos se sientan mejor!" },
+    },
   },
   vi: {
     teachTab: "Dạy Lumi", helpTab: "Giúp mình", grownups: "Người lớn", settings: "Cài đặt cho người lớn",
@@ -156,7 +164,11 @@ const STRINGS: Record<Language, Strings> = {
     allChecked: "Kiểm tra hết rồi! Bấm Kiểm tra xong!", checkAgain: "Kiểm tra lại", newPhoto: "Chụp ảnh khác",
     chooseDream: "Chọn ước mơ cho Lumi", selectDream: "Chọn", prevDream: "Ước mơ trước", nextDream: "Ước mơ tiếp",
     changeDream: "Đổi ước mơ của Lumi", moreDreamsSoon: "Sắp có thêm nhiều ước mơ!",
-    dreams: { astronaut: { name: "Phi hành gia", line: "Mình muốn bay tên lửa lên Mặt Trăng!" } },
+    dreams: {
+      astronaut: { name: "Phi hành gia", line: "Mình muốn bay tên lửa lên Mặt Trăng!" },
+      baker: { name: "Thợ làm bánh", line: "Mình muốn làm bánh thật ngon cho mọi người cùng cười!" },
+      doctor: { name: "Bác sĩ", line: "Mình muốn giúp mọi người khỏe lại!" },
+    },
   },
 };
 

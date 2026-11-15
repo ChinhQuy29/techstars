@@ -3,8 +3,18 @@ import { useEffect, useId, useState } from "react";
 import {
   ARTWORK_EXTRAS, ARTWORK_SIZE, EXPRESSIONS, LUMI_COLORS as C, RASTER_ASSETS, resolveExpression, type LumiExpression, type LumiPose,
 } from "./lumiAssets";
+import { useDreamArt } from "../../dream";
 
 const SIZES = { xs: "w-10", sm: "w-20", md: "w-32", lg: "w-44", hero: "w-60" } as const;
+
+/** How a one-pose outfit shows each mood: a tilt (degrees, from the feet), a gentle wobble, or dozing. */
+const OUTFIT_MOOD: Partial<Record<LumiExpression, { rotate?: number | number[]; wobble?: boolean; opacity?: number }>> = {
+  confused: { rotate: [-5, 4], wobble: true },
+  thinking: { rotate: -5 },
+  curious: { rotate: -4 },
+  listening: { rotate: 4 },
+  sleeping: { rotate: 4, opacity: 0.85 },
+};
 
 interface Props {
   expression?: LumiExpression | string;
@@ -35,8 +45,12 @@ export default function LumiMascot({
   const reduce = useReducedMotion();
   const moving = animated && !reduce;
   const id = useId().replace(/:/g, "");
-  const raster = RASTER_ASSETS[expression];
+  // Once the child picks a dream, every Lumi wears that outfit (docs/12-dreams.md). Outfits have one pose, so the
+  // mood shows through movement and the "?", "hmm", "Z z" extras. No dream yet (or the file fails): the mood poses.
+  const outfit = useDreamArt();
   const [failedRaster, setFailedRaster] = useState<string>();
+  const wearing = outfit && failedRaster !== outfit.image ? outfit : null;
+  const raster = wearing ? wearing.image : RASTER_ASSETS[expression];
   const useArtwork = raster !== undefined && failedRaster !== raster;
   const [blink, setBlink] = useState(false);
   const [mouthOpen, setMouthOpen] = useState(false);
@@ -66,24 +80,34 @@ export default function LumiMascot({
 
   if (useArtwork) {
     const extras = ARTWORK_EXTRAS[expression] ?? [];
+    const mood = wearing ? OUTFIT_MOOD[expression] : undefined;
     return (
       <span
-        className={`relative inline-block select-none align-bottom [container-type:inline-size] ${sizeClass} ${className}`}
+        className={`relative inline-block aspect-[342/353] select-none align-bottom [container-type:inline-size] ${sizeClass} ${className}`}
         role={ariaLabel ? "img" : undefined}
         aria-label={ariaLabel}
         aria-hidden={ariaLabel ? undefined : true}
       >
+        {/* Same box for every pose and outfit (342×353), so Lumi never jumps when the mood or dream changes. */}
         <motion.img
           key={raster}
           src={raster}
-          width={ARTWORK_SIZE.w}
-          height={ARTWORK_SIZE.h}
+          width={wearing ? wearing.w : ARTWORK_SIZE.w}
+          height={wearing ? wearing.h : ARTWORK_SIZE.h}
           onError={() => setFailedRaster(raster)}
           initial={moving ? { opacity: 0.6, scale: 0.97 } : false}
-          animate={moving && expression === "celebrate" ? { opacity: 1, scale: 1, y: [0, -8, 0] } : { opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
+          animate={{
+            opacity: mood?.opacity ?? 1,
+            scale: 1,
+            rotate: mood?.rotate ?? 0,
+            y: moving && (expression === "celebrate" || (wearing && expression === "happy")) ? [0, -8, 0] : 0,
+          }}
+          transition={moving && mood?.wobble
+            ? { rotate: { duration: 1.4, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }, default: { duration: 0.3 } }
+            : { duration: 0.3 }}
+          style={{ transformOrigin: "50% 90%" }}
           alt=""
-          className="block h-auto w-full"
+          className="block h-full w-full object-contain object-bottom"
           draggable={false}
         />
         {/* The "?", "hmm" and "Z z" from the Figma page sit beside Lumi's head (sizes scale with Lumi). */}
