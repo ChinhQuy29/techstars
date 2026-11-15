@@ -20,21 +20,21 @@ const COPY = {
     guide: "Walk to a door to go inside.", shortcuts: "Quick access",
     directions: ["Walk up", "Walk left", "Walk down", "Walk right"], close: "Close", later: "Coming later",
     math: "Math", english: "English", biology: "Biology", art: "Art", astronomy: "Astronomy",
-    xp: "Math XP", taught: "skills taught", gate: "Coming soon",
+    xp: "XP", taught: "skills taught", gate: "Coming soon",
     topics: { english: ["Reading", "Words"], biology: ["Plants", "Animals"], art: ["Colors", "Drawing"], astronomy: ["The Moon", "Planets"] },
   },
   es: {
     guide: "Camina hasta una puerta para entrar.", shortcuts: "Acceso rápido",
     directions: ["Camina hacia arriba", "Camina a la izquierda", "Camina hacia abajo", "Camina a la derecha"], close: "Cerrar", later: "Más adelante",
     math: "Matemáticas", english: "Inglés", biology: "Biología", art: "Arte", astronomy: "Astronomía",
-    xp: "XP de matemáticas", taught: "habilidades enseñadas", gate: "Próximamente",
+    xp: "XP", taught: "habilidades enseñadas", gate: "Próximamente",
     topics: { english: ["Lectura", "Palabras"], biology: ["Plantas", "Animales"], art: ["Colores", "Dibujo"], astronomy: ["La Luna", "Planetas"] },
   },
   vi: {
     guide: "Đi đến cửa để vào nhà.", shortcuts: "Truy cập nhanh",
     directions: ["Đi lên", "Đi sang trái", "Đi xuống", "Đi sang phải"], close: "Đóng", later: "Sắp có",
     math: "Toán", english: "Tiếng Anh", biology: "Sinh học", art: "Mỹ thuật", astronomy: "Thiên văn",
-    xp: "XP Toán", taught: "kỹ năng đã dạy", gate: "Sắp ra mắt",
+    xp: "XP", taught: "kỹ năng đã dạy", gate: "Sắp ra mắt",
     topics: { english: ["Đọc", "Từ vựng"], biology: ["Cây cối", "Động vật"], art: ["Màu sắc", "Vẽ"], astronomy: ["Mặt Trăng", "Các hành tinh"] },
   },
 };
@@ -264,14 +264,14 @@ export default function StudyTown({ sessionId, language, onLearn, actions, notic
                 </button>
               ))}
             </nav>
-            <div className="study-town__xp" role="progressbar" aria-label={copy.xp}
-              aria-valuemin={0} aria-valuemax={XP_GOAL} aria-valuenow={taught ?? undefined}
-              aria-valuetext={taught === null ? undefined : `${taught}/${XP_GOAL} ${copy.taught}`}
-            >
-              <div className="study-town__xp-label"><strong>{copy.xp}</strong><span>{taught ?? "–"}/{XP_GOAL} {copy.taught}</span></div>
-              <div className="study-town__xp-marks" aria-hidden>
-                {Array.from({ length: XP_GOAL }, (_, index) => <span key={index} data-earned={index < (taught ?? 0)} />)}
-              </div>
+          </div>
+          <div className="study-town__xp" role="progressbar" aria-label={copy.xp}
+            aria-valuemin={0} aria-valuemax={XP_GOAL} aria-valuenow={taught ?? undefined}
+            aria-valuetext={taught === null ? undefined : `${taught}/${XP_GOAL} ${copy.taught}`}
+          >
+            <div className="study-town__xp-label"><strong>{copy.xp}</strong><span>{taught ?? "–"}/{XP_GOAL} {copy.taught}</span></div>
+            <div className="study-town__xp-marks" aria-hidden>
+              {Array.from({ length: XP_GOAL }, (_, index) => <span key={index} data-earned={index < (taught ?? 0)} />)}
             </div>
           </div>
           <div className="study-town__actions">{actions}</div>
